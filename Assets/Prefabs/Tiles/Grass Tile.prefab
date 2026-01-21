@@ -1,0 +1,96 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &3971647843914368408
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2981122351337398830, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+      propertyPath: m_Name
+      value: Grass Tile
+      objectReference: {fileID: 0}
+    - target: {fileID: 3067160813145291799, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3067160813145291799, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3067160813145291799, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3067160813145291799, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3067160813145291799, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3067160813145291799, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3067160813145291799, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3067160813145291799, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3067160813145291799, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3067160813145291799, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2981122351337398830, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -6948442550713875531}
+  m_SourcePrefab: {fileID: 100100000, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+--- !u!1 &404980462921528550 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3639162752458518910, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+  m_PrefabInstance: {fileID: 3971647843914368408}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &2180079013836826550 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2981122351337398830, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+  m_PrefabInstance: {fileID: 3971647843914368408}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &-6948442550713875531
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2180079013836826550}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a44116e255bad454d8a3366db8752d08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rend: {fileID: 3927935595944268705}
+  highlight: {fileID: 404980462921528550}
+  isWalkable: 1
+  TileName: Grass
+  OccupiedUnit: {fileID: 0}
+  baseColour: {r: 0.24476346, g: 0.6509434, b: 0.21800464, a: 1}
+  offsetColour: {r: 0.2868701, g: 0.754717, b: 0.25987896, a: 1}
+--- !u!212 &3927935595944268705 stripped
+SpriteRenderer:
+  m_CorrespondingSourceObject: {fileID: 116236206754797113, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+  m_PrefabInstance: {fileID: 3971647843914368408}
+  m_PrefabAsset: {fileID: 0}
