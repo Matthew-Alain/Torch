@@ -22,11 +22,11 @@ public class UnitManager : MonoBehaviour
     {
         var PCCount = 1;
 
-        for (int i = 0; i < PCCount; i++)
+        for (int i = 0; i < PCCount; i++) //For each PC
         {
-            var randomPrefab = GetRandomUnit<BasePC>(Faction.PC);
-            var spawnedPC = Instantiate(randomPrefab);
-            var randomSpawnTile = GridManager.Instance.GetPCSpawnTile();
+            var randomPrefab = GetRandomUnit<BasePC>(Faction.PC); //Get one of them
+            var spawnedPC = Instantiate(randomPrefab); //Spawn the PC on the map
+            var randomSpawnTile = GridManager.Instance.GetPCSpawnTile(); //
 
             randomSpawnTile.SetUnit(spawnedPC);
         }

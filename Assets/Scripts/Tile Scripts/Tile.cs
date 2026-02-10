@@ -37,13 +37,13 @@ public abstract class Tile : MonoBehaviour
         {
             if (OccupiedUnit.Faction == Faction.PC) //If the unit occupying this tile is a PC
             {
-                if (OccupiedUnit == UnitManager.Instance.SelectedPC)
+                if (OccupiedUnit == UnitManager.Instance.SelectedPC) //If you select the same unit again
                 {
-                    MenuManager.Instance.ShowEndTurnMenu();
+                    MenuManager.Instance.ShowEndTurnMenu(); //Show the end turn menu
                 }
                 else
                 {
-                    UnitManager.Instance.SetSelectedPC((BasePC)OccupiedUnit); //Select that PC
+                    UnitManager.Instance.SetSelectedPC((BasePC)OccupiedUnit); //Select the newly clicked PC
                 }
             }
             else //Means you must be selecting a monster
@@ -52,8 +52,8 @@ public abstract class Tile : MonoBehaviour
                 {
                     var monster = (BaseMonster)OccupiedUnit;
                     // Put in what happens when a selected PC clicks on a monster
-                    Destroy(monster.gameObject);
-                    UnitManager.Instance.SetSelectedPC(null);
+                    Destroy(monster.gameObject); //In this case, it dies in one hit
+                    UnitManager.Instance.SetSelectedPC(null); //Deselect the current unit
                 }
             }
         }

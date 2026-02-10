@@ -13,6 +13,7 @@ public class DatabaseManager : MonoBehaviour
         db = new SQLiteConnection(path);
         Debug.Log("Database path: " + path);
 
+        //This one is just a sample
         db.CreateTable<PlayerData>();
         Debug.Log("PlayerData created");
 
@@ -64,6 +65,8 @@ public class DatabaseManager : MonoBehaviour
         db.CreateTable<damage_types>();
         Debug.Log("Created damage_types table");
 
+
+        //Sample configuring new record to be added to database
         PlayerData player = new PlayerData
         {
             PlayerName = "Test",
@@ -73,6 +76,7 @@ public class DatabaseManager : MonoBehaviour
 
         db.Insert(player);
 
+        //Get records from database
         var players = db.Table<PlayerData>().ToList();
 
         foreach (var p in players)
@@ -80,8 +84,8 @@ public class DatabaseManager : MonoBehaviour
             Debug.Log(p.PlayerName + " Lv. " + p.Level + " gold. " + p.Gold);
         }
 
+        //Get specific record from database and update it
         var playerTest = db.Table<PlayerData>().Where(p => p.PlayerName == "Test").FirstOrDefault();
-
         playerTest.Gold += 100;
         db.Update(playerTest);
 
@@ -93,6 +97,7 @@ public class DatabaseManager : MonoBehaviour
 
     }
 
+    //Sample database table with fields
     public class PlayerData
     {
         [PrimaryKey, AutoIncrement]

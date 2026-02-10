@@ -16,28 +16,28 @@ public class GridManager : MonoBehaviour
         Instance = this;
     }
 
+    //Create the grid
     public void GenerateGrid()
     {
-        tiles = new Dictionary<Vector2, Tile>();
+        tiles = new Dictionary<Vector2, Tile>(); //Create a dictionary of tiles
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                var randomTile = Random.Range(0, 6) == 3 ? mountainTile : grassTile;
-                var spawnedTile = Instantiate(randomTile, new Vector3(x, y), Quaternion.identity);
-                spawnedTile.name = $"Tile {x}, {y}";
+                var randomTile = Random.Range(0, 6) == 3 ? mountainTile : grassTile; //Randomly make either a mountain or grass tile
+                var spawnedTile = Instantiate(randomTile, new Vector3(x, y), Quaternion.identity); //Create that tile
+                spawnedTile.name = $"Tile {x}, {y}"; //Name the tile for tracking purposes
 
+                spawnedTile.Init(x, y); //Initialize the tile
 
-                spawnedTile.Init(x, y);
-
-                tiles[new Vector2(x, y)] = spawnedTile;
+                tiles[new Vector2(x, y)] = spawnedTile; //Add the tile to the tiles array
 
             }
         }
 
-        cam.transform.position = new Vector3((float)width / 2 - 0.5f, (float)height / 2 - 0.5f, -10);
+        cam.transform.position = new Vector3((float)width / 2 - 0.5f, (float)height / 2 - 0.5f, -10); //Offset the camera for better viewing
 
-        GameManager.Instance.ChangeState(GameState.SpawnHeroes);
+        GameManager.Instance.ChangeState(GameState.SpawnHeroes); //Once the grid is generated, now spawn the heroes
     }
 
     public Tile GetPCSpawnTile()
