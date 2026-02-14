@@ -49,5 +49,10 @@ public class MenuManager : MonoBehaviour
     public void ShowEndTurnMenu()
     {
         endTurnMenu.SetActive(true);
+        int result = DatabaseManager.Instance.ExecuteNonQuery(
+            "INSERT INTO damage_types (name) VALUES (@name)",
+            ("@name", "New type")
+        );
+        Debug.Log("Rows inserted: " + result);
     }
 }

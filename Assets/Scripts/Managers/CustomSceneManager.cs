@@ -3,21 +3,21 @@ using UnityEngine.SceneManagement;
 
 public class CustomSceneManager : MonoBehaviour
 {
-    public static CustomSceneManager instance;
+    public static CustomSceneManager Instance;
 
     private void Awake()
     {
-        //Check if instance exists
-        if (instance == null)
+        //Check if an instance already exists that isn't this
+        if (Instance != null && Instance != this)
         {
-            //If not, it does now
-            instance = this;
-        }
-        else if (instance != this)
-        {
-            //If it does, and it's not this, destroy this to enforce singleton
+            //If it does, destroy it
             Destroy(gameObject);
+            return;
         }
+
+        //Now safe to create a new instance
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
     }
 
     // Update is called once per frame

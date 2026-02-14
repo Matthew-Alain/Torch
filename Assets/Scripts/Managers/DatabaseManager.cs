@@ -1,299 +1,148 @@
-using SQLite;
+using System.IO;
 using UnityEngine;
+using System.Collections;
+using System.Data;
+using Mono.Data.Sqlite;
 
 public class DatabaseManager : MonoBehaviour
 {
 
-    SQLiteConnection db;
+    private const string dbName = "torch.db";
+    public static DatabaseManager Instance;
+    private string dbPath;
+    private SqliteConnection connection;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    void Awake()
     {
-        string path = System.IO.Path.Combine(Application.persistentDataPath, "torch.db");
-        db = new SQLiteConnection(path);
-        Debug.Log("Database path: " + path);
 
-        //This one is just a sample
-        db.CreateTable<PlayerData>();
-        Debug.Log("PlayerData created");
-
-        db.CreateTable<saved_objects>();
-        Debug.Log("created saved_objects table");
-
-        db.CreateTable<encounters>();
-        Debug.Log("Created encounters table");
-
-        db.CreateTable<tutorials>();
-        Debug.Log("Created tutorials table");
-
-        db.CreateTable<grid_contents>();
-        Debug.Log("Created grid_contents table");
-
-        db.CreateTable<monsters>();
-        Debug.Log("Created monsters table");
-        
-        db.CreateTable<monster_features>();
-        Debug.Log("Created monster_features table");
-
-        db.CreateTable<monster_actions>();
-        Debug.Log("Created monster_actions table");
-
-        db.CreateTable<monster_attacks>();
-        Debug.Log("Created monster_attacks table");
-        
-        db.CreateTable<saved_pcs>();
-        Debug.Log("Created saved_pcs table");
-
-        db.CreateTable<species>();
-        Debug.Log("Created species table");
-
-        db.CreateTable<dndclasses>();
-        Debug.Log("Created dndclasses table");
-
-        db.CreateTable<subclasses>();
-        Debug.Log("Created subclasses table");
-
-        db.CreateTable<features>();
-        Debug.Log("Created features table");
-
-        db.CreateTable<spells>();
-        Debug.Log("Created spells table");
-
-        db.CreateTable<weapons>();
-        Debug.Log("Created weapons table");
-
-        db.CreateTable<damage_types>();
-        Debug.Log("Created damage_types table");
-
-
-        //Sample configuring new record to be added to database
-        PlayerData player = new PlayerData
+        //Check if an instance already exists that isn't this
+        if (Instance != null && Instance != this)
         {
-            PlayerName = "Test",
-            Level = 5,
-            Gold = 250
-        };
-
-        db.Insert(player);
-
-        //Get records from database
-        var players = db.Table<PlayerData>().ToList();
-
-        foreach (var p in players)
-        {
-            Debug.Log(p.PlayerName + " Lv. " + p.Level + " gold. " + p.Gold);
+            //If it does, destroy it
+            Destroy(gameObject);
+            return;
         }
 
-        //Get specific record from database and update it
-        var playerTest = db.Table<PlayerData>().Where(p => p.PlayerName == "Test").FirstOrDefault();
-        playerTest.Gold += 100;
-        db.Update(playerTest);
+        //Now safe to create a new instance
+        Instance = this;
 
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
-    //Sample database table with fields
-    public class PlayerData
-    {
-        [PrimaryKey, AutoIncrement]
-        public int Id { get; set; }
-        public string PlayerName { get; set; }
-        public int Level { get; set; }
-        public int Gold { get; set; }
-    }
-
-    public class saved_objects
-    {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-        public string game_object { get; set; }
-        public int grid_position { get; set; }
-    }
-
-    public class encounters
-    {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-        public string name { get; set; }
-        public string difficulty { get; set; }
-        public string description { get; set; }
-        public int tutorials { get; set; }
-        public string background_filename { get; set; }
-        public int grid_contents { get; set; }
-    }
-
-    public class tutorials
-    {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-        public string name { get; set; }
-        public string description { get; set; }
-        public bool skipped { get; set; }
-    }
-
-    public class grid_contents
-    {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-        public int x { get; set; }
-        public int y { get; set; }
-        public int content { get; set; }
-    }
-
-    public class monsters
-    {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-        public string name { get; set; }
-        public int strength { get; set; }
-        public int dexterity { get; set; }
-        public int constitution { get; set; }
-        public int intelligence { get; set; }
-        public int wisdom { get; set; }
-        public int charisma { get; set; }
-        public int hp { get; set; }
-        public int ac { get; set; }
-        public int features { get; set; }
-        public int actions { get; set; }
-    }
-
-    public class monster_features
-    {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-        public string name { get; set; }
-        public string description { get; set; }
-    }
-
-    public class monster_actions
-    {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-        public string name { get; set; }
-        public string description { get; set; }
-        public int chance { get; set; }
-        public int attack { get; set; }
-    }
-
-    public class monster_attacks
-    {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-        public string name { get; set; }
-        public int hit_modifier { get; set; }
-        public int dice_number { get; set; }
-        public int dice_size { get; set; }
-        public int damage_type { get; set; }
-        public int range { get; set; }
-    }
-
-    public class saved_pcs
-    {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-        public string name { get; set; }
-        public int species { get; set; }
-        public int dndclass { get; set; }
-        public int level { get; set; }
-        public int strength { get; set; }
-        public int dexterity { get; set; }
-        public int constitution { get; set; }
-        public int intelligence { get; set; }
-        public int wisdom { get; set; }
-        public int charisma { get; set; }
-        public string armour { get; set; }
-        public int prepared_spells { get; set; }
-        public int inventory { get; set; }
-    }
-
-    public class species
-    {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-        public string name { get; set; }
-        public int lineages { get; set; }
-        public string features { get; set; }
-    }
-
-    public class dndclasses
-    {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-        public string name { get; set; }
-        public int subclasses { get; set; }
-        public bool spellcaster { get; set; }
-        public string features { get; set; }
-        public int known_spells { get; set; }
-    }
-
-    public class subclasses
-    {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-        public string name { get; set; }
-        public bool spellcaster { get; set; }
-        public string features { get; set; }
-    }
-
-    public class features
-    {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-        public string name { get; set; }
-        public string description { get; set; }
-        public string source { get; set; }
-        public int level { get; set; }
-    }
-
-    public class spells
-    {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-        public string name { get; set; }
-        public string description { get; set; }
-        public int level { get; set; }
-        public string school { get; set; }
-        public string cast_time { get; set; }
-        public bool requires_concentration { get; set; }
-        public int duration { get; set; }
-        public int range { get; set; }
-        public int area_size { get; set; }
-        public string area_shape { get; set; }
-        public string valid_targets { get; set; }
-        public string save_type { get; set; }
-        public int dice_number { get; set; }
-        public int dice_size { get; set; }
-        public int damage_type { get; set; }
-        public int classes { get; set; }
-    }
+        if (transform.parent != null)
+        {
+            transform.parent = null; // Detach from parent
+        }
     
-    public class weapons
-    {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-        public int dice_number { get; set; }
-        public int dice_size { get; set; }
-        public int damage_type { get; set; }
-        public int range { get; set; }
-        public string stat { get; set; }
+        DontDestroyOnLoad(gameObject);
+
+        dbPath = Path.Combine(Application.persistentDataPath, dbName);
+
+        InitializeDatabase();
     }
 
-    public class damage_types
+    private void InitializeDatabase()
     {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-        public string name { get; set; }
-        public string description { get; set; }
+        string sourcePath = Path.Combine(Application.streamingAssetsPath, "Database", dbName);
+
+        if (File.Exists(dbPath)) //If the database already exists, do nothing
+        {
+            return;
+        }
+
+        // Make sure persistent directory exists
+        Directory.CreateDirectory(Application.persistentDataPath);
+
+        File.Copy(sourcePath, dbPath);
+        Debug.Log("New database copy created.");
     }
 
-    void OnApplicationQuit()
+    private void OpenConnection()
     {
-        db.Close();
+        if (connection != null)
+            return;
+
+        connection = new SqliteConnection("URI=file:" + dbPath);
+        connection.Open();
     }
+
+
+    public SqliteCommand CreateCommand(string query, params (string, object)[] parameters)
+    {
+        OpenConnection();
+
+        SqliteCommand command = connection.CreateCommand();
+        command.CommandText = query;
+
+        foreach (var (name, value) in parameters)
+        {
+            var param = command.CreateParameter();
+            param.ParameterName = name;
+            param.Value = value;
+            command.Parameters.Add(param);
+        }
+
+        return command;
+    }
+
+    // The syntax to use this is:
+    // using (var command = DatabaseManager.Instance.CreateCommand(
+    // "SELECT * FROM Players WHERE Id = @id",
+    // ("@id", 5)))
+    // {
+    //     ...
+    // }
+
+    // Use this if you are not expecting a result (like insert, update, delete, etc.)
+    public int ExecuteNonQuery(string query, params (string, object)[] parameters)
+    {
+        using (var cmd = CreateCommand(query, parameters))
+        {
+            return cmd.ExecuteNonQuery();
+        }
+    }
+
+    // Syntax:
+    // int result = DatabaseManager.Instance.ExecuteNonQuery(
+    //     "INSERT INTO Players (Name, Score) VALUES (@name, @score)",
+    //     ("@name", "Alice"),
+    //     ("@score", 100)
+    // );
+    // Debug.Log("Rows inserted: " + result);
+
+    // Use this if you are expecting a result
+    public object ExecuteScalar(string query, params (string, object)[] parameters)
+    {
+        using (var cmd = CreateCommand(query, parameters))
+        {
+            return cmd.ExecuteScalar();
+        }
+    }
+
+    // Use this if you are expecting multiple rows
+    public void ExecuteReader(string query, System.Action<SqliteDataReader> handleRows, params (string, object)[] parameters)
+    {
+        using (var cmd = CreateCommand(query, parameters))
+        using (var reader = cmd.ExecuteReader())
+        {
+            handleRows(reader);
+        }
+    }
+
+    // The syntax for using this is:
+    // DatabaseManager.Instance.ExecuteReader(
+    // "SELECT Id, Name FROM Players",
+    // reader =>
+    // {
+    //     while(reader.Read())
+    //     {
+    //         Debug.Log(reader["Name"]);
+    //     }
+    // });
+
+    void OnDestroy() //When the application quits
+    {
+        connection?.Close();
+        connection?.Dispose();
+        connection = null;
+    }
+
 }
 
