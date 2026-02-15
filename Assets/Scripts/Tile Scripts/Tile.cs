@@ -20,49 +20,49 @@ public abstract class Tile : MonoBehaviour
     void OnMouseEnter()
     {
         highlight.SetActive(true);
-        MenuManager.Instance.ShowTileInfo(this);
+        CombatMenuManager.Instance.ShowTileInfo(this);
     }
 
     void OnMouseExit()
     {
         highlight.SetActive(false);
-        MenuManager.Instance.ShowTileInfo(null);
+        CombatMenuManager.Instance.ShowTileInfo(null);
     }
 
     void OnMouseDown()
     {
-        if (GameManager.Instance.GameState != GameState.PlayerTurn) return; //If it's not your turn, you can't click
+        if (CombatManager.Instance.GameState != GameState.PlayerTurn) return; //If it's not your turn, you can't click
 
         if (OccupiedUnit != null) //If you click on a tile that's not empty
         {
             if (OccupiedUnit.Faction == Faction.PC) //If the unit occupying this tile is a PC
             {
-                if (OccupiedUnit == UnitManager.Instance.SelectedPC) //If you select the same unit again
+                if (OccupiedUnit == CombatUnitManager.Instance.SelectedPC) //If you select the same unit again
                 {
-                    MenuManager.Instance.ShowEndTurnMenu(); //Show the end turn menu
+                    CombatMenuManager.Instance.ShowEndTurnMenu(); //Show the end turn menu
                 }
                 else
                 {
-                    UnitManager.Instance.SetSelectedPC((BasePC)OccupiedUnit); //Select the newly clicked PC
+                    CombatUnitManager.Instance.SetSelectedPC((BasePC)OccupiedUnit); //Select the newly clicked PC
                 }
             }
             else //Means you must be selecting a monster
             {
-                if (UnitManager.Instance.SelectedPC != null) //If you have a PC already selected
+                if (CombatUnitManager.Instance.SelectedPC != null) //If you have a PC already selected
                 {
                     var monster = (BaseMonster)OccupiedUnit;
                     // Put in what happens when a selected PC clicks on a monster
                     Destroy(monster.gameObject); //In this case, it dies in one hit
-                    UnitManager.Instance.SetSelectedPC(null); //Deselect the current unit
+                    CombatUnitManager.Instance.SetSelectedPC(null); //Deselect the current unit
                 }
             }
         }
         else //If you click on an empty tile
         {
-            if (UnitManager.Instance.SelectedPC != null) //If you have a PC already selected 
+            if (CombatUnitManager.Instance.SelectedPC != null) //If you have a PC already selected 
             {
-                SetUnit(UnitManager.Instance.SelectedPC); //Set this tile's unit as the selected unit
-                UnitManager.Instance.SetSelectedPC(null); //And deselect the PC
+                SetUnit(CombatUnitManager.Instance.SelectedPC); //Set this tile's unit as the selected unit
+                CombatUnitManager.Instance.SetSelectedPC(null); //And deselect the PC
             }
         }
     }

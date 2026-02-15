@@ -7,10 +7,14 @@ using Mono.Data.Sqlite;
 public class DatabaseManager : MonoBehaviour
 {
 
+    //Database configurations
     private const string dbName = "torch.db";
     public static DatabaseManager Instance;
     private string dbPath;
     private SqliteConnection connection;
+
+    //Data flags to be used between scenes, but not stored in the database
+    public int lastPCEdited;
 
     void Awake()
     {
@@ -23,14 +27,14 @@ public class DatabaseManager : MonoBehaviour
             return;
         }
 
-        //Now safe to create a new instance
-        Instance = this;
-
+        //This just allows manager scripts to be stored in a folder in the editor for organization, but during runtime, get deteached to avoid errors
         if (transform.parent != null)
         {
             transform.parent = null; // Detach from parent
         }
-    
+
+        //Now safe to create a new instance
+        Instance = this;    
         DontDestroyOnLoad(gameObject);
 
         dbPath = Path.Combine(Application.persistentDataPath, dbName);
@@ -81,14 +85,6 @@ public class DatabaseManager : MonoBehaviour
 
         return command;
     }
-
-    // The syntax to use this is:
-    // using (var command = DatabaseManager.Instance.CreateCommand(
-    // "SELECT * FROM Players WHERE Id = @id",
-    // ("@id", 5)))
-    // {
-    //     ...
-    // }
 
     // Use this if you are not expecting a result (like insert, update, delete, etc.)
     public int ExecuteNonQuery(string query, params (string, object)[] parameters)

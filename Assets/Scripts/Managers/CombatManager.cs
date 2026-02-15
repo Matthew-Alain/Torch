@@ -2,15 +2,25 @@ using System;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class GameManager : MonoBehaviour
+public class CombatManager : MonoBehaviour
 {
 
-    public static GameManager Instance;
+    public static CombatManager Instance;
     public GameState GameState;
 
     void Awake()
     {
-        Instance = this;
+        //Check if an instance already exists that isn't this
+        if (Instance != null && Instance != this)
+        {
+            //If it does, destroy it
+            Destroy(gameObject);
+            return;
+        }
+
+        //Now safe to create a new instance
+        Instance = this;    
+        DontDestroyOnLoad(gameObject);
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -28,7 +38,7 @@ public class GameManager : MonoBehaviour
     public void EndPlayerTurn()
     {
         ChangeState(GameState.MonsterTurn);
-        MenuManager.Instance.endTurnMenu.SetActive(false);
+        CombatMenuManager.Instance.endTurnMenu.SetActive(false);
     }
 
     public void ChangeState(GameState newState)
@@ -39,13 +49,13 @@ public class GameManager : MonoBehaviour
         switch (newState)
         {
             case GameState.GenerateGrid:
-                GridManager.Instance.GenerateGrid();
+                CombatGridManager.Instance.GenerateGrid();
                 break;
             case GameState.SpawnHeroes:
-                UnitManager.Instance.SpawnPCs();
+                CombatUnitManager.Instance.SpawnPCs();
                 break;
             case GameState.SpawnMonsters:
-                UnitManager.Instance.SpawnMonsters();
+                CombatUnitManager.Instance.SpawnMonsters();
                 break;
             case GameState.PlayerTurn:
                 break;

@@ -4,15 +4,25 @@ using System.Net.WebSockets;
 using TMPro.Examples;
 using UnityEngine;
 
-public class UnitManager : MonoBehaviour
+public class CombatUnitManager : MonoBehaviour
 {
     private List<ScriptableUnit> units;
     public BasePC SelectedPC; //We only ever want a PC to be actionable
-    public static UnitManager Instance;
+    public static CombatUnitManager Instance;
 
     void Awake()
     {
-        Instance = this;
+        //Check if an instance already exists that isn't this
+        if (Instance != null && Instance != this)
+        {
+            //If it does, destroy it
+            Destroy(gameObject);
+            return;
+        }
+
+        //Now safe to create a new instance
+        Instance = this;    
+        DontDestroyOnLoad(gameObject);
 
         //Goes into resources folder, goes into units folder, look into all subfolders for all types of scriptable units and put them into this list
         units = Resources.LoadAll<ScriptableUnit>("Units").ToList();
@@ -26,12 +36,12 @@ public class UnitManager : MonoBehaviour
         {
             var randomPrefab = GetRandomUnit<BasePC>(Faction.PC); //Get one of them
             var spawnedPC = Instantiate(randomPrefab); //Spawn the PC on the map
-            var randomSpawnTile = GridManager.Instance.GetPCSpawnTile(); //
+            var randomSpawnTile = CombatGridManager.Instance.GetPCSpawnTile(); //
 
             randomSpawnTile.SetUnit(spawnedPC);
         }
 
-        GameManager.Instance.ChangeState(GameState.SpawnMonsters);
+        CombatManager.Instance.ChangeState(GameState.SpawnMonsters);
     }
 
     public void SpawnMonsters()
@@ -42,12 +52,12 @@ public class UnitManager : MonoBehaviour
         {
             var randomPrefab = GetRandomUnit<BaseMonster>(Faction.Monster);
             var spawnedEnemy = Instantiate(randomPrefab);
-            var randomSpawnTile = GridManager.Instance.GetMonsterSpawnTile();
+            var randomSpawnTile = CombatGridManager.Instance.GetMonsterSpawnTile();
 
             randomSpawnTile.SetUnit(spawnedEnemy);
         }
 
-        GameManager.Instance.ChangeState(GameState.PlayerTurn);
+        CombatManager.Instance.ChangeState(GameState.PlayerTurn);
     }
 
 
@@ -60,7 +70,7 @@ public class UnitManager : MonoBehaviour
     public void SetSelectedPC(BasePC pc)
     {
         SelectedPC = pc;
-        MenuManager.Instance.ShowSelectedPC(pc);
+        CombatMenuManager.Instance.ShowSelectedPC(pc);
     }
 
 }

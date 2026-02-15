@@ -2,15 +2,25 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class MenuManager : MonoBehaviour
+public class CombatMenuManager : MonoBehaviour
 {
-    public static MenuManager Instance;
+    public static CombatMenuManager Instance;
     [SerializeField] private GameObject selectedPCObject, tileObject, tileUnitObject;
     [SerializeField] public GameObject endTurnMenu;
 
     void Awake()
     {
-        Instance = this;
+        //Check if an instance already exists that isn't this
+        if (Instance != null && Instance != this)
+        {
+            //If it does, destroy it
+            Destroy(gameObject);
+            return;
+        }
+
+        //Now safe to create a new instance
+        Instance = this;    
+        DontDestroyOnLoad(gameObject);
     }
 
     public void ShowSelectedPC(BasePC pc)

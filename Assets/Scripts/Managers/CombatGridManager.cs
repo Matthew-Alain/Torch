@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class GridManager : MonoBehaviour
+public class CombatGridManager : MonoBehaviour
 {
-    public static GridManager Instance { get; private set; }
+    public static CombatGridManager Instance { get; private set; }
     [SerializeField] private int width, height;
     [SerializeField] private Tile grassTile, mountainTile;
     [SerializeField] private Transform cam;
@@ -13,7 +13,17 @@ public class GridManager : MonoBehaviour
 
     void Awake()
     {
-        Instance = this;
+        //Check if an instance already exists that isn't this
+        if (Instance != null && Instance != this)
+        {
+            //If it does, destroy it
+            Destroy(gameObject);
+            return;
+        }
+
+        //Now safe to create a new instance
+        Instance = this;    
+        DontDestroyOnLoad(gameObject);
     }
 
     //Create the grid
@@ -37,7 +47,7 @@ public class GridManager : MonoBehaviour
 
         cam.transform.position = new Vector3((float)width / 2 - 0.5f, (float)height / 2 - 0.5f, -10); //Offset the camera for better viewing
 
-        GameManager.Instance.ChangeState(GameState.SpawnHeroes); //Once the grid is generated, now spawn the heroes
+        CombatManager.Instance.ChangeState(GameState.SpawnHeroes); //Once the grid is generated, now spawn the heroes
     }
 
     public Tile GetPCSpawnTile()
