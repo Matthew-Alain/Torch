@@ -74,14 +74,14 @@ public abstract class Tile : MonoBehaviour
 
     public void SetUnit(BaseUnit unit)
     {
-        int a;
+        
         if (unit.occupiedTile != null)
         {
             // Go to unit's occupied tile, and set it's occupied unit to null (for when this unit is moving from a previous tile to this one)
             int oldX = unit.occupiedTile.tileX;
             int oldY = unit.occupiedTile.tileY;
 
-            a = DatabaseManager.Instance.ExecuteNonQuery(
+            DatabaseManager.Instance.ExecuteNonQuery(
                 "UPDATE grid_default_contents SET content = NULL WHERE encounter_id = @encounterID AND x = @x AND y = @y",
                 ("@encounterID", tileEncounter),
                 ("@x", oldX),
@@ -93,7 +93,7 @@ public abstract class Tile : MonoBehaviour
         OccupiedUnit = unit;
         unit.occupiedTile = this;
 
-        int result = DatabaseManager.Instance.ExecuteNonQuery(
+        DatabaseManager.Instance.ExecuteNonQuery(
             "UPDATE grid_default_contents SET content = (@unitID) WHERE encounter_id = @encounterID AND x = @x AND y = @y",
             ("@unitID", unit.UnitID),
             ("@encounterID", tileEncounter),

@@ -39,12 +39,12 @@ public class CombatUnitManager : MonoBehaviour
 
     public void SpawnPCs(int encounterID)
     {
-        int PCCount = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(   //Get the number of PCs to spawn, in theory this should always be 5
-            "SELECT COUNT(content) FROM grid_default_contents WHERE encounter_id = (@encounterID) AND content NOT NULL",
-            ("@encounterID", encounterID)
-        ));
+        // int PCCount = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(   //Get the number of PCs to spawn, in theory this should always be 5
+        //     "SELECT COUNT(content) FROM grid_default_contents WHERE encounter_id = (@encounterID) AND content NOT NULL",
+        //     ("@encounterID", encounterID)
+        // ));
 
-        for (int i = 0; i < PCCount; i++) //For each PC
+        for (int i = 0; i < 5; i++) //For each PC
         {
             ScriptableUnit pcToSpawn = units.FirstOrDefault(u => u.UnitID == i); //Get the PCs from the list of units (based on the fact PC unitIDs are manually assigned)
 

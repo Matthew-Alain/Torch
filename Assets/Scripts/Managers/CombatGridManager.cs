@@ -37,7 +37,7 @@ public class CombatGridManager : MonoBehaviour
     //Create the grid
     public void GenerateGrid(int encounterID)
     {
-        width = 1+Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(   //Get the width of the grid
+        width = 1 + Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(   //Get the width of the grid
             "SELECT MAX(x) FROM grid_default_contents WHERE encounter_id = (@encounterID)",
             ("@encounterID", encounterID)
         ));
