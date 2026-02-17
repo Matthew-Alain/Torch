@@ -1,4 +1,5 @@
 using UnityEngine;
+using static UnityEngine.Debug;
 
 public abstract class Tile : MonoBehaviour
 {
@@ -8,14 +9,17 @@ public abstract class Tile : MonoBehaviour
     [SerializeField] private bool isWalkable;
     public string TileName;
     public int TileID;
+    public int tileEncounter, tileX, tileY;
 
     public BaseUnit OccupiedUnit;
     public bool Walkable => isWalkable && OccupiedUnit == null;
 
     //This logic runs on all tiles, but each tile has the chance to override it
-    public virtual void Init(int x, int y)
+    public virtual void Init(int encounterID, int x, int y)
     {
-
+        tileEncounter = encounterID;
+        tileX = x;
+        tileY = y;
     }
 
     void OnMouseEnter()
@@ -70,14 +74,32 @@ public abstract class Tile : MonoBehaviour
 
     public void SetUnit(BaseUnit unit)
     {
+        int a;
         if (unit.occupiedTile != null)
         {
             // Go to unit's occupied tile, and set it's occupied unit to null (for when this unit is moving from a previous tile to this one)
+            int oldX = unit.occupiedTile.tileX;
+            int oldY = unit.occupiedTile.tileY;
+
+            a = DatabaseManager.Instance.ExecuteNonQuery(
+                "UPDATE grid_default_contents SET content = NULL WHERE encounter_id = @encounterID AND x = @x AND y = @y",
+                ("@encounterID", tileEncounter),
+                ("@x", oldX),
+                ("@y", oldY)
+            );
             unit.occupiedTile.OccupiedUnit = null;
         }
         unit.transform.position = transform.position;
         OccupiedUnit = unit;
         unit.occupiedTile = this;
+
+        int result = DatabaseManager.Instance.ExecuteNonQuery(
+            "UPDATE grid_default_contents SET content = (@unitID) WHERE encounter_id = @encounterID AND x = @x AND y = @y",
+            ("@unitID", unit.UnitID),
+            ("@encounterID", tileEncounter),
+            ("@x", tileX),
+            ("@y", tileY)
+        );
     }
 
 

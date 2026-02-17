@@ -77,7 +77,7 @@ public class CombatGridManager : MonoBehaviour
                 var spawnedTile = Instantiate(tileToSpawn, new Vector3(x, y), Quaternion.identity); //Create that tile
                 spawnedTile.name = $"Tile {x}, {y}"; //Name the tile for tracking purposes
 
-                spawnedTile.Init(x, y); //Initialize the tile
+                spawnedTile.Init(encounterID, x, y); //Initialize the tile
 
                 tiles[new Vector2(x, y)] = spawnedTile; //Add the tile to the tiles array
 
@@ -116,9 +116,6 @@ public class CombatGridManager : MonoBehaviour
         {
             return null; // or handle missing tile
         }
-
-        // return tiles.Where(t => t.Key.x == x && t.Key.y == y).First().Value();
-
     }
 
     public Tile GetMonsterSpawnTile()
