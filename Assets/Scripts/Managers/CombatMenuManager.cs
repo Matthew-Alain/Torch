@@ -18,6 +18,12 @@ public class CombatMenuManager : MonoBehaviour
             return;
         }
 
+        //This just allows manager scripts to be stored in a folder in the editor for organization, but during runtime, get deteached to avoid errors
+        if (transform.parent != null)
+        {
+            transform.parent = null; // Detach from parent
+        }
+
         //Now safe to create a new instance
         Instance = this;    
         DontDestroyOnLoad(gameObject);
@@ -59,10 +65,5 @@ public class CombatMenuManager : MonoBehaviour
     public void ShowEndTurnMenu()
     {
         endTurnMenu.SetActive(true);
-        int result = DatabaseManager.Instance.ExecuteNonQuery(
-            "INSERT INTO damage_types (name) VALUES (@name)",
-            ("@name", "New type")
-        );
-        Debug.Log("Rows inserted: " + result);
     }
 }

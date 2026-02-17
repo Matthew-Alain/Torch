@@ -2,10 +2,10 @@ using System;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class CombatManager : MonoBehaviour
+public class CombatStateManager : MonoBehaviour
 {
 
-    public static CombatManager Instance;
+    public static CombatStateManager Instance;
     public GameState GameState;
 
     void Awake()
@@ -16,6 +16,12 @@ public class CombatManager : MonoBehaviour
             //If it does, destroy it
             Destroy(gameObject);
             return;
+        }
+
+        //This just allows manager scripts to be stored in a folder in the editor for organization, but during runtime, get deteached to avoid errors
+        if (transform.parent != null)
+        {
+            transform.parent = null; // Detach from parent
         }
 
         //Now safe to create a new instance
@@ -49,10 +55,10 @@ public class CombatManager : MonoBehaviour
         switch (newState)
         {
             case GameState.GenerateGrid:
-                CombatGridManager.Instance.GenerateGrid();
+                CombatGridManager.Instance.GenerateGrid(0);
                 break;
             case GameState.SpawnHeroes:
-                CombatUnitManager.Instance.SpawnPCs();
+                CombatUnitManager.Instance.SpawnPCs(0);
                 break;
             case GameState.SpawnMonsters:
                 CombatUnitManager.Instance.SpawnMonsters();

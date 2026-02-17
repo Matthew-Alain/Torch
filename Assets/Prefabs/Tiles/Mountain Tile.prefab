@@ -98,6 +98,7 @@ MonoBehaviour:
   highlight: {fileID: 3488698487759272069}
   isWalkable: 0
   TileName: Mountain
+  TileID: 1
   OccupiedUnit: {fileID: 0}
 --- !u!1 &3488698487759272069 stripped
 GameObject:

@@ -39,7 +39,7 @@ public class CharacterCreationManager : MonoBehaviour
         }
         GetCharacterSpecies(); //Populate the dropdown list
 
-        if(dndclass == null)
+        if (dndclass == null)
         {
             Debug.Log("No dndclass dropdown assigned");
             return;
@@ -64,8 +64,6 @@ public class CharacterCreationManager : MonoBehaviour
             ("@PCID", PCID)
         ));
         characterName.text = savedName;
-
-
     }
 
     void GetCharacterSpecies()
@@ -77,7 +75,7 @@ public class CharacterCreationManager : MonoBehaviour
 
         species.value = savedSpecies;
     }
-
+    
     void GetCharacterClass()
     {
 

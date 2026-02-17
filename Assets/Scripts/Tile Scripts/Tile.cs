@@ -7,6 +7,7 @@ public abstract class Tile : MonoBehaviour
     [SerializeField] private GameObject highlight;
     [SerializeField] private bool isWalkable;
     public string TileName;
+    public int TileID;
 
     public BaseUnit OccupiedUnit;
     public bool Walkable => isWalkable && OccupiedUnit == null;
@@ -31,7 +32,7 @@ public abstract class Tile : MonoBehaviour
 
     void OnMouseDown()
     {
-        if (CombatManager.Instance.GameState != GameState.PlayerTurn) return; //If it's not your turn, you can't click
+        if (CombatStateManager.Instance.GameState != GameState.PlayerTurn) return; //If it's not your turn, you can't click
 
         if (OccupiedUnit != null) //If you click on a tile that's not empty
         {
@@ -59,7 +60,7 @@ public abstract class Tile : MonoBehaviour
         }
         else //If you click on an empty tile
         {
-            if (CombatUnitManager.Instance.SelectedPC != null) //If you have a PC already selected 
+            if (CombatUnitManager.Instance.SelectedPC != null && isWalkable) //If you have a PC already selected, and the tile is walkable
             {
                 SetUnit(CombatUnitManager.Instance.SelectedPC); //Set this tile's unit as the selected unit
                 CombatUnitManager.Instance.SetSelectedPC(null); //And deselect the PC
