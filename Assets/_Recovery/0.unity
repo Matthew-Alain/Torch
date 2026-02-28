@@ -1819,6 +1819,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DatabaseManager
   lastPCEdited: 0
+  lastScene: 0
 --- !u!4 &1817384180
 Transform:
   m_ObjectHideFlags: 0

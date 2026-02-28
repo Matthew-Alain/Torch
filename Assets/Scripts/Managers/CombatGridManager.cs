@@ -37,21 +37,21 @@ public class CombatGridManager : MonoBehaviour
     //Create the grid
     public void GenerateGrid(int encounterID)
     {
-        width = 1 + Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(   //Get the width of the grid
+        width = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(   //Get the width of the grid
             "SELECT MAX(x) FROM grid_default_contents WHERE encounter_id = (@encounterID)",
             ("@encounterID", encounterID)
         ));
 
-        height = 1 + Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(    //Get the height of the grid
+        height = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(    //Get the height of the grid
             "SELECT MAX(y) FROM grid_default_contents WHERE encounter_id = (@encounterID)",
             ("@encounterID", encounterID)
         ));
 
 
         tiles = new Dictionary<Vector2, Tile>(); //Create a dictionary of tiles
-        for (int y = 0; y < height; y++)
+        for (int y = 0; y <= height; y++)
         {
-            for (int x = 0; x < width; x++)
+            for (int x = 0; x <= width; x++)
             {
                 int tileID = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar( //Get the character's species
                     "SELECT tile FROM grid_default_contents WHERE encounter_id = (@encounterID) AND x = (@x) AND y = (@y)",

@@ -32,13 +32,45 @@ public class CustomSceneManager : MonoBehaviour
         // If the user is on a non-setting scene and presses escape...
         if (SceneManager.GetActiveScene().buildIndex != 1 && Input.GetKeyDown(KeyCode.Escape))
         {
+            DatabaseManager.Instance.lastScene = SceneManager.GetActiveScene().buildIndex;
             // Then load the setting scene
-            LoadScene(1);
+            LoadScene(Scene.Settings);
+        }
+        else if (SceneManager.GetActiveScene().buildIndex == 1 && Input.GetKeyDown(KeyCode.Escape))
+        {
+            LoadLastScene();
+        }
+    }
+    
+    public void LoadLastScene()
+    {
+        if(DatabaseManager.Instance.lastScene == 1)
+        {
+            LoadScene(Scene.Main_Menu);
+        }
+        else
+        {        
+            SceneManager.LoadScene(DatabaseManager.Instance.lastScene);
         }
     }
 
-    private void LoadScene(int sceneIndex)
+    private void LoadScene(Scene sceneName)
     {
-        SceneManager.LoadScene(sceneIndex);
+        SceneManager.LoadScene((int)sceneName);
+    }
+    
+    public enum Scene
+    {
+        Main_Menu,          //0
+        Settings,           //1
+        Tutorials,          //2
+        Character_Creation, //3
+        Origin_Select,      //4
+        Class_Select,       //5
+        Equipment_Select,   //6
+        Character_Select,   //7
+        Select_Encounter,   //8
+        Encounter_1,        //9
+        Encounter_2         //10
     }
 }

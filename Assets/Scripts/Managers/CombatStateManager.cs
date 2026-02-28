@@ -78,10 +78,10 @@ public class CombatStateManager : MonoBehaviour
 
 public enum GameState
 {
-    GenerateGrid = 0,
-    SpawnHeroes = 1,
-    SpawnMonsters = 2,
-    PlayerTurn = 3,
-    MonsterTurn = 4
+    GenerateGrid,
+    SpawnHeroes,
+    SpawnMonsters,
+    PlayerTurn,
+    MonsterTurn
 
 }
