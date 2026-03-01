@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.InputSystem;
 
 public class CustomSceneManager : MonoBehaviour
 {
@@ -30,13 +31,13 @@ public class CustomSceneManager : MonoBehaviour
     void Update()
     {
         // If the user is on a non-setting scene and presses escape...
-        if (SceneManager.GetActiveScene().buildIndex != 1 && Input.GetKeyDown(KeyCode.Escape))
+        if (SceneManager.GetActiveScene().buildIndex != 1 && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             DatabaseManager.Instance.lastScene = SceneManager.GetActiveScene().buildIndex;
             // Then load the setting scene
             LoadScene(Scene.Settings);
         }
-        else if (SceneManager.GetActiveScene().buildIndex == 1 && Input.GetKeyDown(KeyCode.Escape))
+        else if (SceneManager.GetActiveScene().buildIndex == 1 && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             LoadLastScene();
         }

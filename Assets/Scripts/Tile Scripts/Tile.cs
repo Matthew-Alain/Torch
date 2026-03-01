@@ -1,9 +1,9 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using static UnityEngine.Debug;
 
-public abstract class Tile : MonoBehaviour
+public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
-
     [SerializeField] protected SpriteRenderer rend;     //Derived tiles can now access
     [SerializeField] private GameObject highlight;
     [SerializeField] private bool isWalkable;
@@ -22,19 +22,49 @@ public abstract class Tile : MonoBehaviour
         tileY = y;
     }
 
-    void OnMouseEnter()
+    public void OnPointerEnter(PointerEventData eventData)
     {
         highlight.SetActive(true);
         CombatMenuManager.Instance.ShowTileInfo(this);
     }
 
-    void OnMouseExit()
+    public void OnPointerExit(PointerEventData eventData)
     {
         highlight.SetActive(false);
         CombatMenuManager.Instance.ShowTileInfo(null);
     }
 
-    void OnMouseDown()
+    public void SetUnit(BaseUnit unit)
+    {
+        
+        if (unit.occupiedTile != null)
+        {
+            // Go to unit's occupied tile, and set it's occupied unit to null (for when this unit is moving from a previous tile to this one)
+            int oldX = unit.occupiedTile.tileX;
+            int oldY = unit.occupiedTile.tileY;
+
+            DatabaseManager.Instance.ExecuteNonQuery(
+                "UPDATE grid_default_contents SET content = NULL WHERE encounter_id = @encounterID AND x = @x AND y = @y",
+                ("@encounterID", tileEncounter),
+                ("@x", oldX),
+                ("@y", oldY)
+            );
+            unit.occupiedTile.OccupiedUnit = null;
+        }
+        unit.transform.position = transform.position;
+        OccupiedUnit = unit;
+        unit.occupiedTile = this;
+
+        DatabaseManager.Instance.ExecuteNonQuery(
+            "UPDATE grid_default_contents SET content = (@unitID) WHERE encounter_id = @encounterID AND x = @x AND y = @y",
+            ("@unitID", unit.UnitID),
+            ("@encounterID", tileEncounter),
+            ("@x", tileX),
+            ("@y", tileY)
+        );
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
     {
         if (CombatStateManager.Instance.GameState != GameState.PlayerTurn) return; //If it's not your turn, you can't click
 
@@ -71,36 +101,4 @@ public abstract class Tile : MonoBehaviour
             }
         }
     }
-
-    public void SetUnit(BaseUnit unit)
-    {
-        
-        if (unit.occupiedTile != null)
-        {
-            // Go to unit's occupied tile, and set it's occupied unit to null (for when this unit is moving from a previous tile to this one)
-            int oldX = unit.occupiedTile.tileX;
-            int oldY = unit.occupiedTile.tileY;
-
-            DatabaseManager.Instance.ExecuteNonQuery(
-                "UPDATE grid_default_contents SET content = NULL WHERE encounter_id = @encounterID AND x = @x AND y = @y",
-                ("@encounterID", tileEncounter),
-                ("@x", oldX),
-                ("@y", oldY)
-            );
-            unit.occupiedTile.OccupiedUnit = null;
-        }
-        unit.transform.position = transform.position;
-        OccupiedUnit = unit;
-        unit.occupiedTile = this;
-
-        DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE grid_default_contents SET content = (@unitID) WHERE encounter_id = @encounterID AND x = @x AND y = @y",
-            ("@unitID", unit.UnitID),
-            ("@encounterID", tileEncounter),
-            ("@x", tileX),
-            ("@y", tileY)
-        );
-    }
-
-
 }

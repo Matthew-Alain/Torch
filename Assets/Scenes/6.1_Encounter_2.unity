@@ -269,8 +269,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d26e4af6ffaecf24aacbd83a9ca1d932, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 16
-  height: 9
   grassTile: {fileID: -6948442550713875531, guid: a346ca0dd8255eb4ebd1341c54316066, type: 3}
   mountainTile: {fileID: -2837528529879160979, guid: 4807e1b56c2b09a45aaa1e9dd4d3123f, type: 3}
   cam: {fileID: 829510226}
@@ -1005,6 +1003,7 @@ GameObject:
   - component: {fileID: 829510225}
   - component: {fileID: 829510224}
   - component: {fileID: 829510227}
+  - component: {fileID: 829510228}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -1130,6 +1129,22 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &829510228
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 829510223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56666c5a40171f54783dd416a44f42bf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.Physics2DRaycaster
+  m_EventMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_MaxRayIntersections: 0
 --- !u!1 &846789236
 GameObject:
   m_ObjectHideFlags: 0
