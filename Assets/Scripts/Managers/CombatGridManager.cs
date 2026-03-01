@@ -3,6 +3,7 @@ using System.Linq;
 using UnityEngine;
 using System;
 using static UnityEngine.Debug;
+using UnityEngine.EventSystems;
 
 public class CombatGridManager : MonoBehaviour
 {
@@ -137,5 +138,10 @@ public class CombatGridManager : MonoBehaviour
     void Start()
     {
         GenerateGrid(0);
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        throw new NotImplementedException();
     }
 }
