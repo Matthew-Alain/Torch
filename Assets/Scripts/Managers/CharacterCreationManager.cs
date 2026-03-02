@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using System;
 using Debug = UnityEngine.Debug;
+using System.Linq;
 
 public class CharacterCreationManager : MonoBehaviour
 {
@@ -41,6 +42,7 @@ public class CharacterCreationManager : MonoBehaviour
             ("@PCID", PCID)
         ));
         characterName.text = savedName;
+        
     }
 
     void SaveCharacter()
@@ -53,4 +55,5 @@ public class CharacterCreationManager : MonoBehaviour
 
         // Debug.Log("Rows updated: " + rowsAffected);
     }
+
 }

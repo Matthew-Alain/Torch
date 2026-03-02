@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,7 +7,14 @@ public class CombatMenuManager : MonoBehaviour
 {
     public static CombatMenuManager Instance;
     [SerializeField] private GameObject selectedPCObject, tileObject, tileUnitObject;
-    [SerializeField] public GameObject endTurnMenu;
+    [SerializeField] public GameObject pcTurnMenu;
+
+    //
+    public GameObject menuPanel;
+    public Transform buttonContainer;
+    public GameObject buttonPrefab;
+
+    private Stack<List<MenuOption>> menuStack = new Stack<List<MenuOption>>();
 
     void Awake()
     {
@@ -26,7 +34,6 @@ public class CombatMenuManager : MonoBehaviour
 
         //Now safe to create a new instance
         Instance = this;    
-        DontDestroyOnLoad(gameObject);
     }
 
     public void ShowSelectedPC(BasePC pc)
@@ -62,8 +69,79 @@ public class CombatMenuManager : MonoBehaviour
         }
     }
 
-    public void ShowEndTurnMenu()
+    public void OpenMenu(List<MenuOption> options)
     {
-        endTurnMenu.SetActive(true);
+        menuStack.Push(options);
+        RenderMenu(options);
+    }
+
+    public void CloseMenu()
+    {
+        if (menuStack.Count > 1)
+        {
+            menuStack.Pop();
+            RenderMenu(menuStack.Peek());
+        }
+        else
+        {
+            menuPanel.SetActive(false);
+            menuStack.Clear();
+        }
+    }
+
+    void RenderMenu(List<MenuOption> options)
+    {
+        menuPanel.SetActive(true);
+
+        foreach (Transform child in buttonContainer)
+            Destroy(child.gameObject);
+
+        foreach (var option in options)
+        {
+            if (!option.IsAvailable())
+                continue;
+
+            GameObject btn = Instantiate(buttonPrefab, buttonContainer);
+            btn.GetComponentInChildren<TextMeshProUGUI>().text = option.Label;
+            btn.GetComponent<Button>().onClick.AddListener(() => option.Action());
+        }
+    }
+
+    public void OpenRootMenu()
+    {
+        List<MenuOption> rootOptions = new List<MenuOption>()
+        {
+            new MenuOption("Major", OpenMajorMenu),
+            new MenuOption("Minor", () => Debug.Log("Minor action")),
+            new MenuOption("Move", () => Debug.Log("Move action")),
+            new MenuOption("End Turn", () => CombatStateManager.Instance.EndPlayerTurn()),
+            new MenuOption("Cancel", () => CloseMenu())
+        };
+
+        OpenMenu(rootOptions);
+    }
+
+    public void OpenMajorMenu()
+    {
+        List<MenuOption> majorOptions = new List<MenuOption>()
+        {
+            new MenuOption("Attack", () => Debug.Log("Attack")),
+            new MenuOption("Dash", () => Debug.Log("Dash")),
+            new MenuOption("Disengage", () => Debug.Log("Disengage")),
+            new MenuOption("Dodge", () => Debug.Log("Dodge")),
+            new MenuOption("Help", () => Debug.Log("Help")),
+            new MenuOption("Hide", () => Debug.Log("Hide"))
+        };
+
+        // Conditional option
+        if (CombatUnitManager.Instance.SelectedPC.GetClass() == "Wizard")
+        {
+            majorOptions.Add(new MenuOption("Magic", () => Debug.Log("Magic")));
+        }
+
+        // Back option
+        majorOptions.Add(new MenuOption("Back", () => CloseMenu()));
+
+        OpenMenu(majorOptions);
     }
 }

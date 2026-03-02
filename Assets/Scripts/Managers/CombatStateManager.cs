@@ -13,6 +13,7 @@ public class CombatStateManager : MonoBehaviour
         //Check if an instance already exists that isn't this
         if (Instance != null && Instance != this)
         {
+            CombatGridManager.Instance.GenerateGrid(0);
             //If it does, destroy it
             Destroy(gameObject);
             return;
@@ -25,7 +26,7 @@ public class CombatStateManager : MonoBehaviour
         }
 
         //Now safe to create a new instance
-        Instance = this;    
+        Instance = this;
         DontDestroyOnLoad(gameObject);
     }
 
@@ -43,8 +44,10 @@ public class CombatStateManager : MonoBehaviour
 
     public void EndPlayerTurn()
     {
+        CombatMenuManager.Instance.CloseMenu();
+        CombatUnitManager.Instance.ResetPCSpeed();
         ChangeState(GameState.MonsterTurn);
-        CombatMenuManager.Instance.endTurnMenu.SetActive(false);
+        CombatMenuManager.Instance.pcTurnMenu.SetActive(false);
     }
 
     public void ChangeState(GameState newState)
@@ -66,6 +69,7 @@ public class CombatStateManager : MonoBehaviour
             case GameState.PlayerTurn:
                 break;
             case GameState.MonsterTurn:
+                CombatUnitManager.Instance.SetSelectedPC(null);
                 Debug.Log("It is now the monster's turn");
                 ChangeState(GameState.PlayerTurn);
                 break;

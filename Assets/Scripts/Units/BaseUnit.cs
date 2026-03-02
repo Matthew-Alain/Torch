@@ -8,5 +8,4 @@ public class BaseUnit : MonoBehaviour
     public Faction Faction;
     public string UnitName;
     public int UnitID;
-
 }

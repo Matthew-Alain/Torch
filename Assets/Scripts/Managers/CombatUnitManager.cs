@@ -39,11 +39,6 @@ public class CombatUnitManager : MonoBehaviour
 
     public void SpawnPCs(int encounterID)
     {
-        // int PCCount = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(   //Get the number of PCs to spawn, in theory this should always be 5
-        //     "SELECT COUNT(content) FROM grid_default_contents WHERE encounter_id = (@encounterID) AND content NOT NULL",
-        //     ("@encounterID", encounterID)
-        // ));
-
         for (int i = 0; i < 5; i++) //For each PC
         {
             ScriptableUnit pcToSpawn = units.FirstOrDefault(u => u.UnitID == i); //Get the PCs from the list of units (based on the fact PC unitIDs are manually assigned)
@@ -58,6 +53,8 @@ public class CombatUnitManager : MonoBehaviour
                 return;
             }
 
+            UpdatePCPrefab(pcToSpawn);
+
             var spawnedPC = Instantiate(pcToSpawn.UnitPrefab); //Creates the PC unit
             var spawnTile = CombatGridManager.Instance.GetPCSpawnTile(i); //Gets which tile that PC is supposed to spawn on
 
@@ -65,6 +62,15 @@ public class CombatUnitManager : MonoBehaviour
         }
 
         CombatStateManager.Instance.ChangeState(GameState.SpawnMonsters);
+    }
+
+    private void UpdatePCPrefab(ScriptableUnit pc)
+    {
+        string savedName = Convert.ToString(DatabaseManager.Instance.ExecuteScalar(
+                "SELECT name FROM saved_pcs WHERE id = (@PCID)",
+                ("@PCID", pc.UnitID)
+            ));
+        pc.UnitPrefab.UnitName = savedName;
     }
 
     public void SpawnMonsters()
@@ -94,6 +100,35 @@ public class CombatUnitManager : MonoBehaviour
     {
         SelectedPC = pc;
         CombatMenuManager.Instance.ShowSelectedPC(pc);
+    }
+
+    public void ResetPCSpeed()
+    {
+        for (int i = 0; i < 5; i++) //For each PC
+        {
+            ScriptableUnit pc = units.FirstOrDefault(u => u.UnitID == i); //Get the PCs from the list of units (based on the fact PC unitIDs are manually assigned)
+
+            if (pc == null)
+            {
+                Log($"No ScriptableUnit found with UnitID {i}");
+            }
+            if (pc.UnitPrefab == null)
+            {
+                LogError($"ScriptableUnit {pc.UnitPrefab} has no prefab assigned!");
+                return;
+            }
+
+            int maxSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
+                "SELECT max_speed FROM saved_pcs WHERE id = (@PCID)",
+                ("@PCID", pc.UnitID)
+            ));
+
+            DatabaseManager.Instance.ExecuteNonQuery(
+            "UPDATE saved_pcs SET remaining_speed = (@newSpeed) WHERE id = @unitID",
+                ("@newSpeed", maxSpeed),
+                ("@unitID", pc.UnitID)
+            );
+        }
     }
 
 }

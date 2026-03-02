@@ -1,3 +1,5 @@
+using System;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using static UnityEngine.Debug;
@@ -74,7 +76,8 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             {
                 if (OccupiedUnit == CombatUnitManager.Instance.SelectedPC) //If you select the same unit again
                 {
-                    CombatMenuManager.Instance.ShowEndTurnMenu(); //Show the end turn menu
+                    //CombatMenuManager.Instance.ShowPCTurnMenu(); //Show the PC turn menu
+                    CombatMenuManager.Instance.OpenRootMenu();
                 }
                 else
                 {
@@ -96,9 +99,88 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         {
             if (CombatUnitManager.Instance.SelectedPC != null && isWalkable) //If you have a PC already selected, and the tile is walkable
             {
-                SetUnit(CombatUnitManager.Instance.SelectedPC); //Set this tile's unit as the selected unit
-                CombatUnitManager.Instance.SetSelectedPC(null); //And deselect the PC
+                bool inRange = CheckWithinUnitSpeed(CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile, this), CombatUnitManager.Instance.SelectedPC);
+                if (inRange)
+                {
+                    MoveUnit(CombatUnitManager.Instance.SelectedPC);
+                }
+                else
+                {
+                    Log("Tile out of range");
+                }
             }
         }
+    }
+
+    //Returns the number of tiles between two tiles
+    public int CheckDistance(Tile originTile, Tile targetTile)
+    {
+        int xDifference;
+        int yDifference;
+
+        if (originTile.tileX < targetTile.tileX) //Moving to the right
+        {
+            xDifference = targetTile.tileX - originTile.tileX; //The difference is the target minus the origin
+        }
+        else //Moving to the left or not moving
+        {
+            xDifference = originTile.tileX - targetTile.tileX; //The difference is the origin minus the target
+        }
+
+        if (originTile.tileY < targetTile.tileY) //Moving up
+        {
+            yDifference = targetTile.tileY - originTile.tileY; //The difference is the target minus the origin
+        }
+        else //Moving down or not moving
+        {
+            yDifference = originTile.tileY - targetTile.tileY; //The difference is the origin minus the target
+        }
+
+        if (xDifference > yDifference)
+        {
+            // Log("xDifference: "+xDifference);
+            return xDifference;
+        }
+        else
+        {
+            // Log("yDifference: "+yDifference);
+            return yDifference;
+        }
+    }
+
+    private bool CheckWithinUnitSpeed(int numberOfTiles, BaseUnit movingUnit)
+    {
+        decimal unitSpeed = Convert.ToDecimal(DatabaseManager.Instance.ExecuteScalar(
+            "SELECT remaining_speed FROM saved_pcs WHERE id = (@PCID)",
+            ("@PCID", movingUnit.UnitID)
+        )) / 5;
+
+        int speedInTiles = (int)Math.Floor(unitSpeed);
+
+        return numberOfTiles <= speedInTiles;
+    }
+
+    private void MoveUnit(BaseUnit movingUnit)
+    {
+        int unitSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
+            "SELECT remaining_speed FROM saved_pcs WHERE id = (@PCID)",
+            ("@PCID", movingUnit.UnitID)
+        ));
+
+        int amountMoved = CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile, this) * 5;
+
+        int newSpeed = unitSpeed - amountMoved;
+
+        SetUnit(movingUnit); //Set this tile's unit as the selected unit
+
+        DatabaseManager.Instance.ExecuteNonQuery(
+            "UPDATE saved_pcs SET remaining_speed = (@newSpeed) WHERE id = @unitID",
+            ("@newSpeed", newSpeed),
+            ("@unitID", movingUnit.UnitID)
+        );
+
+        Log("Unit has "+newSpeed+" feet of movement left.");
+        
+        CombatUnitManager.Instance.SetSelectedPC(null); //And deselect the PC
     }
 }
