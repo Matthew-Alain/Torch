@@ -3330,8 +3330,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TutorialManager
   title: {fileID: 319720203}
   text: {fileID: 525618417}
-  btnShowTutorials: {fileID: 0}
-  btnNext: {fileID: 0}
+  btnShowTutorials: {fileID: 800345397}
+  btnNext: {fileID: 1294443399}
   tutorialPanel: {fileID: 1935082131}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
