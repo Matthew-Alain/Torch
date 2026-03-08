@@ -125,14 +125,17 @@ public class DatabaseManager : MonoBehaviour
 
     // The syntax for using this is:
     // DatabaseManager.Instance.ExecuteReader(
-    // "SELECT Id, Name FROM Players",
-    // reader =>
-    // {
-    //     while(reader.Read())
+    //     "SELECT dnd_class_1, dnd_class_2 FROM saved_pcs WHERE id = (@PCID)",
+    //     reader =>
     //     {
-    //         Debug.Log(reader["Name"]);
-    //     }
-    // });
+    //         while (reader.Read())
+    //         {
+    //             if (level.value >=0) classIDs.Add(Convert.ToInt32(reader["dnd_class_1"]));
+    //             if (level.value >=1) classIDs.Add(Convert.ToInt32(reader["dnd_class_2"]));
+    //         }
+    //     },
+    //     ("@PCID", PCID)
+    // );
 
     void OnDestroy() //When the application quits
     {
