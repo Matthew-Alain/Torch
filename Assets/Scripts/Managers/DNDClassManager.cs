@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using TMPro;
 using System;
 using Debug = UnityEngine.Debug;
-using Unity.VisualScripting;
 
 public class DNDClassManager : MonoBehaviour
 {
@@ -17,203 +16,98 @@ public class DNDClassManager : MonoBehaviour
     public int PCID;
     private int classWithSubclass = -1;
     int lastClassWithSubclass;
+    bool firstLoad = true;
+    int lastSubclass;
     void Awake()
     {
         PCID = DatabaseManager.Instance.lastPCEdited;
+        
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        GetDefaultInfo();
+        level.onValueChanged.AddListener(OnLevelChanged);
         dndClass1.onValueChanged.AddListener(OnClassChanged);
         dndClass2.onValueChanged.AddListener(OnClassChanged);
         dndClass3.onValueChanged.AddListener(OnClassChanged);
         dndClass4.onValueChanged.AddListener(OnClassChanged);
         dndClass5.onValueChanged.AddListener(OnClassChanged);
-        level.onValueChanged.AddListener(OnLevelChanged);
         btnBack.onClick.AddListener(SaveCharacter);
-
-        if (level == null)
-        {
-            Debug.Log("No level dropdown assigned");
-            return;
-        }
-        GetCharacterLevel();
-
-        if (dndClass1 == null)
-        {
-            Debug.Log("No dndClass1 dropdown assigned");
-            return;
-        }
-        if (dndClass2 == null)
-        {
-            Debug.Log("No dndClass2 dropdown assigned");
-            return;
-        }
-        if (dndClass3 == null)
-        {
-            Debug.Log("No dndClass3 dropdown assigned");
-            return;
-        }
-        if (dndClass4 == null)
-        {
-            Debug.Log("No dndClass4 dropdown assigned");
-            return;
-        }
-        if (dndClass5 == null)
-        {
-            Debug.Log("No dndClass5 dropdown assigned");
-            return;
-        }
-        GetCharacterClasses();
-
-        if (subclass == null)
-        {
-            Debug.Log("No subclass dropdown assigned");
-            return;
-        }
-        CheckForSubclass();
-
+        OnLevelChanged(0);
     }
-    
-    void GetCharacterLevel()
+
+    void GetDefaultInfo()
     {
-        int savedLevel = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar( //Get the character's level
-            "SELECT level FROM saved_pcs WHERE id = (@PCID)",
+        DatabaseManager.Instance.ExecuteReader(
+            "SELECT level, dnd_class_1, dnd_class_2, dnd_class_3, dnd_class_4, dnd_class_5, subclass FROM saved_pcs WHERE id = (@PCID)",
+            reader =>
+            {
+                while (reader.Read())
+                {
+                    level.value = Convert.ToInt32(reader["level"]) - 1;
+
+                    if (level.value >= 0) { dndClass1.value = Convert.ToInt32(reader["dnd_class_1"]); }
+                    if (level.value >= 1) { dndClass2.value = Convert.ToInt32(reader["dnd_class_2"]); }
+                    if (level.value >= 2) { dndClass3.value = Convert.ToInt32(reader["dnd_class_3"]); }
+                    if (level.value >= 3) { dndClass4.value = Convert.ToInt32(reader["dnd_class_4"]); }
+                    if (level.value >= 4) { dndClass5.value = Convert.ToInt32(reader["dnd_class_5"]); }
+
+                    var savedSubclass = reader["subclass"];
+                    if (!(savedSubclass == DBNull.Value))
+                    {
+                        lastSubclass = Convert.ToInt32(reader["subclass"]);
+                    }
+                }
+            },
             ("@PCID", PCID)
-        ));
-        level.value = savedLevel - 1;
+        );
+
     }
 
     void OnLevelChanged(int index)
     {
-        if (level.value < 1)
-        {
-            dndClass2.gameObject.SetActive(false);
-        }
-        else
-        {
-            dndClass2.gameObject.SetActive(true);
-        }
+        if (level.value < 1) { dndClass2.gameObject.SetActive(false); }
+        else { dndClass2.gameObject.SetActive(true); }
 
-        if (level.value < 2)
-        {
-            dndClass3.gameObject.SetActive(false);
-        }
-        else
-        {
-            dndClass3.gameObject.SetActive(true);
-        }
+        if (level.value < 2) { dndClass3.gameObject.SetActive(false); }
+        else { dndClass3.gameObject.SetActive(true); }
 
-        if (level.value < 3)
-        {
-            dndClass4.gameObject.SetActive(false);
-        }
-        else
-        {
-            dndClass4.gameObject.SetActive(true);
-        }
+        if (level.value < 3) { dndClass4.gameObject.SetActive(false); }
+        else { dndClass4.gameObject.SetActive(true); }
 
-        if (level.value < 4)
-        {
-            dndClass5.gameObject.SetActive(false);
-        }
-        else
-        {
-            dndClass5.gameObject.SetActive(true);
-        }
+        if (level.value < 4) { dndClass5.gameObject.SetActive(false); }
+        else { dndClass5.gameObject.SetActive(true); }
 
         CheckForSubclass();
-        
-        // For each level row above the character's current level:
-        // - Update the saved_pcs column for that level to NULL (may not be possible, need to add a variable, then instead of updating DB with the dropdown value, update it with the respective variables?)
-        // If there is no class listed at least three times, hide subclass
-    }
-    
-    void GetCharacterClasses()
-    {
-
-        int savedClass1 = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-            "SELECT dnd_class_1 FROM saved_pcs WHERE id = (@PCID)",
-            ("@PCID", PCID)
-        ));
-        dndClass1.value = savedClass1;
-
-        if (level.value+1 >= 2)
-        {
-            int savedClass2 = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                "SELECT dnd_class_2 FROM saved_pcs WHERE id = (@PCID)",
-                ("@PCID", PCID)
-            ));
-            dndClass2.value = savedClass2;
-        }
-
-        if (level.value+1 >= 3)
-        {
-            int savedClass3 = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                "SELECT dnd_class_3 FROM saved_pcs WHERE id = (@PCID)",
-                ("@PCID", PCID)
-            ));
-            dndClass3.value = savedClass3;
-        }
-
-        if (level.value+1 >= 4)
-        {
-            int savedClass4 = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                "SELECT dnd_class_4 FROM saved_pcs WHERE id = (@PCID)",
-                ("@PCID", PCID)
-            ));
-            dndClass4.value = savedClass4;
-        }
-
-        if (level.value+1 >= 5)
-        {
-            int savedClass5 = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                "SELECT dnd_class_5 FROM saved_pcs WHERE id = (@PCID)",
-                ("@PCID", PCID)
-            ));
-            dndClass5.value = savedClass5;
-        }
     }
 
     void UpdateSubclassList()
     {
         if (classWithSubclass == -1) //There is no class that could have a subclass
         {
-            Debug.Log("No valid class");
+            // Debug.Log("No valid class");
             return;
         }
 
-        var result = DatabaseManager.Instance.ExecuteScalar( //Check if the character has a saved subclass
-            "SELECT subclass FROM saved_pcs WHERE id = (@PCID)",
-            ("@PCID", PCID)
-        );
         int currentSelection;
 
-        if (!(classWithSubclass == lastClassWithSubclass)) //This covers changing between two classes
+        if (firstLoad)
         {
-            Debug.Log("The valid class has changed. Set to first option");
+            // Debug.Log("First load, subclass defaults to: " + lastSubclass);
+            currentSelection = lastSubclass;
+            firstLoad = false;
+        }
+        else if (!(classWithSubclass == lastClassWithSubclass)) //This covers changing between two classes
+        {
+            // Debug.Log("Class changed. Set to first option");
             currentSelection = 0;
         }
-        else if (result == DBNull.Value) //This covers adding/changing levels without changing the class with a subclass
+        else
         {
-            Debug.Log("The valid class has not changed, and it does not have a saved subclass. Keep the current subclass");
+            // Debug.Log("Class not changed. Keep the same option");
             currentSelection = subclass.value;
-        }
-
-        // TODO: Fix this issue: right now, if there is a saved subclass, and the list is updated without changing the valid class, it resets to the saved subclass
-        // Want to change it to always either set currentSelection to 0 if it's changing valid class, or keep the same value if its not
-        // Issue is that when the scene is first loaded, if there is a saved subclass, it needs to be set instead
-
-        // else if ()
-        // {
-        //     Debug.Log("Class with a subclass has not changed, and is the same ");
-        //     currentSelection = subclass.value;
-        // }
-        else //This covers loading the default option
-        {
-            Debug.Log("The class with a subclass has not changed, and it has a saved subclass. Set to saved option");
-            currentSelection = Convert.ToInt32(result);
         }
 
         subclass.ClearOptions(); //Clear the old options
@@ -333,14 +227,11 @@ public class DNDClassManager : MonoBehaviour
                     // Debug.Log("Match: " + count+"/3");
                     if (count >= 3)
                     {
+                        // Debug.Log("Class with subclass found: "+classIDs[i]);
                         classWithSubclass = classIDs[i];
                         UpdateSubclassList();
                         return;
                     }
-                }
-                else
-                {
-                    // Debug.Log("No match");
                 }
             }
         }
@@ -348,6 +239,7 @@ public class DNDClassManager : MonoBehaviour
 
         void Skip()
         {
+            // Debug.Log("Checking for subclass: skipping");
             classWithSubclass = -1; //They cannot have a subclass
             UpdateSubclassList();
             subclass.gameObject.SetActive(false); //They cannot select a subclass
