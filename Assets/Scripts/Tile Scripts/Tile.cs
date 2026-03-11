@@ -167,6 +167,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             ("@PCID", movingUnit.UnitID)
         ));
 
+        //If tile is difficult terrain, multiply by 10 instead
         int amountMoved = CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile, this) * 5;
 
         int newSpeed = unitSpeed - amountMoved;
