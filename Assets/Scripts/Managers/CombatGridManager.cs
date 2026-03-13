@@ -32,19 +32,19 @@ public class CombatGridManager : MonoBehaviour
 
         //Now safe to create a new instance
         Instance = this;    
-        DontDestroyOnLoad(gameObject);
+        // DontDestroyOnLoad(gameObject);
     }
 
     //Create the grid
     public void GenerateGrid(int encounterID)
     {
         width = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(   //Get the width of the grid
-            "SELECT MAX(x) FROM grid_default_contents WHERE encounter_id = (@encounterID)",
+            "SELECT MAX(x) FROM grid_contents WHERE encounter_id = (@encounterID)",
             ("@encounterID", encounterID)
         ));
 
         height = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(    //Get the height of the grid
-            "SELECT MAX(y) FROM grid_default_contents WHERE encounter_id = (@encounterID)",
+            "SELECT MAX(y) FROM grid_contents WHERE encounter_id = (@encounterID)",
             ("@encounterID", encounterID)
         ));
 
@@ -55,7 +55,7 @@ public class CombatGridManager : MonoBehaviour
             for (int x = 0; x <= width; x++)
             {
                 int tileID = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar( //Get the character's species
-                    "SELECT tile FROM grid_default_contents WHERE encounter_id = (@encounterID) AND x = (@x) AND y = (@y)",
+                    "SELECT tile FROM grid_contents WHERE encounter_id = (@encounterID) AND x = (@x) AND y = (@y)",
                     ("@encounterID", encounterID),
                     ("@x", x),
                     ("@y", y)
@@ -90,13 +90,13 @@ public class CombatGridManager : MonoBehaviour
         CombatStateManager.Instance.ChangeState(GameState.SpawnHeroes); //Once the grid is generated, now spawn the heroes
     }
 
-    public Tile GetPCSpawnTile(int PCID)
+    public Tile GetPCSpawnTile(int PCID, int encounterID)
     {
         int x = -1;
         int y = -1;
         // return tiles.Where(t => t.Key.x < width / 2 && t.Value.Walkable).OrderBy(t => UnityEngine.Random.value).First().Value;
         DatabaseManager.Instance.ExecuteReader(
-            "SELECT x, y FROM grid_default_contents WHERE content = @PCID",
+            "SELECT x, y FROM grid_contents WHERE content = @PCID AND encounter_id = @encounter_id",
             reader =>
             {
                 while (reader.Read())
@@ -105,7 +105,8 @@ public class CombatGridManager : MonoBehaviour
                     y = Convert.ToInt32(reader["y"]);
                 }
             },
-            ("@PCID", PCID)
+            ("@PCID", PCID),
+            ("@encounter_id",encounterID)
         );
 
         Vector2 key = new Vector2(x, y);
@@ -119,9 +120,34 @@ public class CombatGridManager : MonoBehaviour
         }
     }
 
-    public Tile GetMonsterSpawnTile()
+    public Tile GetMonsterSpawnTile(int monsterID, int encounterID)
     {
-        return tiles.Where(t => t.Key.x > width / 2 && t.Value.Walkable).OrderBy(t => UnityEngine.Random.value).First().Value;
+        // return tiles.Where(t => t.Key.x > width / 2 && t.Value.Walkable).OrderBy(t => UnityEngine.Random.value).First().Value;
+        int x = -1;
+        int y = -1;
+        DatabaseManager.Instance.ExecuteReader(
+            "SELECT x, y FROM grid_contents WHERE content = @PCID AND encounter_id = @encounter_id",
+            reader =>
+            {
+                while (reader.Read())
+                {
+                    x = Convert.ToInt32(reader["x"]);
+                    y = Convert.ToInt32(reader["y"]);
+                }
+            },
+            ("@PCID", monsterID),
+            ("@encounter_id",encounterID)
+        );
+
+        Vector2 key = new Vector2(x, y);
+        if (tiles.TryGetValue(key, out Tile tile))
+        {
+            return tile;
+        }
+        else
+        {
+            return null; // or handle missing tile
+        }
     }
 
     public Tile GetTileAtPosition(Vector2 pos)
@@ -137,7 +163,7 @@ public class CombatGridManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        GenerateGrid(0);
+        GenerateGrid(DatabaseManager.Instance.encounterToLoad);
     }
 
     public void OnPointerClick(PointerEventData eventData)

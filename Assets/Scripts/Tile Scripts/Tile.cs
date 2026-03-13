@@ -46,7 +46,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             int oldY = unit.occupiedTile.tileY;
 
             DatabaseManager.Instance.ExecuteNonQuery(
-                "UPDATE grid_default_contents SET content = NULL WHERE encounter_id = @encounterID AND x = @x AND y = @y",
+                "UPDATE grid_contents SET content = NULL WHERE encounter_id = @encounterID AND x = @x AND y = @y",
                 ("@encounterID", tileEncounter),
                 ("@x", oldX),
                 ("@y", oldY)
@@ -58,7 +58,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         unit.occupiedTile = this;
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE grid_default_contents SET content = (@unitID) WHERE encounter_id = @encounterID AND x = @x AND y = @y",
+            "UPDATE grid_contents SET content = (@unitID) WHERE encounter_id = @encounterID AND x = @x AND y = @y",
             ("@unitID", unit.UnitID),
             ("@encounterID", tileEncounter),
             ("@x", tileX),
@@ -115,37 +115,10 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     //Returns the number of tiles between two tiles
     public int CheckDistance(Tile originTile, Tile targetTile)
     {
-        int xDifference;
-        int yDifference;
+        int xDifference = Mathf.Abs(originTile.tileX - targetTile.tileX);
+        int yDifference = Mathf.Abs(originTile.tileY - targetTile.tileY);
 
-        if (originTile.tileX < targetTile.tileX) //Moving to the right
-        {
-            xDifference = targetTile.tileX - originTile.tileX; //The difference is the target minus the origin
-        }
-        else //Moving to the left or not moving
-        {
-            xDifference = originTile.tileX - targetTile.tileX; //The difference is the origin minus the target
-        }
-
-        if (originTile.tileY < targetTile.tileY) //Moving up
-        {
-            yDifference = targetTile.tileY - originTile.tileY; //The difference is the target minus the origin
-        }
-        else //Moving down or not moving
-        {
-            yDifference = originTile.tileY - targetTile.tileY; //The difference is the origin minus the target
-        }
-
-        if (xDifference > yDifference)
-        {
-            // Log("xDifference: "+xDifference);
-            return xDifference;
-        }
-        else
-        {
-            // Log("yDifference: "+yDifference);
-            return yDifference;
-        }
+        return Mathf.Max(xDifference, yDifference);
     }
 
     private bool CheckWithinUnitSpeed(int numberOfTiles, BaseUnit movingUnit)

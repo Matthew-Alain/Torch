@@ -549,7 +549,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!212 &450048005
 SpriteRenderer:
   serializedVersion: 2
@@ -1923,7 +1923,10 @@ MonoBehaviour:
   selectedPCObject: {fileID: 440190873}
   tileObject: {fileID: 1410606208}
   tileUnitObject: {fileID: 54662883}
-  endTurnMenu: {fileID: 658532277}
+  pcTurnMenu: {fileID: 0}
+  menuPanel: {fileID: 0}
+  buttonContainer: {fileID: 0}
+  buttonPrefab: {fileID: 0}
 --- !u!4 &1940576353
 Transform:
   m_ObjectHideFlags: 0

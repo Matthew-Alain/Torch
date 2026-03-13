@@ -13,7 +13,7 @@ public class CombatStateManager : MonoBehaviour
         //Check if an instance already exists that isn't this
         if (Instance != null && Instance != this)
         {
-            CombatGridManager.Instance.GenerateGrid(0);
+            // CombatGridManager.Instance.GenerateGrid(DatabaseManager.Instance.encounterToLoad);
             //If it does, destroy it
             Destroy(gameObject);
             return;
@@ -27,7 +27,7 @@ public class CombatStateManager : MonoBehaviour
 
         //Now safe to create a new instance
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        // DontDestroyOnLoad(gameObject);
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -58,13 +58,13 @@ public class CombatStateManager : MonoBehaviour
         switch (newState)
         {
             case GameState.GenerateGrid:
-                CombatGridManager.Instance.GenerateGrid(0);
+                CombatGridManager.Instance.GenerateGrid(DatabaseManager.Instance.encounterToLoad);
                 break;
             case GameState.SpawnHeroes:
-                CombatUnitManager.Instance.SpawnPCs(0);
+                CombatUnitManager.Instance.SpawnPCs(DatabaseManager.Instance.encounterToLoad);
                 break;
             case GameState.SpawnMonsters:
-                CombatUnitManager.Instance.SpawnMonsters();
+                CombatUnitManager.Instance.SpawnMonsters(DatabaseManager.Instance.encounterToLoad);
                 break;
             case GameState.PlayerTurn:
                 break;

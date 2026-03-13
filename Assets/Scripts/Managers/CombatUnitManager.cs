@@ -31,7 +31,7 @@ public class CombatUnitManager : MonoBehaviour
 
         //Now safe to create a new instance
         Instance = this;    
-        DontDestroyOnLoad(gameObject);
+        // DontDestroyOnLoad(gameObject);
 
         //Goes into resources folder, goes into units folder, look into all subfolders for all types of scriptable units and put them into this list
         units = Resources.LoadAll<ScriptableUnit>("Units").ToList();
@@ -39,7 +39,12 @@ public class CombatUnitManager : MonoBehaviour
 
     public void SpawnPCs(int encounterID)
     {
-        for (int i = 0; i < 5; i++) //For each PC
+        int numberOfPCs = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
+                "SELECT COUNT(*) FROM grid_contents WHERE encounter_id = @encounter_id AND content IN (0,1,2,3,4)",
+                ("@encounter_id", encounterID)
+            ));
+
+        for (int i = 0; i < numberOfPCs; i++) //For each PC
         {
             ScriptableUnit pcToSpawn = units.FirstOrDefault(u => u.UnitID == i); //Get the PCs from the list of units (based on the fact PC unitIDs are manually assigned)
 
@@ -56,7 +61,7 @@ public class CombatUnitManager : MonoBehaviour
             UpdatePCPrefab(pcToSpawn);
 
             var spawnedPC = Instantiate(pcToSpawn.UnitPrefab); //Creates the PC unit
-            var spawnTile = CombatGridManager.Instance.GetPCSpawnTile(i); //Gets which tile that PC is supposed to spawn on
+            var spawnTile = CombatGridManager.Instance.GetPCSpawnTile(i, encounterID); //Gets which tile that PC is supposed to spawn on
 
             spawnTile.SetUnit(spawnedPC); //Set that spawn tile's unit to the spawned PC
         }
@@ -73,18 +78,54 @@ public class CombatUnitManager : MonoBehaviour
         pc.UnitPrefab.UnitName = savedName;
     }
 
-    public void SpawnMonsters()
+    public void SpawnMonsters(int encounterID)
     {
-        var enemyCount = 1;
+        int enemyCount = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
+            "SELECT COUNT(*) FROM grid_contents WHERE encounter_id = @encounter_id AND content > 4",
+            ("@encounter_id", encounterID)
+        ));
+        Log("enemyCount: " + enemyCount);
+        
+        DatabaseManager.Instance.ExecuteReader(
+            "SELECT content FROM grid_contents WHERE encounter_id = @encounter_id AND content > 4",
+            reader =>
+            {
+                while (reader.Read())
+                {
+                    int monsterID = Convert.ToInt32(reader["content"]);
 
-        for (int i = 0; i < enemyCount; i++)
-        {
-            var randomPrefab = GetRandomUnit<BaseMonster>(Faction.Monster);
-            var spawnedEnemy = Instantiate(randomPrefab);
-            var randomSpawnTile = CombatGridManager.Instance.GetMonsterSpawnTile();
+                    ScriptableUnit monsterToSpawn = units.FirstOrDefault(u => u.UnitID == monsterID); //Get the PCs from the list of units (based on the fact PC unitIDs are manually assigned)
 
-            randomSpawnTile.SetUnit(spawnedEnemy);
-        }
+                    if (monsterToSpawn == null)
+                    {
+                        Log($"No ScriptableUnit found with UnitID {monsterID}");
+                    }
+                    if (monsterToSpawn.UnitPrefab == null)
+                    {
+                        Debug.LogError($"ScriptableUnit {monsterToSpawn.UnitPrefab} has no prefab assigned!");
+                        return;
+                    }
+
+                    var spawnedMonster = Instantiate(monsterToSpawn.UnitPrefab); //Creates the PC unit
+                    var spawnTile = CombatGridManager.Instance.GetPCSpawnTile(monsterID, encounterID); //Gets which tile that PC is supposed to spawn on
+
+                    spawnTile.SetUnit(spawnedMonster); //Set that spawn tile's unit to the spawned PC
+
+                }
+            },
+            ("@encounter_id", encounterID)
+        );
+
+        // for (int i = 0; i < enemyCount; i++)
+        // {
+            
+            
+        //     // var randomPrefab = GetRandomUnit<BaseMonster>(Faction.Monster);
+        //     // var spawnedEnemy = Instantiate(randomPrefab);
+        //     // var randomSpawnTile = CombatGridManager.Instance.GetMonsterSpawnTile(6, encounterID);
+
+        //     // randomSpawnTile.SetUnit(spawnedEnemy);
+        // }
 
         CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
     }

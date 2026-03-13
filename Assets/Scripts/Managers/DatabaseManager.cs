@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Collections;
 using System.Data;
 using Mono.Data.Sqlite;
+using System;
 
 public class DatabaseManager : MonoBehaviour
 {
@@ -16,6 +17,7 @@ public class DatabaseManager : MonoBehaviour
     //Data flags to be used between scenes, but not stored in the database
     public int lastPCEdited;
     public int lastScene;
+    public int encounterToLoad;
 
     void Awake()
     {
@@ -142,6 +144,14 @@ public class DatabaseManager : MonoBehaviour
         connection?.Close();
         connection?.Dispose();
         connection = null;
+    }
+
+    public string GetDamageType(int damageTypeID)
+    {
+        return Convert.ToString(Instance.ExecuteScalar(
+                    "SELECT name FROM damage_types WHERE id = @damageTypeID",
+                    ("@damageTypeID", damageTypeID)
+                ));
     }
 
 }

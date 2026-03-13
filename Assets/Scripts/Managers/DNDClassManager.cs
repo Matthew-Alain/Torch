@@ -185,101 +185,55 @@ public class DNDClassManager : MonoBehaviour
         }
 
     }
-
-    // void UpdateSubclassList()
-    // {
-    //     if (classWithSubclass == -1) //There is no class that could have a subclass
-    //     {
-    //         // Debug.Log("No valid class");
-    //         return;
-    //     }
-
-    //     int currentSelection;
-
-    //     if (firstLoad)
-    //     {
-    //         // Debug.Log("First load, subclass defaults to: " + lastSubclass);
-    //         currentSelection = lastSubclass;
-    //         firstLoad = false;
-    //     }
-    //     else if (!(classWithSubclass == lastClassWithSubclass)) //This covers changing between two classes
-    //     {
-    //         // Debug.Log("Class changed. Set to first option");
-    //         currentSelection = 0;
-    //     }
-    //     else
-    //     {
-    //         // Debug.Log("Class not changed. Keep the same option");
-    //         currentSelection = subclass.value;
-    //     }
-
-    //     List<string> subclassList = new List<string>(); //Create list to contain subclass names
-
-    //     DatabaseManager.Instance.ExecuteReader(
-    //         "SELECT name FROM subclasses WHERE dndclass = @classWithSubclass", //Get all subclass names that belong to the current class id
-    //         reader =>
-    //         {
-    //             while (reader.Read())
-    //             {
-    //                 subclassList.Add(reader["name"] as string);
-    //             }
-    //         },
-    //         ("@classWithSubclass", classWithSubclass)
-    //     );
-
-    //     subclass.AddOptions(subclassList); //Add the list of names to the dropdown
-
-    //     subclass.value = currentSelection; //Re-select the previous option in the dropdown
-    // }
     
     void UpdateSubclassList()
-{
-    if (classWithSubclass == -1) return;
-
-    List<string> subclassList = new List<string>();
-    DatabaseManager.Instance.ExecuteReader(
-        "SELECT name FROM subclasses WHERE dndclass = @classWithSubclass",
-        reader =>
-        {
-            while (reader.Read())
-                subclassList.Add(reader["name"] as string);
-        },
-        ("@classWithSubclass", classWithSubclass)
-    );
-
-    // Only update dropdown if the options actually changed
-    bool changed = false;
-    if (subclass.options.Count != subclassList.Count)
-        changed = true;
-    else
     {
-        for (int i = 0; i < subclassList.Count; i++)
-        {
-            if (subclass.options[i].text != subclassList[i])
+        if (classWithSubclass == -1) return;
+
+        List<string> subclassList = new List<string>();
+        DatabaseManager.Instance.ExecuteReader(
+            "SELECT name FROM subclasses WHERE dndclass = @classWithSubclass",
+            reader =>
             {
-                changed = true;
-                break;
+                while (reader.Read())
+                    subclassList.Add(reader["name"] as string);
+            },
+            ("@classWithSubclass", classWithSubclass)
+        );
+
+        // Only update dropdown if the options actually changed
+        bool changed = false;
+        if (subclass.options.Count != subclassList.Count)
+            changed = true;
+        else
+        {
+            for (int i = 0; i < subclassList.Count; i++)
+            {
+                if (subclass.options[i].text != subclassList[i])
+                {
+                    changed = true;
+                    break;
+                }
             }
         }
-    }
 
-    if (changed)
-    {
-        subclass.ClearOptions();
-        subclass.AddOptions(subclassList);
-    }
+        if (changed)
+        {
+            subclass.ClearOptions();
+            subclass.AddOptions(subclassList);
+        }
 
-    // Preserve selection
-    if (firstLoad)
-    {
-        subclass.value = lastSubclass;
-        firstLoad = false;
+        // Preserve selection
+        if (firstLoad)
+        {
+            subclass.value = lastSubclass;
+            firstLoad = false;
+        }
+        else if (classWithSubclass != lastClassWithSubclass)
+        {
+            subclass.value = 0;
+        }
     }
-    else if (classWithSubclass != lastClassWithSubclass)
-    {
-        subclass.value = 0;
-    }
-}
 
     void UpdateClassFeatures()
     {

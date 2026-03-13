@@ -1201,6 +1201,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 972134691}
   m_CullTransparentMesh: 1
+--- !u!1 &1010823291
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1010823293}
+  - component: {fileID: 1010823292}
+  m_Layer: 0
+  m_Name: EncounterSelectManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1010823292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1010823291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42f89290e0275f943aa8c11f566272e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EncounterSelectManager
+  encounterList: {fileID: 913890053}
+  btnStartEncounter: {fileID: 1260598557}
+--- !u!4 &1010823293
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1010823291}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 983.76575, y: 514.5574, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1034647511
 GameObject:
   m_ObjectHideFlags: 0
@@ -1869,19 +1915,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1260598558}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1824643830}
-        m_TargetAssemblyTypeName: LoadSceneByIndex, Assembly-CSharp
-        m_MethodName: LoadScene
-        m_Mode: 3
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 25
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1260598558
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2958,4 +2992,5 @@ SceneRoots:
   m_Roots:
   - {fileID: 1224440745}
   - {fileID: 605433074}
+  - {fileID: 1010823293}
   - {fileID: 1824643829}

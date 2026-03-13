@@ -51,6 +51,9 @@ public class CombatMenuManager : MonoBehaviour
     public void ShowTileInfo(Tile tile)
     {
 
+        if (tileObject == null || tileUnitObject == null)
+        return;
+
         if (tile == null)
         {
             tileObject.SetActive(false);
