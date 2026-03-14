@@ -88,7 +88,6 @@ public class DNDClassManager : MonoBehaviour
             },
             ("@PCID", PCID)
         );
-
     }
 
     void RefreshData(int index)

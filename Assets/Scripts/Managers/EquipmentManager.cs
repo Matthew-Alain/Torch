@@ -25,26 +25,55 @@ public class EquipmentManager : MonoBehaviour
         mainRow.AddRange(mainTextElements.GetComponentsInChildren<TMP_Text>());
         offRow.AddRange(offTextElements.GetComponentsInChildren<TMP_Text>());
 
-        mainHand.onValueChanged.AddListener(UpdateEquipment);
-        offHand.onValueChanged.AddListener(UpdateEquipment);
+        mainHand.onValueChanged.AddListener(UpdateMainHand);
+        offHand.onValueChanged.AddListener(UpdateOffHand);
         mainProperties.onClick.AddListener(() => OpenPropertiesWindow(mainHand.value));
         offProperties.onClick.AddListener(() => OpenPropertiesWindow(offHand.value));
         btnClosePropertyWindow.onClick.AddListener(ClosePropertyWindow);
         armor.onValueChanged.AddListener(UpdateArmor);
+
+        btnBack.onClick.AddListener(SaveEquipment);
     }
 
     void Start()
     {
-        UpdateEquipment(0);
-        UpdateArmor(0);
+        GetDefaultInfo();
     }
 
-    void UpdateEquipment(int index)
+    void GetDefaultInfo()
     {
+        DatabaseManager.Instance.ExecuteReader(
+            "SELECT main_hand_item, off_hand_item, equipped_armor FROM saved_pcs WHERE id = (@PCID)",
+            reader =>
+            {
+                while (reader.Read())
+                {
+                    mainHand.value = Convert.ToInt32(reader["main_hand_item"]);
+                    offHand.value = Convert.ToInt32(reader["off_hand_item"]);
+                    armor.value = Convert.ToInt32(reader["equipped_armor"]);
+
+                    UpdateMainHand(mainHand.value);
+                    UpdateArmor(armor.value);
+                }
+            },
+            ("@PCID", PCID)
+        );
+    }
+
+    void UpdateMainHand(int index)
+    {
+        HandleTwoHandedWeapons(index, true);
         UpdateEquipmentDetails(mainHand.value, mainRow, mainProperties);
         UpdateEquipmentDetails(offHand.value, offRow, offProperties);
     }
-    
+
+    void UpdateOffHand(int index)
+    {
+        HandleTwoHandedWeapons(index, false);
+        UpdateEquipmentDetails(offHand.value, offRow, offProperties);
+        UpdateEquipmentDetails(mainHand.value, mainRow, mainProperties);
+    }
+
     void UpdateEquipmentDetails(int weaponID, List<TMP_Text> rowToEdit, Button propertyButton)
     {
 
@@ -54,7 +83,7 @@ public class EquipmentManager : MonoBehaviour
             {
                 while (reader.Read())
                 {
-                    if(Convert.ToString(reader["name"]) == "Shield")
+                    if (Convert.ToString(reader["name"]) == "Shield")
                     {
                         rowToEdit[0].text = "--";
                         rowToEdit[1].text = "--";
@@ -98,21 +127,54 @@ public class EquipmentManager : MonoBehaviour
                             rowToEdit[3].text = Convert.ToString(reader["stat"]);
                         }
 
-                        if (!(Convert.ToBoolean(reader["heavy"]) || Convert.ToBoolean(reader["light"]) || Convert.ToBoolean(reader["loading"]) ||
-                        Convert.ToBoolean(reader["thrown"]) || Convert.ToBoolean(reader["two-handed"]) || Convert.ToString(reader["stat"]) == "Finesse" ||
-                        Convert.ToInt32(reader["melee_range"]) == 10 || Convert.ToBoolean(reader["versatile"]) || Convert.ToBoolean(reader["mastery"])))
+                        if (Convert.ToBoolean(reader["heavy"]) ||
+                            Convert.ToBoolean(reader["light"]) ||
+                            Convert.ToBoolean(reader["loading"]) ||
+                            Convert.ToBoolean(reader["thrown"]) ||
+                            Convert.ToBoolean(reader["two_handed"]) ||
+                            Convert.ToString(reader["stat"]) == "Finesse" ||
+                            (reader["melee_range"] != DBNull.Value && Convert.ToInt32(reader["melee_range"]) > 5 ) ||
+                            Convert.ToBoolean(reader["versatile"]) ||
+                            !(reader["mastery"] == DBNull.Value))
                         {
-                            propertyButton.gameObject.SetActive(false);
+                            propertyButton.gameObject.SetActive(true);
                         }
                         else
                         {
-                            propertyButton.gameObject.SetActive(true);
+                            propertyButton.gameObject.SetActive(false);
                         }
                     }
                 }
             },
             ("@weaponID", weaponID)
         );
+    }
+    
+    void HandleTwoHandedWeapons(int weaponID, bool updatingMainHand)
+    {
+        bool mainHandTwoHanded = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar(
+                "SELECT two_handed FROM weapons WHERE id = @weaponID",
+                ("@weaponID", mainHand.value)
+            ));
+        
+        bool offHandTwoHanded = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar(
+                "SELECT two_handed FROM weapons WHERE id = @weaponID",
+                ("@weaponID", offHand.value)
+            ));
+
+        if (!updatingMainHand && offHandTwoHanded) //If you are updating the offhand and the offhand is two-handed
+        {
+            offHand.value = 0;  //Clear the offhand
+            mainHand.value = weaponID; //Put the new weapon into the mainhand
+        }
+        else if (updatingMainHand && (mainHandTwoHanded || offHandTwoHanded)) //If you are updating the mainhand and either weapon is two-handed
+        {
+            offHand.value = 0;  //Clear the offhand
+        }
+        else if (!updatingMainHand && mainHandTwoHanded && weaponID != 0) //If you are updating the offhand with a weapon that's NOT two-handed or unarmed, and the mainhand is two-handed
+        {
+            mainHand.value = 0; //Clear the mainhand
+        }
     }
 
     public void OpenPropertiesWindow(int weaponID)
@@ -159,7 +221,7 @@ public class EquipmentManager : MonoBehaviour
                         {
                             weaponDescription.text += "Thrown - \n";
                         }
-                        if (!(reader["two-handed"] == DBNull.Value) && Convert.ToBoolean(reader["two-handed"]))
+                        if (!(reader["two_handed"] == DBNull.Value) && Convert.ToBoolean(reader["two_handed"]))
                         {
                             weaponDescription.text += "Two-Handed - \n";
                         }
@@ -167,9 +229,21 @@ public class EquipmentManager : MonoBehaviour
                         {
                             weaponDescription.text += "Versatile - \n";
                         }
-                        if (!(reader["mastery"] == DBNull.Value) && Convert.ToBoolean(reader["mastery"]))
+                        if (!(reader["mastery"] == DBNull.Value))
                         {
-                            weaponDescription.text += "Sap - \n";
+                            weaponDescription.text += "Mastery - If you have the Weapon Mastery class feature, you have the following ability with this weapon:\n";
+
+                            DatabaseManager.Instance.ExecuteReader(
+                                "SELECT name, description FROM weapon_masteries WHERE id = @masteryID",
+                                reader2 =>
+                                {
+                                    while (reader2.Read())
+                                    {
+                                        weaponDescription.text += Convert.ToString(reader2["name"]) + " - " + Convert.ToString(reader2["description"]);
+                                    }
+                                },
+                                ("@masteryID", Convert.ToInt32(reader["mastery"]))
+                            );    
                         }
                     }
                 }
@@ -249,8 +323,12 @@ public class EquipmentManager : MonoBehaviour
     
     void SaveEquipment()
     {
-        //TODO: add columns to the database to save AC and current equipment (maybe just hit mod?)
-        //Import these columns as default values to populate dropdown lists
-        //Write UPDATE query to save changes to the database
+        DatabaseManager.Instance.ExecuteNonQuery(
+            "UPDATE saved_pcs SET main_hand_item = @mainHand, off_hand_item = @offHand, equipped_armor = @armor WHERE id = @id",
+            ("@mainHand", mainHand.value),
+            ("@offHand", offHand.value),
+            ("@armor", armor.value),
+            ("@id", PCID)
+        );
     }
 }
