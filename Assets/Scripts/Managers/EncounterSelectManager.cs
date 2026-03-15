@@ -20,14 +20,12 @@ public class EncounterSelectManager : MonoBehaviour
     void Start()
     {
         DatabaseManager.Instance.encounterToLoad = 0;
-        Debug.Log("Set encounter to: " + DatabaseManager.Instance.encounterToLoad);
         btnStartEncounter.onClick.AddListener(() => SceneManager.LoadScene(DatabaseManager.Instance.encounterToLoad + 25));
     }
 
     void ChangeEncounter(int index)
     {
         DatabaseManager.Instance.encounterToLoad = index;
-        Debug.Log("Set encounter to: " + DatabaseManager.Instance.encounterToLoad);
     }
 
 

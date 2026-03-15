@@ -8,11 +8,11 @@ public class CombatMenuManager : MonoBehaviour
     public static CombatMenuManager Instance;
     [SerializeField] private GameObject selectedPCObject, tileObject, tileUnitObject;
     [SerializeField] public GameObject pcTurnMenu;
-
-    //
+    
     public GameObject menuPanel;
     public Transform buttonContainer;
     public GameObject buttonPrefab;
+    
 
     private Stack<List<MenuOption>> menuStack = new Stack<List<MenuOption>>();
 
@@ -33,7 +33,7 @@ public class CombatMenuManager : MonoBehaviour
         }
 
         //Now safe to create a new instance
-        Instance = this;    
+        Instance = this;
     }
 
     public void ShowSelectedPC(BasePC pc)
@@ -89,7 +89,15 @@ public class CombatMenuManager : MonoBehaviour
         {
             menuPanel.SetActive(false);
             menuStack.Clear();
+            CombatUnitManager.Instance.SetSelectedPC(null);
         }
+    }
+
+    public void CloseAllMenus()
+    {
+        menuPanel.SetActive(false);
+        menuStack.Clear();
+        CombatUnitManager.Instance.SetSelectedPC(null);
     }
 
     void RenderMenu(List<MenuOption> options)
@@ -115,7 +123,7 @@ public class CombatMenuManager : MonoBehaviour
         List<MenuOption> rootOptions = new List<MenuOption>()
         {
             new MenuOption("Major", OpenMajorMenu),
-            new MenuOption("Minor", () => Debug.Log("Minor action")),
+            new MenuOption("Minor", OpenMinorMenu),
             new MenuOption("Move", () => Debug.Log("Move action")),
             new MenuOption("End Turn", () => CombatStateManager.Instance.EndPlayerTurn()),
             new MenuOption("Cancel", () => CloseMenu())
@@ -146,5 +154,24 @@ public class CombatMenuManager : MonoBehaviour
         majorOptions.Add(new MenuOption("Back", () => CloseMenu()));
 
         OpenMenu(majorOptions);
+    }
+
+        public void OpenMinorMenu()
+    {
+        List<MenuOption> minorOptions = new List<MenuOption>()
+        {
+            //Put default options here
+        };
+
+        // Conditional option
+        if (CombatUnitManager.Instance.SelectedPC.GetClass() == "Barbarian")
+        {
+            minorOptions.Add(new MenuOption("Rage", () => CombatUnitManager.Instance.HealUnit(CombatUnitManager.Instance.SelectedPC.UnitID, 1)));
+        }
+
+        // Back option
+        minorOptions.Add(new MenuOption("Back", () => CloseMenu()));
+
+        OpenMenu(minorOptions);
     }
 }

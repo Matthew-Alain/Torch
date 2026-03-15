@@ -70,45 +70,52 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     {
         if (CombatStateManager.Instance.GameState != GameState.PlayerTurn) return; //If it's not your turn, you can't click
 
-        if (OccupiedUnit != null) //If you click on a tile that's not empty
+        if(eventData.button == PointerEventData.InputButton.Left)
         {
-            if (OccupiedUnit.Faction == Faction.PC) //If the unit occupying this tile is a PC
+            if (OccupiedUnit != null) //If you click on a tile that's not empty
             {
-                if (OccupiedUnit == CombatUnitManager.Instance.SelectedPC) //If you select the same unit again
+                if (OccupiedUnit.Faction == Faction.PC) //If the unit occupying this tile is a PC
                 {
-                    //CombatMenuManager.Instance.ShowPCTurnMenu(); //Show the PC turn menu
-                    CombatMenuManager.Instance.OpenRootMenu();
+                    if (OccupiedUnit == CombatUnitManager.Instance.SelectedPC) //If you select the same unit again
+                    {
+                        //CombatMenuManager.Instance.ShowPCTurnMenu(); //Show the PC turn menu
+                        CombatMenuManager.Instance.OpenRootMenu();
+                    }
+                    else
+                    {
+                        CombatUnitManager.Instance.SetSelectedPC((BasePC)OccupiedUnit); //Select the newly clicked PC
+                    }
                 }
-                else
+                else //Means you must be selecting a monster
                 {
-                    CombatUnitManager.Instance.SetSelectedPC((BasePC)OccupiedUnit); //Select the newly clicked PC
+                    if (CombatUnitManager.Instance.SelectedPC != null) //If you have a PC already selected
+                    {
+                        var monster = (BaseMonster)OccupiedUnit;
+                        // Put in what happens when a selected PC clicks on a monster
+                        Destroy(monster.gameObject); //In this case, it dies in one hit
+                        CombatUnitManager.Instance.SetSelectedPC(null); //Deselect the current unit
+                    }
                 }
             }
-            else //Means you must be selecting a monster
+            else //If you click on an empty tile
             {
-                if (CombatUnitManager.Instance.SelectedPC != null) //If you have a PC already selected
+                if (CombatUnitManager.Instance.SelectedPC != null && isWalkable) //If you have a PC already selected, and the tile is walkable
                 {
-                    var monster = (BaseMonster)OccupiedUnit;
-                    // Put in what happens when a selected PC clicks on a monster
-                    Destroy(monster.gameObject); //In this case, it dies in one hit
-                    CombatUnitManager.Instance.SetSelectedPC(null); //Deselect the current unit
+                    bool inRange = CheckWithinUnitSpeed(CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile, this), CombatUnitManager.Instance.SelectedPC);
+                    if (inRange)
+                    {
+                        MoveUnit(CombatUnitManager.Instance.SelectedPC);
+                    }
+                    else
+                    {
+                        Log("Tile out of range");
+                    }
                 }
             }
         }
-        else //If you click on an empty tile
+        else
         {
-            if (CombatUnitManager.Instance.SelectedPC != null && isWalkable) //If you have a PC already selected, and the tile is walkable
-            {
-                bool inRange = CheckWithinUnitSpeed(CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile, this), CombatUnitManager.Instance.SelectedPC);
-                if (inRange)
-                {
-                    MoveUnit(CombatUnitManager.Instance.SelectedPC);
-                }
-                else
-                {
-                    Log("Tile out of range");
-                }
-            }
+            CombatMenuManager.Instance.CloseAllMenus();
         }
     }
 

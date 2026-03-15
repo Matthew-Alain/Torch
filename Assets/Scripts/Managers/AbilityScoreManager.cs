@@ -50,7 +50,7 @@ public class AbilityScoreManager : MonoBehaviour
     public Button btnBack;
     
 
-    public int PCID;
+    private int PCID;
 
     void Awake()
     {
@@ -60,10 +60,9 @@ public class AbilityScoreManager : MonoBehaviour
             "SELECT base_str, base_dex, base_con, base_int, base_wis, base_cha, " +
                 "origin_str, origin_dex, origin_con, origin_int, origin_wis, origin_cha, " +
                 "asi_str, asi_dex, asi_con, asi_int, asi_wis, asi_cha, " +
-                "strength, dexterity, constitution, intelligence, wisdom, charisma, " +
-                "mSTR, mDEX, mCON, mINT, mWIS, mCHA, " +
+
                 "current_point_buy, current_origin_points " +
-                "FROM pc_stats WHERE id = (@PCID)",
+                "FROM pc_character_creation_stats WHERE id = (@PCID)",
             reader =>
             {
                 while (reader.Read())
@@ -89,6 +88,20 @@ public class AbilityScoreManager : MonoBehaviour
                     asi_wis = Convert.ToInt32(reader["asi_wis"]);
                     asi_cha = Convert.ToInt32(reader["asi_cha"]);
 
+                    currentPointBuy = Convert.ToInt32(reader["current_point_buy"]);
+                    currentOriginPoints = Convert.ToInt32(reader["current_origin_points"]);
+                }
+            },
+            ("@PCID", PCID)
+        );
+
+        DatabaseManager.Instance.ExecuteReader(
+            "SELECT strength, dexterity, constitution, intelligence, wisdom, charisma, mSTR, mDEX, mCON, mINT, mWIS, mCHA, " +
+                "FROM unit_stats WHERE id = (@PCID)",
+            reader =>
+            {
+                while (reader.Read())
+                {
                     strength = Convert.ToInt32(reader["strength"]);
                     dexterity = Convert.ToInt32(reader["dexterity"]);
                     constitution = Convert.ToInt32(reader["constitution"]);
@@ -102,16 +115,12 @@ public class AbilityScoreManager : MonoBehaviour
                     mINT = Convert.ToInt32(reader["mINT"]);
                     mWIS = Convert.ToInt32(reader["mWIS"]);
                     mCHA = Convert.ToInt32(reader["mCHA"]);
-
-                    currentPointBuy = Convert.ToInt32(reader["current_point_buy"]);
-                    currentOriginPoints = Convert.ToInt32(reader["current_origin_points"]);
                 }
             },
-            ("@PCID", PCID)
+            ("@PCID",PCID)
         );
-            }
+    }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         statDownButtons.Add(btnStrDown);
@@ -397,10 +406,9 @@ public class AbilityScoreManager : MonoBehaviour
     void SaveAbilityScores()
     {
         DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE pc_stats SET base_str = @base_str, base_dex = @base_dex, base_con = @base_con, base_int = @base_int, base_wis = @base_wis, base_cha = @base_cha, " +
+            "UPDATE pc_character_creation_stats SET " +
+                "base_str = @base_str, base_dex = @base_dex, base_con = @base_con, base_int = @base_int, base_wis = @base_wis, base_cha = @base_cha, " +
                 "origin_str = @origin_str, origin_dex = @origin_dex, origin_con = @origin_con, origin_int = @origin_int, origin_wis = @origin_wis, origin_cha = @origin_cha, " +
-                "strength = @strength, dexterity = @dexterity, constitution = @constitution, intelligence = @intelligence, wisdom = @wisdom, charisma = @charisma, " +
-                "mSTR = @mSTR, mDEX = @mDEX, mCON = @mCON, mINT = @mINT, mWIS = @mWIS, mCHA = @mCHA, " +
                 "current_point_buy = @current_point_buy, current_origin_points = @current_origin_points " +
                 "WHERE id = @id",
             ("@base_str", baseStatList[0]),
@@ -417,6 +425,18 @@ public class AbilityScoreManager : MonoBehaviour
             ("@origin_wis", originStatList[4]),
             ("@origin_cha", originStatList[5]),
 
+            ("@current_point_buy", currentPointBuy),
+            ("@current_origin_points", currentOriginPoints),
+
+            ("@id", PCID)
+        );
+
+        DatabaseManager.Instance.ExecuteNonQuery(
+            "UPDATE unit_stats SET " +
+                "strength = @strength, dexterity = @dexterity, constitution = @constitution, intelligence = @intelligence, wisdom = @wisdom, charisma = @charisma, " +
+                "mSTR = @mSTR, mDEX = @mDEX, mCON = @mCON, mINT = @mINT, mWIS = @mWIS, mCHA = @mCHA " +
+                "WHERE id = @id",
+
             ("@strength", finalStatsList[0]),
             ("@dexterity", finalStatsList[1]),
             ("@constitution", finalStatsList[2]),
@@ -430,9 +450,6 @@ public class AbilityScoreManager : MonoBehaviour
             ("@mINT", modsList[3]),
             ("@mWIS", modsList[4]),
             ("@mCHA", modsList[5]),
-
-            ("@current_point_buy", currentPointBuy),
-            ("@current_origin_points", currentOriginPoints),
 
             ("@id", PCID)
         );

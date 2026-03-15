@@ -84,7 +84,6 @@ public class CombatUnitManager : MonoBehaviour
             "SELECT COUNT(*) FROM grid_contents WHERE encounter_id = @encounter_id AND content > 4",
             ("@encounter_id", encounterID)
         ));
-        Log("enemyCount: " + enemyCount);
         
         DatabaseManager.Instance.ExecuteReader(
             "SELECT content FROM grid_contents WHERE encounter_id = @encounter_id AND content > 4",
@@ -116,25 +115,7 @@ public class CombatUnitManager : MonoBehaviour
             ("@encounter_id", encounterID)
         );
 
-        // for (int i = 0; i < enemyCount; i++)
-        // {
-            
-            
-        //     // var randomPrefab = GetRandomUnit<BaseMonster>(Faction.Monster);
-        //     // var spawnedEnemy = Instantiate(randomPrefab);
-        //     // var randomSpawnTile = CombatGridManager.Instance.GetMonsterSpawnTile(6, encounterID);
-
-        //     // randomSpawnTile.SetUnit(spawnedEnemy);
-        // }
-
         CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
-    }
-
-
-    private T GetRandomUnit<T>(Faction faction) where T : BaseUnit
-    {
-        //Go through list, getting all units according to the called faction, shuffle them, select the first one, and return its prefab
-        return (T)units.Where(u => u.Faction == faction).OrderBy(o => UnityEngine.Random.value).First().UnitPrefab;
     }
 
     public void SetSelectedPC(BasePC pc)
@@ -143,33 +124,167 @@ public class CombatUnitManager : MonoBehaviour
         CombatMenuManager.Instance.ShowSelectedPC(pc);
     }
 
-    public void ResetPCSpeed()
+    public void RefreshUnitSpeed(int unitID)
     {
-        for (int i = 0; i < 5; i++) //For each PC
+        ScriptableUnit unit = units.FirstOrDefault(u => u.UnitID == unitID); //Get the unit object from the list of units
+        if (unit == null)
         {
-            ScriptableUnit pc = units.FirstOrDefault(u => u.UnitID == i); //Get the PCs from the list of units (based on the fact PC unitIDs are manually assigned)
-
-            if (pc == null)
-            {
-                Log($"No ScriptableUnit found with UnitID {i}");
-            }
-            if (pc.UnitPrefab == null)
-            {
-                LogError($"ScriptableUnit {pc.UnitPrefab} has no prefab assigned!");
-                return;
-            }
-
-            int maxSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                "SELECT max_speed FROM saved_pcs WHERE id = (@PCID)",
-                ("@PCID", pc.UnitID)
-            ));
-
-            DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE saved_pcs SET remaining_speed = (@newSpeed) WHERE id = @unitID",
-                ("@newSpeed", maxSpeed),
-                ("@unitID", pc.UnitID)
-            );
+            Log($"No ScriptableUnit found with UnitID {unitID}");
         }
+        if (unit.UnitPrefab == null)
+        {
+            LogError($"ScriptableUnit {unit.UnitPrefab} has no prefab assigned!");
+            return;
+        }
+
+        int maxSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
+            "SELECT max_speed FROM unit_resources WHERE id = (@unitID)",
+            ("@unitID", unitID)
+        ));
+
+        DatabaseManager.Instance.ExecuteNonQuery(
+        "UPDATE unit_resources SET current_speed = (@newSpeed) WHERE id = @unitID",
+            ("@newSpeed", maxSpeed),
+            ("@unitID", unitID)
+        );
+    }
+
+    public void RefreshUnitActions(int unitID)
+    {
+        ScriptableUnit unit = units.FirstOrDefault(u => u.UnitID == unitID); //Get the unit object from the list of units
+        if (unit == null)
+        {
+            Log($"No ScriptableUnit found with UnitID {unitID}");
+        }
+        if (unit.UnitPrefab == null)
+        {
+            LogError($"ScriptableUnit {unit.UnitPrefab} has no prefab assigned!");
+            return;
+        }
+
+        DatabaseManager.Instance.ExecuteNonQuery(
+        "UPDATE unit_resources SET major_action = 1, minor_action = 1, reaction = 1 WHERE id = @unitID",
+            ("@unitID", unitID)
+        );
+    }
+
+    public void DamageUnit(int unitID, int damage, bool wasCrit)
+    {
+        int damageRemaining = damage;
+
+        int currentHP = 0;
+        int tempHP = 0;
+        int maxHP = 0;
+
+        DatabaseManager.Instance.ExecuteReader(
+            "SELECT current_hp, temp_hp, max_hp FROM unit_resources WHERE id = @unitID",
+            reader =>
+            {
+                while (reader.Read())
+                {
+                    currentHP = Convert.ToInt32(reader["current_hp"]);
+                    tempHP = Convert.ToInt32(reader["temp_hp"]);
+                    maxHP = Convert.ToInt32(reader["max_hp"]);
+                }
+            },
+            ("@unitID", unitID)
+        );
+
+        if (tempHP > 0 && tempHP >= damageRemaining)
+        {
+            tempHP -= damageRemaining;
+            damageRemaining = 0;
+        }
+        else
+        {
+            damageRemaining -= tempHP;
+            tempHP = 0;
+        }
+
+        if (currentHP > 0 && currentHP > damageRemaining)
+        {
+            currentHP -= damageRemaining;
+        }
+        else if (currentHP > 0)
+        {
+            damageRemaining -= currentHP;
+            if (damageRemaining >= maxHP)
+            {
+                //Unit dies
+            }
+            else
+            {
+                currentHP = 0;
+            }
+        }
+        else
+        {
+            if (damageRemaining >= maxHP)
+            {
+                //Unit dies
+            }
+            else if (wasCrit)
+            {
+                //Unit fails two death saves
+                //Check for death
+            }
+            else
+            {
+                //Unit fails one death save
+                //Check for death
+            }
+        }
+        
+        Log("Unit's current HP is: " + currentHP);
+
+
+        DatabaseManager.Instance.ExecuteNonQuery(
+            "UPDATE unit_stats SET temp_hp = @tempHP, current_hp = @currentHP "+
+            "WHERE id = @unitID",
+            ("@tempHP", tempHP),
+            ("@currentHP", currentHP),
+            ("@unitID", unitID)
+        );
+    }
+    
+    public void HealUnit(int unitID, int healing)
+    {
+        int currentHP = 0;
+        int maxHP = 0;
+        DatabaseManager.Instance.ExecuteReader(
+            "SELECT current_hp, max_hp FROM unit_resources WHERE id = @unitID",
+            reader =>
+            {
+                while (reader.Read())
+                {
+                    currentHP = Convert.ToInt32(reader["current_hp"]);
+                    maxHP = Convert.ToInt32(reader["max_hp"]);
+                }
+            },
+            ("@unitID", unitID)
+        );
+
+        if (currentHP + healing >= maxHP)
+        {
+            currentHP = maxHP;
+        }
+        else
+        {
+            if (currentHP == 0) //And unit is not dead
+            {
+                //Clear death saves
+            }
+
+            currentHP += healing;
+        }
+
+        Log("Unit's current HP is: " + currentHP);
+        
+        DatabaseManager.Instance.ExecuteNonQuery(
+            "UPDATE unit_stats SET current_hp = @currentHP WHERE id = @unitID",
+            ("@currentHP", currentHP),
+            ("@unitID", unitID)
+        );
     }
 
 }

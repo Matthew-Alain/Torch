@@ -45,9 +45,8 @@ public class CombatStateManager : MonoBehaviour
     public void EndPlayerTurn()
     {
         CombatMenuManager.Instance.CloseMenu();
-        CombatUnitManager.Instance.ResetPCSpeed();
+        
         ChangeState(GameState.MonsterTurn);
-        CombatMenuManager.Instance.pcTurnMenu.SetActive(false);
     }
 
     public void ChangeState(GameState newState)
@@ -67,6 +66,7 @@ public class CombatStateManager : MonoBehaviour
                 CombatUnitManager.Instance.SpawnMonsters(DatabaseManager.Instance.encounterToLoad);
                 break;
             case GameState.PlayerTurn:
+                StartPlayerTurn();
                 break;
             case GameState.MonsterTurn:
                 CombatUnitManager.Instance.SetSelectedPC(null);
@@ -78,6 +78,15 @@ public class CombatStateManager : MonoBehaviour
         }
 
     }
+
+    private void StartPlayerTurn()
+    {
+        for(int i = 0; i < 5; i++)
+        {
+            CombatUnitManager.Instance.RefreshUnitSpeed(i);
+            CombatUnitManager.Instance.RefreshUnitActions(i);
+        }
+    } 
 }
 
 public enum GameState

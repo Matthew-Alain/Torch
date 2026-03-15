@@ -330,5 +330,11 @@ public class EquipmentManager : MonoBehaviour
             ("@armor", armor.value),
             ("@id", PCID)
         );
+
+        DatabaseManager.Instance.ExecuteNonQuery(
+            "UPDATE pc_stats SET AC = @totalAC WHERE id = @id",
+            ("@totalAC", totalACLabel.text),
+            ("@id", PCID)
+        );
     }
 }

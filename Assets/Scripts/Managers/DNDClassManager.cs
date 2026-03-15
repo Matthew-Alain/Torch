@@ -394,6 +394,22 @@ public class DNDClassManager : MonoBehaviour
             );
         }
 
+        if (level.value == 4)
+        {
+            DatabaseManager.Instance.ExecuteNonQuery(
+                "UPDATE unit_stats SET proficiency = 3 WHERE id = @id",
+                ("@id", PCID)
+            );
+        }
+        else
+        {
+            DatabaseManager.Instance.ExecuteNonQuery(
+                "UPDATE unit_stats SET proficiency = 2 WHERE id = @id",
+                ("@id", PCID)
+            );
+        }
+
+
         if (classWithSubclass == -1)
         {
             DatabaseManager.Instance.ExecuteNonQuery(
@@ -401,6 +417,194 @@ public class DNDClassManager : MonoBehaviour
                 ("@id", PCID)
             );
         }
+
+        UpdateProficiencies();
+    }
+
+    public void UpdateProficiencies()
+    {
+        UpdateWeaponProficiencies();
+        UpdateArmorProficiencies();
+        UpdateSaveProficiencies();
+    }
+
+    public void UpdateWeaponProficiencies()
+    {
+        // bool all_simple = true;
+        bool martial_light = false;
+        bool martial_finesse = false;
+        bool all_martial = false;
+
+        // Simple weapons
+        // if (dndClass1.value == 1 || dndClass1.value == 2 || dndClass1.value == 3 || dndClass1.value == 9 || dndClass1.value == 10 || dndClass1.value == 11)
+        // {
+        //     simple_melee = true;
+        //     simple_ranged = true;
+        // }
+
+        //Simple + Martial Light
+        if (dndClass1.value == 5)
+        {
+            // simple_melee = true;
+            // simple_ranged = true;
+            martial_light = true;
+        }
+
+        //Simple + Martial finesse + Martial light
+        if (dndClass1.value == 8)
+        {
+            // simple_melee = true;
+            // simple_ranged = true;
+            martial_light = true;
+            martial_finesse = true;
+        }
+
+        //All weapons
+        if (dndClass1.value == 0 || dndClass1.value == 4 || dndClass1.value == 6 || dndClass1.value == 7)
+        {
+            // simple_melee = true;
+            // simple_ranged = true;
+            martial_light = true;
+            martial_finesse = true;
+            all_martial = true;
+        }
+
+        DatabaseManager.Instance.ExecuteNonQuery(
+            "UPDATE pc_proficiencies SET " +
+            // "all_simple = @all_simple, " +
+            "martial_light = @martial_light, " +
+            "martial_finesse = @martial_finesse, " +
+            "all_martial = @all_martial " +
+            "WHERE id = @id",
+            // ("@all_simple", all_simple),
+            ("@martial_light", martial_light),
+            ("@martial_finesse", martial_finesse),
+            ("@all_martial", all_martial),
+            ("@id", PCID)
+        );
+    }
+
+    public void UpdateArmorProficiencies()
+    {
+        bool light = false;
+        bool medium = false;
+        bool heavy = false;
+        bool shields = false;
+
+        // Light
+        if (dndClass1.value == 0 ||
+            dndClass1.value == 1 ||
+            dndClass1.value == 2 ||
+            dndClass1.value == 3 ||
+            dndClass1.value == 4 ||
+            dndClass1.value == 6 ||
+            dndClass1.value == 7 ||
+            dndClass1.value == 8 ||
+            dndClass1.value == 10)
+        {
+            light = true;
+        }
+
+        // Medium
+        if (dndClass1.value == 0 ||
+            dndClass1.value == 2 ||
+            dndClass1.value == 4 ||
+            dndClass1.value == 6 ||
+            dndClass1.value == 7)
+        {
+            medium = true;
+        }
+
+        // Heavy
+        if (dndClass1.value == 0 ||
+            dndClass1.value == 4 ||
+            dndClass1.value == 6)
+        {
+            heavy = true;
+        }
+
+        // Shields
+        if (dndClass1.value == 0 ||
+            dndClass1.value == 2 ||
+            dndClass1.value == 3 ||
+            dndClass1.value == 4 ||
+            dndClass1.value == 6 ||
+            dndClass1.value == 7)
+        {
+            shields = true;
+        }
+
+        DatabaseManager.Instance.ExecuteNonQuery(
+            "UPDATE pc_proficiencies SET " +
+            "light = @light, " +
+            "medium = @medium, " +
+            "heavy = @heavy, " +
+            "shields = @shields " +
+            "WHERE id = @id",
+            ("@light", light),
+            ("@medium", medium),
+            ("@heavy", heavy),
+            ("@shields", shields),
+            ("@id", PCID)
+        );
+    }
+    
+    private void UpdateSaveProficiencies()
+    {
+        bool str_save = false;
+        bool dex_save = false;
+        bool con_save = false;
+        bool int_save = false;
+        bool wis_save = false;
+        bool cha_save = false;
+
+        if (dndClass1.value == 0 || dndClass1.value == 4 || dndClass1.value == 5 || dndClass1.value == 7)
+        {
+            str_save = true;
+        }
+
+        if (dndClass1.value == 1 || dndClass1.value == 5 || dndClass1.value == 7 || dndClass1.value == 8)
+        {
+            dex_save = true;
+        }
+
+        if (dndClass1.value == 0 || dndClass1.value == 4 || dndClass1.value == 9)
+        {
+            con_save = true;
+        }
+
+        if (dndClass1.value == 3 || dndClass1.value == 8 || dndClass1.value == 11)
+        {
+            int_save = true;
+        }
+
+        if (dndClass1.value == 2 || dndClass1.value == 3 || dndClass1.value == 6 || dndClass1.value == 10 || dndClass1.value == 11)
+        {
+            wis_save = true;
+        }
+
+        if (dndClass1.value == 1 || dndClass1.value == 2 || dndClass1.value == 6 || dndClass1.value == 9 || dndClass1.value == 10)
+        {
+            cha_save = true;
+        }
+
+        DatabaseManager.Instance.ExecuteNonQuery(
+            "UPDATE pc_proficiencies SET " +
+            "str_save = @str_save, " +
+            "dex_save = @dex_save, " +
+            "con_save = @con_save, " +
+            "int_save = @int_save " +
+            "wis_save = @wis_save " +
+            "cha_save = @cha_save " +
+            "WHERE id = @id",
+            ("@str_save", str_save),
+            ("@dex_save", dex_save),
+            ("@con_save", con_save),
+            ("@int_save", int_save),
+            ("@wis_save", wis_save),
+            ("@cha_save", cha_save),
+            ("@id", PCID)
+        );
     }
 
     private void CloseFeatureWindow()
