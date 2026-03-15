@@ -68,56 +68,172 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (CombatStateManager.Instance.GameState != GameState.PlayerTurn) return; //If it's not your turn, you can't click
+        bool leftClick = eventData.button == PointerEventData.InputButton.Left;
+        GameState currentState = CombatStateManager.Instance.GameState;
 
-        if(eventData.button == PointerEventData.InputButton.Left)
+        if (currentState == GameState.GenerateGrid ||
+            currentState == GameState.SpawnHeroes ||
+            currentState == GameState.SpawnMonsters ||
+            currentState == GameState.Precombat ||
+            currentState == GameState.RollInitiative ||
+            currentState == GameState.MonsterTurn
+        ) return; //If it's not your turn, you can't click
+
+        switch (currentState)
         {
-            if (OccupiedUnit != null) //If you click on a tile that's not empty
-            {
-                if (OccupiedUnit.Faction == Faction.PC) //If the unit occupying this tile is a PC
+            case GameState.PlayerTurn:
+                if (leftClick)
                 {
-                    if (OccupiedUnit == CombatUnitManager.Instance.SelectedPC) //If you select the same unit again
+                    if (OccupiedUnit != null && OccupiedUnit.Faction == Faction.PC) //If you click on tile containing a PC
                     {
-                        //CombatMenuManager.Instance.ShowPCTurnMenu(); //Show the PC turn menu
-                        CombatMenuManager.Instance.OpenRootMenu();
+                        SelectPC(); //Select that PC
+                    }
+                }
+                else
+                {
+                    ClearUnitSelection();
+                }
+                break;
+            
+            case GameState.MovingPC:
+                if (leftClick)
+                {
+                    if(OccupiedUnit != null)
+                    {
+                        Log("You cannot move through units");
+                        //Check if halfling
+                    }
+                    else if (isWalkable)
+                    {
+                        int distance = CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile, this);
+                        bool hasEnoughSpeed = CheckWithinUnitSpeed(distance, CombatUnitManager.Instance.SelectedPC);
+                        if (hasEnoughSpeed)
+                        {
+                            if(distance == 1)
+                            {
+                                MoveUnit(CombatUnitManager.Instance.SelectedPC);
+                            }
+                            else
+                            {
+                                Log("Please move one tile at a time");
+                            }
+                        }
+                        else
+                        {
+                            Log("Tile out of range");
+                        }
+                    }
+                }
+                else
+                {
+                    CombatStateManager.Instance.ChangeState(GameState.PlayerTurn); //Cancel moving
+                    Log("No longer moving");
+                }
+                break;
+            
+            case GameState.SelectAttackTarget:
+                if (leftClick)
+                {
+                    int melee_range = 0;
+                    int normal_range = 0;
+                    int long_range = 0;
+
+                    DatabaseManager.Instance.ExecuteReader(
+                        "SELECT melee_range, normal_range, long_range FROM weapons WHERE id = @weaponID",
+                        reader =>
+                        {
+                            while (reader.Read())
+                            {
+                                if (reader["melee_range"] != DBNull.Value) melee_range = Convert.ToInt32(reader["melee_range"]);
+                                if (reader["normal_range"] != DBNull.Value) normal_range = Convert.ToInt32(reader["normal_range"]);
+                                if (reader["long_range"] != DBNull.Value) long_range = Convert.ToInt32(reader["long_range"]);
+                            }
+                        },
+                        ("@weaponID", CombatStateManager.Instance.declaredWeapon)
+                    );
+
+                    if(OccupiedUnit.Faction == Faction.Monster)
+                    {
+                        int distance = CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile, this) * 5;
+                        if (distance <= melee_range)
+                        {
+                            CombatActions.MeleeWeaponAttack(CombatUnitManager.Instance.SelectedPC.UnitID, CombatStateManager.Instance.declaredWeapon, OccupiedUnit.UnitID);
+                        }
+                        else if (distance <= normal_range)
+                        {
+                            CombatActions.RangedWeaponAttack(CombatUnitManager.Instance.SelectedPC.UnitID, OccupiedUnit.UnitID);
+                        }
+                        else if (distance <= long_range)
+                        {
+                            CombatActions.LongRangeWeaponAttack(CombatUnitManager.Instance.SelectedPC.UnitID, OccupiedUnit.UnitID);
+                        }
+                        else
+                        {
+                            Log("The target is out of range");
+                        }
                     }
                     else
                     {
-                        CombatUnitManager.Instance.SetSelectedPC((BasePC)OccupiedUnit); //Select the newly clicked PC
+                        Log("You can only attack monsters");
                     }
+                    
                 }
-                else //Means you must be selecting a monster
+                else
                 {
-                    if (CombatUnitManager.Instance.SelectedPC != null) //If you have a PC already selected
-                    {
-                        var monster = (BaseMonster)OccupiedUnit;
-                        // Put in what happens when a selected PC clicks on a monster
-                        Destroy(monster.gameObject); //In this case, it dies in one hit
-                        CombatUnitManager.Instance.SetSelectedPC(null); //Deselect the current unit
-                    }
+                    CombatStateManager.Instance.ChangeState(GameState.PlayerTurn); //Cancel moving
+                    Log("No longer attacking");
                 }
-            }
-            else //If you click on an empty tile
-            {
-                if (CombatUnitManager.Instance.SelectedPC != null && isWalkable) //If you have a PC already selected, and the tile is walkable
-                {
-                    bool inRange = CheckWithinUnitSpeed(CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile, this), CombatUnitManager.Instance.SelectedPC);
-                    if (inRange)
-                    {
-                        MoveUnit(CombatUnitManager.Instance.SelectedPC);
-                    }
-                    else
-                    {
-                        Log("Tile out of range");
-                    }
-                }
-            }
-        }
-        else
-        {
-            CombatMenuManager.Instance.CloseAllMenus();
+                break;
+            
+            default:
+                Log("No click action for the current game state: " + currentState);
+                break;
         }
     }
+    
+    private void ClearUnitSelection()
+    {
+        CombatUnitManager.Instance.SetSelectedPC(null);
+        CombatMenuManager.Instance.CloseAllMenus();
+        CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
+    }
+
+    private void SelectPC()
+    {
+        CombatMenuManager.Instance.CloseAllMenus(); //Close any existing menu
+        CombatUnitManager.Instance.SetSelectedPC((BasePC)OccupiedUnit); //Select the newly clicked PC
+        CombatMenuManager.Instance.OpenRootMenu(); //Open the action menu
+    }
+
+    //         else //Means you must be selecting a monster
+    //         {
+    //             if (CombatUnitManager.Instance.SelectedPC != null) //If you have a PC already selected
+    //             {
+    //                 var monster = (BaseMonster)OccupiedUnit;
+    //                 // Put in what happens when a selected PC clicks on a monster
+    //                 Destroy(monster.gameObject); //In this case, it dies in one hit
+    //                 CombatUnitManager.Instance.SetSelectedPC(null); //Deselect the current unit
+    //             }
+    //         }
+
+
+        
+    //     else //If you click on an empty tile
+    //     {
+    //         if (CombatUnitManager.Instance.SelectedPC != null && isWalkable) //If you have a PC already selected, and the tile is walkable
+    //         {
+    //             bool inRange = CheckWithinUnitSpeed(CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile, this), CombatUnitManager.Instance.SelectedPC);
+    //             if (inRange)
+    //             {
+    //                 MoveUnit(CombatUnitManager.Instance.SelectedPC);
+    //             }
+    //             else
+    //             {
+    //                 Log("Tile out of range");
+    //             }
+    //         }
+    //     }
+    // }
 
     //Returns the number of tiles between two tiles
     public int CheckDistance(Tile originTile, Tile targetTile)
@@ -131,7 +247,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     private bool CheckWithinUnitSpeed(int numberOfTiles, BaseUnit movingUnit)
     {
         decimal unitSpeed = Convert.ToDecimal(DatabaseManager.Instance.ExecuteScalar(
-            "SELECT remaining_speed FROM saved_pcs WHERE id = (@PCID)",
+            "SELECT current_speed FROM unit_resources WHERE id = (@PCID)",
             ("@PCID", movingUnit.UnitID)
         )) / 5;
 
@@ -143,7 +259,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     private void MoveUnit(BaseUnit movingUnit)
     {
         int unitSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-            "SELECT remaining_speed FROM saved_pcs WHERE id = (@PCID)",
+            "SELECT current_speed FROM unit_resources WHERE id = (@PCID)",
             ("@PCID", movingUnit.UnitID)
         ));
 
@@ -155,13 +271,17 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         SetUnit(movingUnit); //Set this tile's unit as the selected unit
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE saved_pcs SET remaining_speed = (@newSpeed) WHERE id = @unitID",
+            "UPDATE unit_resources SET current_speed = (@newSpeed) WHERE id = @unitID",
             ("@newSpeed", newSpeed),
             ("@unitID", movingUnit.UnitID)
         );
 
-        Log("Unit has "+newSpeed+" feet of movement left.");
+        Log("Unit has " + newSpeed + " feet of movement left.");
         
-        CombatUnitManager.Instance.SetSelectedPC(null); //And deselect the PC
+        if(newSpeed == 0)
+        {
+            // CombatUnitManager.Instance.SetSelectedPC(null); //And deselect the PC
+            CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
+        }
     }
 }

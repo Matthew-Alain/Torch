@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -7,6 +8,7 @@ public class CombatStateManager : MonoBehaviour
 
     public static CombatStateManager Instance;
     public GameState GameState;
+    public int declaredWeapon;
 
     void Awake()
     {
@@ -36,17 +38,12 @@ public class CombatStateManager : MonoBehaviour
         ChangeState(GameState.GenerateGrid);
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
     public void EndPlayerTurn()
     {
         CombatMenuManager.Instance.CloseMenu();
-        
-        ChangeState(GameState.MonsterTurn);
+        CombatUnitManager.Instance.SetSelectedPC(null);
+
+        ChangeState(GameState.StartMonsterTurn);
     }
 
     public void ChangeState(GameState newState)
@@ -65,13 +62,28 @@ public class CombatStateManager : MonoBehaviour
             case GameState.SpawnMonsters:
                 CombatUnitManager.Instance.SpawnMonsters(DatabaseManager.Instance.encounterToLoad);
                 break;
-            case GameState.PlayerTurn:
+            case GameState.Precombat:
+                break;
+            case GameState.RollInitiative:
+                break;
+            case GameState.StartPlayerTurn:
                 StartPlayerTurn();
                 break;
-            case GameState.MonsterTurn:
-                CombatUnitManager.Instance.SetSelectedPC(null);
+            case GameState.PlayerTurn:
+                break;
+            case GameState.MovingPC:
+                Debug.Log("Select the space to move to.");
+                break;
+            case GameState.SelectWeapon:
+                break;
+            case GameState.SelectAttackTarget:
+                break;
+            case GameState.StartMonsterTurn:
                 Debug.Log("It is now the monster's turn");
-                ChangeState(GameState.PlayerTurn);
+                StartMonsterTurn();
+                break;
+            case GameState.MonsterTurn:
+                ChangeState(GameState.StartPlayerTurn);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(newState), newState, null);
@@ -81,12 +93,26 @@ public class CombatStateManager : MonoBehaviour
 
     private void StartPlayerTurn()
     {
-        for(int i = 0; i < 5; i++)
+        for (int i = 0; i < 5; i++)
         {
             CombatUnitManager.Instance.RefreshUnitSpeed(i);
             CombatUnitManager.Instance.RefreshUnitActions(i);
         }
-    } 
+
+        ChangeState(GameState.PlayerTurn);
+    }
+
+    private void StartMonsterTurn()
+    {
+        ChangeState(GameState.MonsterTurn);
+    }
+    
+    public void DeclareAttack(int weaponID)
+    {
+        declaredWeapon = weaponID;
+        ChangeState(GameState.SelectAttackTarget);
+        Debug.Log("Selecting attack target");
+    }
 }
 
 public enum GameState
@@ -94,7 +120,14 @@ public enum GameState
     GenerateGrid,
     SpawnHeroes,
     SpawnMonsters,
+    Precombat,
+    RollInitiative,
+    StartPlayerTurn,
     PlayerTurn,
+    MovingPC,
+    SelectWeapon,
+    SelectAttackTarget,
+    StartMonsterTurn,
     MonsterTurn
 
 }

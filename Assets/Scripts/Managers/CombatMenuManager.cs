@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -90,6 +91,7 @@ public class CombatMenuManager : MonoBehaviour
             menuPanel.SetActive(false);
             menuStack.Clear();
             CombatUnitManager.Instance.SetSelectedPC(null);
+            CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
         }
     }
 
@@ -124,7 +126,7 @@ public class CombatMenuManager : MonoBehaviour
         {
             new MenuOption("Major", OpenMajorMenu),
             new MenuOption("Minor", OpenMinorMenu),
-            new MenuOption("Move", () => Debug.Log("Move action")),
+            new MenuOption("Move", () => CombatStateManager.Instance.ChangeState(GameState.MovingPC)),
             new MenuOption("End Turn", () => CombatStateManager.Instance.EndPlayerTurn()),
             new MenuOption("Cancel", () => CloseMenu())
         };
@@ -136,7 +138,7 @@ public class CombatMenuManager : MonoBehaviour
     {
         List<MenuOption> majorOptions = new List<MenuOption>()
         {
-            new MenuOption("Attack", () => Debug.Log("Attack")),
+            new MenuOption("Attack", OpenAttackMenu),
             new MenuOption("Dash", () => Debug.Log("Dash")),
             new MenuOption("Disengage", () => Debug.Log("Disengage")),
             new MenuOption("Dodge", () => Debug.Log("Dodge")),
@@ -156,7 +158,50 @@ public class CombatMenuManager : MonoBehaviour
         OpenMenu(majorOptions);
     }
 
-        public void OpenMinorMenu()
+    public void OpenAttackMenu()
+    {
+        int mainHand = 0;
+        int offHand = 0;
+        DatabaseManager.Instance.ExecuteReader(
+            "SELECT main_hand_item, off_hand_item FROM saved_pcs WHERE id = @PCID",
+            reader =>
+            {
+                while (reader.Read())
+                {
+                    mainHand = Convert.ToInt32(reader["main_hand_item"]);
+                    offHand = Convert.ToInt32(reader["off_hand_item"]);
+                }
+            },
+            ("@PCID", CombatUnitManager.Instance.SelectedPC.UnitID)
+        );
+
+        List<MenuOption> attackOptions = new List<MenuOption>();
+
+        if (mainHand != 39)
+        {
+            string mainHandText = Convert.ToString(DatabaseManager.Instance.ExecuteScalar(
+                "SELECT name FROM weapons WHERE id = @id",
+                ("@id", mainHand)
+            ));
+            attackOptions.Add(new MenuOption("Mainhand (" + mainHandText + ")", () => CombatStateManager.Instance.DeclareAttack(mainHand)));
+        }
+        
+        if(offHand != 39)
+        {
+            string offHandText = Convert.ToString(DatabaseManager.Instance.ExecuteScalar(
+                "SELECT name FROM weapons WHERE id = @id",
+                ("@id", offHand)
+            ));
+            attackOptions.Add(new MenuOption("Offhand (" + offHandText + ")", () => CombatStateManager.Instance.DeclareAttack(offHand)));
+        }
+
+        // Back option
+        attackOptions.Add(new MenuOption("Back", () => CloseMenu()));
+
+        OpenMenu(attackOptions);
+    }
+
+    public void OpenMinorMenu()
     {
         List<MenuOption> minorOptions = new List<MenuOption>()
         {

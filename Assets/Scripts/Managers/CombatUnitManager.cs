@@ -138,7 +138,7 @@ public class CombatUnitManager : MonoBehaviour
         }
 
         int maxSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-            "SELECT max_speed FROM unit_resources WHERE id = (@unitID)",
+            "SELECT base_speed FROM unit_resources WHERE id = (@unitID)",
             ("@unitID", unitID)
         ));
 
@@ -239,14 +239,14 @@ public class CombatUnitManager : MonoBehaviour
 
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE unit_stats SET temp_hp = @tempHP, current_hp = @currentHP "+
+            "UPDATE unit_resources SET temp_hp = @tempHP, current_hp = @currentHP "+
             "WHERE id = @unitID",
             ("@tempHP", tempHP),
             ("@currentHP", currentHP),
             ("@unitID", unitID)
         );
     }
-    
+
     public void HealUnit(int unitID, int healing)
     {
         int currentHP = 0;
@@ -279,12 +279,39 @@ public class CombatUnitManager : MonoBehaviour
         }
 
         Log("Unit's current HP is: " + currentHP);
-        
+
         DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE unit_stats SET current_hp = @currentHP WHERE id = @unitID",
+            "UPDATE unit_resources SET current_hp = @currentHP WHERE id = @unitID",
             ("@currentHP", currentHP),
             ("@unitID", unitID)
         );
+    }
+
+    public int GetAC(int unitID)
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
+                "SELECT AC FROM unit_stats WHERE id = @unitID",
+                ("@unitID", unitID)
+            ));
+    }
+    
+    public int GetProficiency(int unitID, string proficiency)
+    {
+        Log("Getting "+proficiency+" proficiency for unit " + unitID);
+        bool isProficient = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar(
+            $"SELECT {proficiency} FROM pc_proficiencies WHERE id = {unitID}"
+        ));
+
+        if (isProficient)
+        {
+            return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
+                "SELECT proficiency FROM unit_stats WHERE id = (@unitID)",
+                ("@unitID", unitID)
+            ));
+        }
+
+        Debug.Log("Not proficient");
+        return 0;
     }
 
 }
