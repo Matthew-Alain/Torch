@@ -62,7 +62,7 @@ public class AbilityScoreManager : MonoBehaviour
                 "asi_str, asi_dex, asi_con, asi_int, asi_wis, asi_cha, " +
 
                 "current_point_buy, current_origin_points " +
-                "FROM pc_character_creation_stats WHERE id = (@PCID)",
+                $"FROM pc_character_creation_stats WHERE id = {PCID}",
             reader =>
             {
                 while (reader.Read())
@@ -91,13 +91,12 @@ public class AbilityScoreManager : MonoBehaviour
                     currentPointBuy = Convert.ToInt32(reader["current_point_buy"]);
                     currentOriginPoints = Convert.ToInt32(reader["current_origin_points"]);
                 }
-            },
-            ("@PCID", PCID)
+            }
         );
 
         DatabaseManager.Instance.ExecuteReader(
-            "SELECT strength, dexterity, constitution, intelligence, wisdom, charisma, mSTR, mDEX, mCON, mINT, mWIS, mCHA, " +
-                "FROM unit_stats WHERE id = (@PCID)",
+            "SELECT strength, dexterity, constitution, intelligence, wisdom, charisma, mSTR, mDEX, mCON, mINT, mWIS, mCHA " +
+                $"FROM unit_stats WHERE id = {PCID}",
             reader =>
             {
                 while (reader.Read())
@@ -116,8 +115,7 @@ public class AbilityScoreManager : MonoBehaviour
                     mWIS = Convert.ToInt32(reader["mWIS"]);
                     mCHA = Convert.ToInt32(reader["mCHA"]);
                 }
-            },
-            ("@PCID",PCID)
+            }
         );
     }
 
@@ -407,51 +405,19 @@ public class AbilityScoreManager : MonoBehaviour
     {
         DatabaseManager.Instance.ExecuteNonQuery(
             "UPDATE pc_character_creation_stats SET " +
-                "base_str = @base_str, base_dex = @base_dex, base_con = @base_con, base_int = @base_int, base_wis = @base_wis, base_cha = @base_cha, " +
-                "origin_str = @origin_str, origin_dex = @origin_dex, origin_con = @origin_con, origin_int = @origin_int, origin_wis = @origin_wis, origin_cha = @origin_cha, " +
-                "current_point_buy = @current_point_buy, current_origin_points = @current_origin_points " +
-                "WHERE id = @id",
-            ("@base_str", baseStatList[0]),
-            ("@base_dex", baseStatList[1]),
-            ("@base_con", baseStatList[2]),
-            ("@base_int", baseStatList[3]),
-            ("@base_wis", baseStatList[4]),
-            ("@base_cha", baseStatList[5]),
-
-            ("@origin_str", originStatList[0]),
-            ("@origin_dex", originStatList[1]),
-            ("@origin_con", originStatList[2]),
-            ("@origin_int", originStatList[3]),
-            ("@origin_wis", originStatList[4]),
-            ("@origin_cha", originStatList[5]),
-
-            ("@current_point_buy", currentPointBuy),
-            ("@current_origin_points", currentOriginPoints),
-
-            ("@id", PCID)
+                $"base_str = {baseStatList[0]}, base_dex = {baseStatList[1]}, base_con = {baseStatList[2]}, " +
+                $"base_int = {baseStatList[3]}, base_wis = {baseStatList[4]}, base_cha = {baseStatList[5]}, " +
+                $"origin_str = {originStatList[0]}, origin_dex = {originStatList[1]}, origin_con = {originStatList[2]}, " +
+                $"origin_int = {originStatList[3]}, origin_wis = {originStatList[4]}, origin_cha = {originStatList[5]}, " +
+                $"current_point_buy = {currentPointBuy}, current_origin_points = {currentOriginPoints} WHERE id = {PCID}"
         );
 
         DatabaseManager.Instance.ExecuteNonQuery(
             "UPDATE unit_stats SET " +
-                "strength = @strength, dexterity = @dexterity, constitution = @constitution, intelligence = @intelligence, wisdom = @wisdom, charisma = @charisma, " +
-                "mSTR = @mSTR, mDEX = @mDEX, mCON = @mCON, mINT = @mINT, mWIS = @mWIS, mCHA = @mCHA " +
-                "WHERE id = @id",
-
-            ("@strength", finalStatsList[0]),
-            ("@dexterity", finalStatsList[1]),
-            ("@constitution", finalStatsList[2]),
-            ("@intelligence", finalStatsList[3]),
-            ("@wisdom", finalStatsList[4]),
-            ("@charisma", finalStatsList[5]),
-
-            ("@mSTR", modsList[0]),
-            ("@mDEX", modsList[1]),
-            ("@mCON", modsList[2]),
-            ("@mINT", modsList[3]),
-            ("@mWIS", modsList[4]),
-            ("@mCHA", modsList[5]),
-
-            ("@id", PCID)
+                $"strength = {finalStatsList[0]}, dexterity = {finalStatsList[1]}, constitution = {finalStatsList[2]}, "+
+                $"intelligence = {finalStatsList[3]}, wisdom = {finalStatsList[4]}, charisma = {finalStatsList[5]}, " +
+                $"mSTR = {modsList[0]}, mDEX = {modsList[1]}, mCON = {modsList[2]}, mINT = {modsList[3]}, mWIS = {modsList[4]}, mCHA = {modsList[5]} " +
+                $"WHERE id = {PCID}"
         );
     }
 

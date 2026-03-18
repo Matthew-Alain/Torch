@@ -43,7 +43,7 @@ public class EquipmentManager : MonoBehaviour
     void GetDefaultInfo()
     {
         DatabaseManager.Instance.ExecuteReader(
-            "SELECT main_hand_item, off_hand_item, equipped_armor FROM saved_pcs WHERE id = (@PCID)",
+            $"SELECT main_hand_item, off_hand_item, equipped_armor FROM saved_pcs WHERE id = {PCID}",
             reader =>
             {
                 while (reader.Read())
@@ -55,8 +55,7 @@ public class EquipmentManager : MonoBehaviour
                     UpdateMainHand(mainHand.value);
                     UpdateArmor(armor.value);
                 }
-            },
-            ("@PCID", PCID)
+            }
         );
     }
 
@@ -78,7 +77,7 @@ public class EquipmentManager : MonoBehaviour
     {
 
         DatabaseManager.Instance.ExecuteReader(
-            "SELECT * FROM weapons WHERE id = @weaponID",
+            $"SELECT * FROM weapons WHERE id = {weaponID}",
             reader =>
             {
                 while (reader.Read())
@@ -145,21 +144,18 @@ public class EquipmentManager : MonoBehaviour
                         }
                     }
                 }
-            },
-            ("@weaponID", weaponID)
+            }
         );
     }
     
     void HandleTwoHandedWeapons(int weaponID, bool updatingMainHand)
     {
         bool mainHandTwoHanded = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar(
-                "SELECT two_handed FROM weapons WHERE id = @weaponID",
-                ("@weaponID", mainHand.value)
+                $"SELECT two_handed FROM weapons WHERE id = {mainHand.value}"
             ));
         
         bool offHandTwoHanded = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar(
-                "SELECT two_handed FROM weapons WHERE id = @weaponID",
-                ("@weaponID", offHand.value)
+                $"SELECT two_handed FROM weapons WHERE id = {offHand.value}"
             ));
 
         if (!updatingMainHand && offHandTwoHanded) //If you are updating the offhand and the offhand is two-handed
@@ -182,7 +178,7 @@ public class EquipmentManager : MonoBehaviour
         propertyPanel.SetActive(true);
 
         DatabaseManager.Instance.ExecuteReader(
-            "SELECT * FROM weapons WHERE id = @weaponID",
+            $"SELECT * FROM weapons WHERE id = {weaponID}",
             reader =>
             {
                 while (reader.Read())
@@ -234,21 +230,19 @@ public class EquipmentManager : MonoBehaviour
                             weaponDescription.text += "Mastery - If you have the Weapon Mastery class feature, you have the following ability with this weapon:\n";
 
                             DatabaseManager.Instance.ExecuteReader(
-                                "SELECT name, description FROM weapon_masteries WHERE id = @masteryID",
+                                $"SELECT name, description FROM weapon_masteries WHERE id = {Convert.ToInt32(reader["mastery"])}",
                                 reader2 =>
                                 {
                                     while (reader2.Read())
                                     {
                                         weaponDescription.text += Convert.ToString(reader2["name"]) + " - " + Convert.ToString(reader2["description"]);
                                     }
-                                },
-                                ("@masteryID", Convert.ToInt32(reader["mastery"]))
-                            );    
+                                }
+                            );
                         }
                     }
                 }
-            },
-            ("@weaponID", weaponID)
+            }
         );
     }
 
@@ -260,7 +254,7 @@ public class EquipmentManager : MonoBehaviour
     private void UpdateArmor(int index)
     {
         DatabaseManager.Instance.ExecuteReader(
-            "SELECT * FROM armor WHERE id = @index",
+            $"SELECT * FROM armor WHERE id = {index}",
             reader =>
             {
                 while (reader.Read())
@@ -273,7 +267,7 @@ public class EquipmentManager : MonoBehaviour
                     baseACLabel.text = baseAC.ToString();
 
                     int dexBonus = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                            "SELECT mDEX FROM pc_stats WHERE id = @PCID",
+                            "SELECT mDEX FROM unit_stats WHERE id = @PCID",
                             ("@PCID", PCID)
                         ));
 
@@ -316,25 +310,18 @@ public class EquipmentManager : MonoBehaviour
                         loudLabel.text = "No";
                     }
                 }
-            },
-            ("@index", index)
+            }
         );
     }
     
     void SaveEquipment()
     {
         DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE saved_pcs SET main_hand_item = @mainHand, off_hand_item = @offHand, equipped_armor = @armor WHERE id = @id",
-            ("@mainHand", mainHand.value),
-            ("@offHand", offHand.value),
-            ("@armor", armor.value),
-            ("@id", PCID)
+            $"UPDATE saved_pcs SET main_hand_item = {mainHand.value}, off_hand_item = {offHand.value}, equipped_armor = {armor.value} WHERE id = {PCID}"
         );
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE pc_stats SET AC = @totalAC WHERE id = @id",
-            ("@totalAC", totalACLabel.text),
-            ("@id", PCID)
+            $"UPDATE unit_stats SET AC = {totalACLabel.text} WHERE id = {PCID}"
         );
     }
 }

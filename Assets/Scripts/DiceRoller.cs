@@ -13,13 +13,15 @@ public class DiceRoller
 
         int total = 0;
 
+        Debug.Log("You are rolling " + diceNumber + "d" + diceSize + " for damage.");
+
         for (int i = 1; i <= diceNumber; i++)
         {
             int result = UnityEngine.Random.Range(1, diceSize + 1);
-            Debug.Log("Roll " + i + "/" + diceNumber + ": " + result);
+            Debug.Log("For roll " + i + "/" + diceNumber + ", you rolled: " + result);
             total += result;
         }
-        Debug.Log("For a total of: " + total);
+        Debug.Log("For a total of " + total+" damage");
 
         return total;
     }
@@ -28,13 +30,14 @@ public class DiceRoller
     {
         int total = 0;
 
+        Debug.Log("You are rolling " + diceNumber + "d" + diceSize + " for damage.");
         for (int i = 1; i <= diceNumber; i++)
         {
             int result = UnityEngine.Random.Range(1, diceSize + 1);
-            Debug.Log("Roll " + i + "/" + diceNumber + ": " + result);
+            Debug.Log("For roll " + i + "/" + diceNumber + ", you rolled: " + result);
             total += result;
         }
-        Debug.Log("For a total of: " + total);
+        Debug.Log("For a total of " + total+" damage");
 
         return total;
     }
@@ -54,23 +57,27 @@ public class DiceRoller
 
         if (withAdvantage && !withDisadvantage)
         {
+            Debug.Log("You have advantage, so you roll 2d20 and take the higher result.");
             int roll1 = UnityEngine.Random.Range(1, 20 + 1);
             int roll2 = UnityEngine.Random.Range(1, 20 + 1);
             Debug.Log("Roll 1: " + roll1 + ", Roll2: " + roll2);
             dieRoll = Math.Max(roll1, roll2);
+            Debug.Log("So your roll is: " + dieRoll);
         }
         else if (withDisadvantage && !withAdvantage)
         {
+            Debug.Log("You have disadvantage, so you roll 2d20 and take the lower result.");
             int roll1 = UnityEngine.Random.Range(1, 20 + 1);
             int roll2 = UnityEngine.Random.Range(1, 20 + 1);
             Debug.Log("Roll 1: " + roll1 + ", Roll2: " + roll2);
             dieRoll = Math.Min(roll1, roll2);
+            Debug.Log("So your roll is: "+dieRoll);
         }
         else
         {
             dieRoll = UnityEngine.Random.Range(1, 20 + 1);
+            Debug.Log("On your d20, you rolled: " + dieRoll);
         }
-        Debug.Log("Final die roll: " + dieRoll);
 
         //Check for automatic rerolls (halfling luck)
 

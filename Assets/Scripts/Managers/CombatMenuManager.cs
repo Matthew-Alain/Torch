@@ -139,7 +139,7 @@ public class CombatMenuManager : MonoBehaviour
         List<MenuOption> majorOptions = new List<MenuOption>()
         {
             new MenuOption("Attack", OpenAttackMenu),
-            new MenuOption("Dash", () => Debug.Log("Dash")),
+            new MenuOption("Dash", () => CombatActions.Dash(CombatUnitManager.Instance.SelectedPC.UnitID)),
             new MenuOption("Disengage", () => Debug.Log("Disengage")),
             new MenuOption("Dodge", () => Debug.Log("Dodge")),
             new MenuOption("Help", () => Debug.Log("Help")),
@@ -163,35 +163,29 @@ public class CombatMenuManager : MonoBehaviour
         int mainHand = 0;
         int offHand = 0;
         DatabaseManager.Instance.ExecuteReader(
-            "SELECT main_hand_item, off_hand_item FROM saved_pcs WHERE id = @PCID",
+            $"SELECT main_hand_item, off_hand_item FROM saved_pcs WHERE id = {CombatUnitManager.Instance.SelectedPC.UnitID}",
             reader =>
             {
                 while (reader.Read())
                 {
                     mainHand = Convert.ToInt32(reader["main_hand_item"]);
+                    Debug.Log(Convert.ToString(reader["main_hand_item"]));
                     offHand = Convert.ToInt32(reader["off_hand_item"]);
                 }
-            },
-            ("@PCID", CombatUnitManager.Instance.SelectedPC.UnitID)
+            }
         );
 
         List<MenuOption> attackOptions = new List<MenuOption>();
 
         if (mainHand != 39)
         {
-            string mainHandText = Convert.ToString(DatabaseManager.Instance.ExecuteScalar(
-                "SELECT name FROM weapons WHERE id = @id",
-                ("@id", mainHand)
-            ));
+            string mainHandText = Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT name FROM weapons WHERE id = {mainHand}"));
             attackOptions.Add(new MenuOption("Mainhand (" + mainHandText + ")", () => CombatStateManager.Instance.DeclareAttack(mainHand)));
         }
         
         if(offHand != 39)
         {
-            string offHandText = Convert.ToString(DatabaseManager.Instance.ExecuteScalar(
-                "SELECT name FROM weapons WHERE id = @id",
-                ("@id", offHand)
-            ));
+            string offHandText = Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT name FROM weapons WHERE id = {offHand}"));
             attackOptions.Add(new MenuOption("Offhand (" + offHandText + ")", () => CombatStateManager.Instance.DeclareAttack(offHand)));
         }
 

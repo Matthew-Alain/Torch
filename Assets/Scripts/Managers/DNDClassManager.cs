@@ -66,7 +66,7 @@ public class DNDClassManager : MonoBehaviour
     void GetDefaultInfo()
     {
         DatabaseManager.Instance.ExecuteReader(
-            "SELECT level, dnd_class_1, dnd_class_2, dnd_class_3, dnd_class_4, dnd_class_5, subclass FROM saved_pcs WHERE id = (@PCID)",
+            $"SELECT level, dnd_class_1, dnd_class_2, dnd_class_3, dnd_class_4, dnd_class_5, subclass FROM saved_pcs WHERE id = {PCID}",
             reader =>
             {
                 while (reader.Read())
@@ -85,8 +85,7 @@ public class DNDClassManager : MonoBehaviour
                         lastSubclass = Convert.ToInt32(reader["subclass"]);
                     }
                 }
-            },
-            ("@PCID", PCID)
+            }
         );
     }
 
@@ -191,13 +190,12 @@ public class DNDClassManager : MonoBehaviour
 
         List<string> subclassList = new List<string>();
         DatabaseManager.Instance.ExecuteReader(
-            "SELECT name FROM subclasses WHERE dndclass = @classWithSubclass",
+            $"SELECT name FROM subclasses WHERE dndclass = {classWithSubclass}",
             reader =>
             {
                 while (reader.Read())
                     subclassList.Add(reader["name"] as string);
-            },
-            ("@classWithSubclass", classWithSubclass)
+            }
         );
 
         // Only update dropdown if the options actually changed
@@ -247,45 +245,35 @@ public class DNDClassManager : MonoBehaviour
             if(classWithSubclass == -1)
             {
                 numberOfFeatures = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                    "SELECT COUNT(*) FROM class_features WHERE class = @classToSearch AND level = @classLevel AND subclass IS NULL",
-                    ("@classToSearch", rowClass),
-                    ("@classLevel", classLevel)
+                    $"SELECT COUNT(*) FROM class_features WHERE class = {rowClass} AND level = {classLevel} AND subclass IS NULL"
                 ));
 
                 DatabaseManager.Instance.ExecuteReader(
-                    "SELECT name FROM class_features WHERE class = @classToSearch AND level = @classLevel AND subclass IS NULL",
+                    $"SELECT name FROM class_features WHERE class = {rowClass} AND level = {classLevel} AND subclass IS NULL",
                     reader =>
                     {
                         while (reader.Read())
                         {
                             featureNames.Add(Convert.ToString(reader["name"]));
                         }
-                    },
-                    ("@classToSearch", rowClass),
-                    ("@classLevel", classLevel)
+                    }
                 );
             }
             else
             {
                 numberOfFeatures = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                    "SELECT COUNT(*) FROM class_features WHERE class = @classToSearch AND level = @classLevel AND (subclass IS NULL OR subclass = @subclass)",
-                    ("@classToSearch", rowClass),
-                    ("@classLevel", classLevel),
-                    ("@subclass", subclass.value)
+                    $"SELECT COUNT(*) FROM class_features WHERE class = {rowClass} AND level = {classLevel} AND (subclass IS NULL OR subclass = {subclass.value})"
                 ));
 
                 DatabaseManager.Instance.ExecuteReader(
-                    "SELECT name FROM class_features WHERE class = @classToSearch AND level = @classLevel AND (subclass IS NULL OR subclass = @subclass)",
+                    $"SELECT name FROM class_features WHERE class = {rowClass} AND level = {classLevel} AND (subclass IS NULL OR subclass = {subclass.value})",
                     reader =>
                     {
                         while (reader.Read())
                         {
                             featureNames.Add(Convert.ToString(reader["name"]));
                         }
-                    },
-                    ("@classToSearch", rowClass),
-                    ("@classLevel", classLevel),
-                    ("@subclass", subclass.value)
+                    }
                 );
             }
 
@@ -314,10 +302,9 @@ public class DNDClassManager : MonoBehaviour
         featurePanel.SetActive(true);
 
         DatabaseManager.Instance.ExecuteReader(
-            "SELECT name, description, scene_to_load " +
-                "FROM class_features " +
-                "WHERE class = @rowClass AND level = @rowLevel AND (subclass IS NULL OR subclass = @subclass)" +
-                "LIMIT 1 OFFSET @columnNumber",
+            "SELECT name, description, scene_to_load FROM class_features " +
+                $"WHERE class = {rowClass} AND level = {rowLevel} AND (subclass IS NULL OR subclass = {subclass.value})" +
+                $"LIMIT 1 OFFSET {columnNumber}",
             reader =>
             {
                 while (reader.Read())
@@ -339,84 +326,36 @@ public class DNDClassManager : MonoBehaviour
                     }
 
                 }
-            },
-            ("@rowClass", rowClass),
-            ("@rowLevel", rowLevel),
-            ("@subclass", subclass.value),
-            ("@columnNumber", columnNumber)
+            }
         );
     }
 
     void SaveCharacter()
     {
         DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE saved_pcs SET dnd_class_1 = @dndClass1, dnd_class_2 = @dndClass2, dnd_class_3 = @dndClass3, dnd_class_4 = @dndClass4, dnd_class_5 = @dndClass5, "
-            + "subclass = @subclass, level = @level WHERE id = @id",
-            ("@dndClass1", dndClass1.value),
-            ("@dndClass2", dndClass2.value),
-            ("@dndClass3", dndClass3.value),
-            ("@dndClass4", dndClass4.value),
-            ("@dndClass5", dndClass5.value),
-            ("@subclass", subclass.value),
-            ("@level", level.value + 1),
-            ("@id", PCID)
+            $"UPDATE saved_pcs SET dnd_class_1 = {dndClass1.value}, dnd_class_2 = {dndClass2.value}, dnd_class_3 = {dndClass3.value}, " +
+            $"dnd_class_4 = {dndClass4.value}, dnd_class_5 = {dndClass5.value}, subclass = {subclass.value}, level = {level.value + 1} WHERE id = {PCID}"
         );
 
         if (level.value < 1)
-        {
-            DatabaseManager.Instance.ExecuteNonQuery(
-                "UPDATE saved_pcs SET dnd_class_2 = null WHERE id = @id",
-                ("@id", PCID)
-            );
-        }
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET dnd_class_2 = null WHERE id = {PCID}");
 
         if (level.value < 2)
-        {
-            DatabaseManager.Instance.ExecuteNonQuery(
-                "UPDATE saved_pcs SET dnd_class_3 = null WHERE id = @id",
-                ("@id", PCID)
-            );
-        }
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET dnd_class_3 = null WHERE id = {PCID}");
 
         if (level.value < 3)
-        {
-            DatabaseManager.Instance.ExecuteNonQuery(
-                "UPDATE saved_pcs SET dnd_class_4 = null WHERE id = @id",
-                ("@id", PCID)
-            );
-        }
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET dnd_class_4 = null WHERE id = {PCID}");
 
         if (level.value < 4)
-        {
-            DatabaseManager.Instance.ExecuteNonQuery(
-                "UPDATE saved_pcs SET dnd_class_5 = null WHERE id = @id",
-                ("@id", PCID)
-            );
-        }
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET dnd_class_5 = null WHERE id = {PCID}");
 
         if (level.value == 4)
-        {
-            DatabaseManager.Instance.ExecuteNonQuery(
-                "UPDATE unit_stats SET proficiency = 3 WHERE id = @id",
-                ("@id", PCID)
-            );
-        }
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_stats SET proficiency = 3 WHERE id = {PCID}");
         else
-        {
-            DatabaseManager.Instance.ExecuteNonQuery(
-                "UPDATE unit_stats SET proficiency = 2 WHERE id = @id",
-                ("@id", PCID)
-            );
-        }
-
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_stats SET proficiency = 2 WHERE id = {PCID}");
 
         if (classWithSubclass == -1)
-        {
-            DatabaseManager.Instance.ExecuteNonQuery(
-                "UPDATE saved_pcs SET subclass = null WHERE id = @id",
-                ("@id", PCID)
-            );
-        }
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET subclass = null WHERE id = {PCID}");
 
         UpdateProficiencies();
     }
@@ -471,16 +410,11 @@ public class DNDClassManager : MonoBehaviour
 
         DatabaseManager.Instance.ExecuteNonQuery(
             "UPDATE pc_proficiencies SET " +
-            // "all_simple = @all_simple, " +
-            "martial_light = @martial_light, " +
-            "martial_finesse = @martial_finesse, " +
-            "all_martial = @all_martial " +
-            "WHERE id = @id",
-            // ("@all_simple", all_simple),
-            ("@martial_light", martial_light),
-            ("@martial_finesse", martial_finesse),
-            ("@all_martial", all_martial),
-            ("@id", PCID)
+            // $"all_simple = {all_simple}, " +
+            $"martial_light = {martial_light}, " +
+            $"martial_finesse = {martial_finesse}, " +
+            $"all_martial = {all_martial} " +
+            $"WHERE id = {PCID}"
         );
     }
 
@@ -535,17 +469,7 @@ public class DNDClassManager : MonoBehaviour
         }
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE pc_proficiencies SET " +
-            "light = @light, " +
-            "medium = @medium, " +
-            "heavy = @heavy, " +
-            "shields = @shields " +
-            "WHERE id = @id",
-            ("@light", light),
-            ("@medium", medium),
-            ("@heavy", heavy),
-            ("@shields", shields),
-            ("@id", PCID)
+            $"UPDATE pc_proficiencies SET light_armor = {light}, medium_armor = {medium}, heavy_armor = {heavy}, shields = {shields} WHERE id = {PCID}"
         );
     }
     
@@ -589,21 +513,8 @@ public class DNDClassManager : MonoBehaviour
         }
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE pc_proficiencies SET " +
-            "str_save = @str_save, " +
-            "dex_save = @dex_save, " +
-            "con_save = @con_save, " +
-            "int_save = @int_save " +
-            "wis_save = @wis_save " +
-            "cha_save = @cha_save " +
-            "WHERE id = @id",
-            ("@str_save", str_save),
-            ("@dex_save", dex_save),
-            ("@con_save", con_save),
-            ("@int_save", int_save),
-            ("@wis_save", wis_save),
-            ("@cha_save", cha_save),
-            ("@id", PCID)
+            $"UPDATE pc_proficiencies SET str_save = {str_save}, dex_save = {dex_save}, con_save = {con_save}, "+
+            $"int_save = {int_save}, wis_save = {wis_save}, cha_save = {cha_save} WHERE id = {PCID}"
         );
     }
 

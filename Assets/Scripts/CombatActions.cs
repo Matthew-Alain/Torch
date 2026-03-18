@@ -7,15 +7,13 @@ public class CombatActions
     public static bool HasMajor(int unitID)
     {
         bool hasMajor = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar(
-            "SELECT major_action FROM unit_resources WHERE id = @unitID",
-            ("@unitID", unitID)
+            $"SELECT major_action FROM unit_resources WHERE id = {unitID}"
         ));
 
         if (hasMajor)
         {
             DatabaseManager.Instance.ExecuteNonQuery(
-                "UPDATE unit_resources SET major_action = 0 WHERE id = @unitID",
-                ("@unitID", unitID)
+                $"UPDATE unit_resources SET major_action = 0 WHERE id = {unitID}"
             );
         }
         else
@@ -29,15 +27,13 @@ public class CombatActions
     public static bool HasMinor(int unitID)
     {
         bool hasMinor = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar(
-            "SELECT minor_action FROM unit_resources WHERE id = @unitID",
-            ("@unitID", unitID)
+            $"SELECT minor_action FROM unit_resources WHERE id = {unitID}"
         ));
 
         if (hasMinor)
         {
             DatabaseManager.Instance.ExecuteNonQuery(
-                "UPDATE unit_resources SET minor_action = 0 WHERE id = @unitID",
-                ("@unitID", unitID)
+                $"UPDATE unit_resources SET minor_action = 0 WHERE id = {unitID}"
             );
         }
         else
@@ -51,8 +47,7 @@ public class CombatActions
     public static bool HasReaction(int unitID)
     {
         bool hasReaction = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar(
-            "SELECT reaction FROM unit_resources WHERE id = @unitID",
-            ("@unitID", unitID)
+            $"SELECT reaction FROM unit_resources WHERE id = {unitID}"
         ));
 
         if (!hasReaction)
@@ -70,7 +65,7 @@ public class CombatActions
             int current_speed = 0;
             int base_speed = 0;
             DatabaseManager.Instance.ExecuteReader(
-                "SELECT current_speed, base_speed FROM unit_resources WHERE id = @unitID",
+                $"SELECT current_speed, base_speed FROM unit_resources WHERE id = {unitID}",
                 reader =>
                 {
                     while (reader.Read())
@@ -78,16 +73,13 @@ public class CombatActions
                         current_speed = Convert.ToInt32(reader["current_speed"]);
                         base_speed = Convert.ToInt32(reader["base_speed"]);
                     }
-                },
-                ("@unitID", unitID)
+                }
             );
 
             current_speed += base_speed;
 
             DatabaseManager.Instance.ExecuteNonQuery(
-                "UPDATE unit_resources SET current_speed = @current_speed WHERE id = @unitID",
-                ("@current_speed", current_speed),
-                ("@unitID", unitID)
+                $"UPDATE unit_resources SET current_speed = {current_speed} WHERE id = {unitID}"
             );
         }
     }
@@ -105,7 +97,7 @@ public class CombatActions
             int dice_number = 0;
             int dice_size = 0;
             DatabaseManager.Instance.ExecuteReader(
-                "SELECT stat, category, light, dice_number, dice_size FROM weapons WHERE id = @weaponID",
+                $"SELECT stat, category, light, dice_number, dice_size FROM weapons WHERE id = {weaponID}",
                 reader =>
                 {
                     attackStat = Convert.ToString(reader["stat"]);
@@ -113,16 +105,15 @@ public class CombatActions
                     light = Convert.ToBoolean(reader["light"]);
                     finesse = Convert.ToString(reader["stat"]) == "Finesse";
                     dice_number = Convert.ToInt32(reader["dice_number"]);
-                    dice_size = Convert.ToInt32(reader["dice_number"]);
-                },
-                ("@weaponID", weaponID)
+                    dice_size = Convert.ToInt32(reader["dice_size"]);
+                }
             );
 
             int mSTR = 0;
             int mDEX = 0;
 
             DatabaseManager.Instance.ExecuteReader(
-                "SELECT mSTR, mDEX FROM unit_stats WHERE id = @unitID",
+                $"SELECT mSTR, mDEX FROM unit_stats WHERE id = {attackerID}",
                 reader =>
                 {
                     while (reader.Read())
@@ -131,12 +122,10 @@ public class CombatActions
                         mDEX = Convert.ToInt32(reader["mDEX"]);
 
                     }
-                },
-                ("@unitID", attackerID)
+                }
             );
 
             int attackModifier = 0;
-
             if (attackStat == "STR" || (attackStat == "Finesse" && mSTR > mDEX))
             {
                 attackModifier = mSTR;
@@ -145,9 +134,10 @@ public class CombatActions
             {
                 attackModifier = mDEX;
             }
+            Debug.Log("Your weapon uses " + attackStat + ", so you add " + attackModifier + " to your d20 roll.");
+
 
             int pb = 0;
-
             if (category == "Simple Melee" || category == "Simple Ranged")
             {
                 pb = CombatUnitManager.Instance.GetProficiency(attackerID, "all_simple");
@@ -164,21 +154,43 @@ public class CombatActions
             {
                 pb = CombatUnitManager.Instance.GetProficiency(attackerID, "all_martial");
             }
+            if (pb > 0)
+            {
+                Debug.Log("You have proficiency with this weapon, so you had your proficiency bonus of " + pb + " to your roll.");
+            }
+            else
+            {
+                Debug.Log("You do not have proficiency with this weapon, so you do not add your proficiency bonus to this roll.");
+            }
+
 
             int totalResult = dieRoll + attackModifier + pb;
+            Debug.Log("Your roll is made up of:" +
+            "\nD20 roll: " + dieRoll +
+            "\nAttack modifier: " + attackModifier +
+            "\nProficiency bonus: +" + pb +
+            "\nFor a total result of: " + totalResult);
 
-            if (totalResult >= CombatUnitManager.Instance.GetAC(targetID))
+
+            int targetAC = CombatUnitManager.Instance.GetAC(targetID);
+            Debug.Log("The target's AC is: " + targetAC);
+
+            if (totalResult >= targetAC)
             {
-                Debug.Log("You hit!");
+                Debug.Log("So you hit!");
 
-                if(dieRoll == 20)
+                if (dieRoll == 20)
                 {
-                    CombatUnitManager.Instance.DamageUnit(targetID, DiceRoller.Roll(dice_number*2, dice_size), true);
+                    CombatUnitManager.Instance.DamageUnit(targetID, DiceRoller.Roll(dice_number * 2, dice_size), true);
                 }
                 else
                 {
                     CombatUnitManager.Instance.DamageUnit(targetID, DiceRoller.Roll(dice_number, dice_size), false);
                 }
+            }
+            else
+            {
+                Debug.Log("So you miss...");
             }
 
         }

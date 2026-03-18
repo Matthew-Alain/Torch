@@ -10,7 +10,6 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     [SerializeField] private GameObject highlight;
     [SerializeField] private bool isWalkable;
     public string TileName;
-    public int TileID;
     public int tileEncounter, tileX, tileY;
 
     public BaseUnit OccupiedUnit;
@@ -46,10 +45,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             int oldY = unit.occupiedTile.tileY;
 
             DatabaseManager.Instance.ExecuteNonQuery(
-                "UPDATE grid_contents SET content = NULL WHERE encounter_id = @encounterID AND x = @x AND y = @y",
-                ("@encounterID", tileEncounter),
-                ("@x", oldX),
-                ("@y", oldY)
+                $"UPDATE grid_contents SET content = NULL WHERE encounter_id = {tileEncounter} AND x = {oldX} AND y = {oldY}"
             );
             unit.occupiedTile.OccupiedUnit = null;
         }
@@ -58,11 +54,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         unit.occupiedTile = this;
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE grid_contents SET content = (@unitID) WHERE encounter_id = @encounterID AND x = @x AND y = @y",
-            ("@unitID", unit.UnitID),
-            ("@encounterID", tileEncounter),
-            ("@x", tileX),
-            ("@y", tileY)
+            $"UPDATE grid_contents SET content = {unit.UnitID} WHERE encounter_id = {tileEncounter} AND x = {tileX} AND y = {tileY}"
         );
     }
 
@@ -127,6 +119,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 else
                 {
                     CombatStateManager.Instance.ChangeState(GameState.PlayerTurn); //Cancel moving
+                    ClearUnitSelection();
                     Log("No longer moving");
                 }
                 break;
@@ -139,7 +132,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                     int long_range = 0;
 
                     DatabaseManager.Instance.ExecuteReader(
-                        "SELECT melee_range, normal_range, long_range FROM weapons WHERE id = @weaponID",
+                        $"SELECT melee_range, normal_range, long_range FROM weapons WHERE id = {CombatStateManager.Instance.declaredWeapon}",
                         reader =>
                         {
                             while (reader.Read())
@@ -148,16 +141,16 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                                 if (reader["normal_range"] != DBNull.Value) normal_range = Convert.ToInt32(reader["normal_range"]);
                                 if (reader["long_range"] != DBNull.Value) long_range = Convert.ToInt32(reader["long_range"]);
                             }
-                        },
-                        ("@weaponID", CombatStateManager.Instance.declaredWeapon)
+                        }
                     );
 
-                    if(OccupiedUnit.Faction == Faction.Monster)
+                    if(OccupiedUnit!= null && OccupiedUnit.Faction == Faction.Monster)
                     {
                         int distance = CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile, this) * 5;
                         if (distance <= melee_range)
                         {
                             CombatActions.MeleeWeaponAttack(CombatUnitManager.Instance.SelectedPC.UnitID, CombatStateManager.Instance.declaredWeapon, OccupiedUnit.UnitID);
+                            
                         }
                         else if (distance <= normal_range)
                         {
@@ -193,8 +186,8 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     
     private void ClearUnitSelection()
     {
-        CombatUnitManager.Instance.SetSelectedPC(null);
         CombatMenuManager.Instance.CloseAllMenus();
+        CombatUnitManager.Instance.SetSelectedPC(null);
         CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
     }
 
@@ -204,36 +197,6 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         CombatUnitManager.Instance.SetSelectedPC((BasePC)OccupiedUnit); //Select the newly clicked PC
         CombatMenuManager.Instance.OpenRootMenu(); //Open the action menu
     }
-
-    //         else //Means you must be selecting a monster
-    //         {
-    //             if (CombatUnitManager.Instance.SelectedPC != null) //If you have a PC already selected
-    //             {
-    //                 var monster = (BaseMonster)OccupiedUnit;
-    //                 // Put in what happens when a selected PC clicks on a monster
-    //                 Destroy(monster.gameObject); //In this case, it dies in one hit
-    //                 CombatUnitManager.Instance.SetSelectedPC(null); //Deselect the current unit
-    //             }
-    //         }
-
-
-        
-    //     else //If you click on an empty tile
-    //     {
-    //         if (CombatUnitManager.Instance.SelectedPC != null && isWalkable) //If you have a PC already selected, and the tile is walkable
-    //         {
-    //             bool inRange = CheckWithinUnitSpeed(CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile, this), CombatUnitManager.Instance.SelectedPC);
-    //             if (inRange)
-    //             {
-    //                 MoveUnit(CombatUnitManager.Instance.SelectedPC);
-    //             }
-    //             else
-    //             {
-    //                 Log("Tile out of range");
-    //             }
-    //         }
-    //     }
-    // }
 
     //Returns the number of tiles between two tiles
     public int CheckDistance(Tile originTile, Tile targetTile)
@@ -247,8 +210,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     private bool CheckWithinUnitSpeed(int numberOfTiles, BaseUnit movingUnit)
     {
         decimal unitSpeed = Convert.ToDecimal(DatabaseManager.Instance.ExecuteScalar(
-            "SELECT current_speed FROM unit_resources WHERE id = (@PCID)",
-            ("@PCID", movingUnit.UnitID)
+            $"SELECT current_speed FROM unit_resources WHERE id = {movingUnit.UnitID}"
         )) / 5;
 
         int speedInTiles = (int)Math.Floor(unitSpeed);
@@ -259,8 +221,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     private void MoveUnit(BaseUnit movingUnit)
     {
         int unitSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-            "SELECT current_speed FROM unit_resources WHERE id = (@PCID)",
-            ("@PCID", movingUnit.UnitID)
+            $"SELECT current_speed FROM unit_resources WHERE id = {movingUnit.UnitID}"
         ));
 
         //If tile is difficult terrain, multiply by 10 instead
@@ -271,17 +232,24 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         SetUnit(movingUnit); //Set this tile's unit as the selected unit
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE unit_resources SET current_speed = (@newSpeed) WHERE id = @unitID",
-            ("@newSpeed", newSpeed),
-            ("@unitID", movingUnit.UnitID)
+            $"UPDATE unit_resources SET current_speed = {newSpeed} WHERE id = {movingUnit.UnitID}"
         );
 
         Log("Unit has " + newSpeed + " feet of movement left.");
-        
-        if(newSpeed == 0)
+
+        if (newSpeed == 0)
         {
             // CombatUnitManager.Instance.SetSelectedPC(null); //And deselect the PC
             CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
         }
+    }
+    
+    public void EmptyTile()
+    {
+        Destroy(OccupiedUnit.gameObject);
+        OccupiedUnit = null;
+        DatabaseManager.Instance.ExecuteNonQuery(
+            $"UPDATE grid_contents SET content = NULL WHERE x = {tileX} AND y = {tileY}"
+        );
     }
 }

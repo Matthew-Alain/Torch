@@ -24,7 +24,7 @@ public class TutorialManager : MonoBehaviour
     private void GetSceneTutorials()
     {
         DatabaseManager.Instance.ExecuteReader(
-            "SELECT id FROM tutorials WHERE scene = @current_scene",
+            $"SELECT id FROM tutorials WHERE scene = {SceneManager.GetActiveScene().buildIndex}",
             reader =>
             {
                 while (reader.Read())
@@ -32,8 +32,7 @@ public class TutorialManager : MonoBehaviour
                     tutorialIDList.Add(Convert.ToInt32(reader["id"]));
                     // Debug.Log("Added tutorial id "+Convert.ToInt32(reader["id"]));
                 }
-            },
-            ("@current_scene", SceneManager.GetActiveScene().buildIndex)
+            }
         );
 
     }
@@ -68,13 +67,11 @@ public class TutorialManager : MonoBehaviour
     public void GetTutorialByID(int id)
     {
         string returnedTitle = Convert.ToString(DatabaseManager.Instance.ExecuteScalar( //Get the character's species
-            "SELECT name FROM tutorials WHERE id = (@tutorialID)",
-            ("@tutorialID", id)
+            $"SELECT name FROM tutorials WHERE id = {id}"
         ));
 
         string returnedText = Convert.ToString(DatabaseManager.Instance.ExecuteScalar( //Get the character's species
-            "SELECT description FROM tutorials WHERE id = (@tutorialID)",
-            ("@tutorialID", id)
+            $"SELECT description FROM tutorials WHERE id = {id}"
         ));
 
         title.text = returnedTitle;

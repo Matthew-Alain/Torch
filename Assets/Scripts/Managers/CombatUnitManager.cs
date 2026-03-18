@@ -5,6 +5,7 @@ using TMPro.Examples;
 using UnityEngine;
 using System;
 using static UnityEngine.Debug;
+using Unity.VisualScripting;
 
 
 public class CombatUnitManager : MonoBehaviour
@@ -40,8 +41,7 @@ public class CombatUnitManager : MonoBehaviour
     public void SpawnPCs(int encounterID)
     {
         int numberOfPCs = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                "SELECT COUNT(*) FROM grid_contents WHERE encounter_id = @encounter_id AND content IN (0,1,2,3,4)",
-                ("@encounter_id", encounterID)
+                $"SELECT COUNT(*) FROM grid_contents WHERE encounter_id = {encounterID} AND content IN (0,1,2,3,4)"
             ));
 
         for (int i = 0; i < numberOfPCs; i++) //For each PC
@@ -54,7 +54,7 @@ public class CombatUnitManager : MonoBehaviour
             }
             if (pcToSpawn.UnitPrefab == null)
             {
-                Debug.LogError($"ScriptableUnit {pcToSpawn.UnitPrefab} has no prefab assigned!");
+                LogError($"ScriptableUnit {pcToSpawn.UnitPrefab} has no prefab assigned!");
                 return;
             }
 
@@ -72,8 +72,7 @@ public class CombatUnitManager : MonoBehaviour
     private void UpdatePCPrefab(ScriptableUnit pc)
     {
         string savedName = Convert.ToString(DatabaseManager.Instance.ExecuteScalar(
-                "SELECT name FROM saved_pcs WHERE id = (@PCID)",
-                ("@PCID", pc.UnitID)
+                $"SELECT name FROM saved_pcs WHERE id = {pc.UnitID}"
             ));
         pc.UnitPrefab.UnitName = savedName;
     }
@@ -81,12 +80,11 @@ public class CombatUnitManager : MonoBehaviour
     public void SpawnMonsters(int encounterID)
     {
         int enemyCount = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-            "SELECT COUNT(*) FROM grid_contents WHERE encounter_id = @encounter_id AND content > 4",
-            ("@encounter_id", encounterID)
+            $"SELECT COUNT(*) FROM grid_contents WHERE encounter_id = {encounterID} AND content > 4"
         ));
         
         DatabaseManager.Instance.ExecuteReader(
-            "SELECT content FROM grid_contents WHERE encounter_id = @encounter_id AND content > 4",
+            $"SELECT content FROM grid_contents WHERE encounter_id = {encounterID} AND content > 4",
             reader =>
             {
                 while (reader.Read())
@@ -101,7 +99,7 @@ public class CombatUnitManager : MonoBehaviour
                     }
                     if (monsterToSpawn.UnitPrefab == null)
                     {
-                        Debug.LogError($"ScriptableUnit {monsterToSpawn.UnitPrefab} has no prefab assigned!");
+                        LogError($"ScriptableUnit {monsterToSpawn.UnitPrefab} has no prefab assigned!");
                         return;
                     }
 
@@ -111,8 +109,7 @@ public class CombatUnitManager : MonoBehaviour
                     spawnTile.SetUnit(spawnedMonster); //Set that spawn tile's unit to the spawned PC
 
                 }
-            },
-            ("@encounter_id", encounterID)
+            }
         );
 
         CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
@@ -138,14 +135,11 @@ public class CombatUnitManager : MonoBehaviour
         }
 
         int maxSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-            "SELECT base_speed FROM unit_resources WHERE id = (@unitID)",
-            ("@unitID", unitID)
+            $"SELECT base_speed FROM unit_resources WHERE id = {unitID}"
         ));
 
         DatabaseManager.Instance.ExecuteNonQuery(
-        "UPDATE unit_resources SET current_speed = (@newSpeed) WHERE id = @unitID",
-            ("@newSpeed", maxSpeed),
-            ("@unitID", unitID)
+            $"UPDATE unit_resources SET current_speed = {maxSpeed} WHERE id = {unitID}"
         );
     }
 
@@ -163,21 +157,19 @@ public class CombatUnitManager : MonoBehaviour
         }
 
         DatabaseManager.Instance.ExecuteNonQuery(
-        "UPDATE unit_resources SET major_action = 1, minor_action = 1, reaction = 1 WHERE id = @unitID",
-            ("@unitID", unitID)
+        $"UPDATE unit_resources SET major_action = 1, minor_action = 1, reaction = 1 WHERE id = {unitID}"
         );
     }
 
     public void DamageUnit(int unitID, int damage, bool wasCrit)
     {
         int damageRemaining = damage;
-
         int currentHP = 0;
         int tempHP = 0;
         int maxHP = 0;
 
         DatabaseManager.Instance.ExecuteReader(
-            "SELECT current_hp, temp_hp, max_hp FROM unit_resources WHERE id = @unitID",
+            $"SELECT current_hp, temp_hp, max_hp FROM unit_resources WHERE id = {unitID}",
             reader =>
             {
                 while (reader.Read())
@@ -186,17 +178,19 @@ public class CombatUnitManager : MonoBehaviour
                     tempHP = Convert.ToInt32(reader["temp_hp"]);
                     maxHP = Convert.ToInt32(reader["max_hp"]);
                 }
-            },
-            ("@unitID", unitID)
+            }
         );
 
         if (tempHP > 0 && tempHP >= damageRemaining)
         {
+            Log("The target had "+tempHP+" temp HP.");
             tempHP -= damageRemaining;
             damageRemaining = 0;
+            Log("They now have "+tempHP+" left.");
         }
-        else
+        else if(tempHP > 0)
         {
+            Log("The target had "+tempHP+" temp HP, which is now all gone.");
             damageRemaining -= tempHP;
             tempHP = 0;
         }
@@ -204,21 +198,26 @@ public class CombatUnitManager : MonoBehaviour
         if (currentHP > 0 && currentHP > damageRemaining)
         {
             currentHP -= damageRemaining;
+            Log("The attacker dealt " + damageRemaining + " damage to the target, who now has " + currentHP + " HP left.");
         }
         else if (currentHP > 0)
         {
+            int damageDealt = damageRemaining;
             damageRemaining -= currentHP;
             if (damageRemaining >= maxHP)
             {
                 //Unit dies
+                Log("The attacker dealt " + damageDealt + " damage to the target, which was enough to instantly kill them!");
             }
             else
             {
                 currentHP = 0;
+                Log("The attacker dealt " + damageDealt + " damage to the target, which knocks them unconscious!");
             }
         }
         else
         {
+            KillUnit(unitID);
             if (damageRemaining >= maxHP)
             {
                 //Unit dies
@@ -235,15 +234,12 @@ public class CombatUnitManager : MonoBehaviour
             }
         }
         
-        Log("Unit's current HP is: " + currentHP);
+
+        // Log("Unit's current HP is: " + currentHP);
 
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE unit_resources SET temp_hp = @tempHP, current_hp = @currentHP "+
-            "WHERE id = @unitID",
-            ("@tempHP", tempHP),
-            ("@currentHP", currentHP),
-            ("@unitID", unitID)
+            $"UPDATE unit_resources SET temp_hp = {tempHP}, current_hp = {currentHP} WHERE id = {unitID}"
         );
     }
 
@@ -252,7 +248,7 @@ public class CombatUnitManager : MonoBehaviour
         int currentHP = 0;
         int maxHP = 0;
         DatabaseManager.Instance.ExecuteReader(
-            "SELECT current_hp, max_hp FROM unit_resources WHERE id = @unitID",
+            $"SELECT current_hp, max_hp FROM unit_resources WHERE id = {unitID}",
             reader =>
             {
                 while (reader.Read())
@@ -260,13 +256,13 @@ public class CombatUnitManager : MonoBehaviour
                     currentHP = Convert.ToInt32(reader["current_hp"]);
                     maxHP = Convert.ToInt32(reader["max_hp"]);
                 }
-            },
-            ("@unitID", unitID)
+            }
         );
 
         if (currentHP + healing >= maxHP)
         {
             currentHP = maxHP;
+            Log("You healed the target to full hit points!");
         }
         else
         {
@@ -276,22 +272,40 @@ public class CombatUnitManager : MonoBehaviour
             }
 
             currentHP += healing;
+            Log("You healed the target by " + healing + " HP!");
         }
 
         Log("Unit's current HP is: " + currentHP);
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE unit_resources SET current_hp = @currentHP WHERE id = @unitID",
-            ("@currentHP", currentHP),
-            ("@unitID", unitID)
+            $"UPDATE unit_resources SET current_hp = {currentHP} WHERE id = {unitID}"
         );
+    }
+    
+    public void KillUnit(int unitID)
+    {
+        ScriptableUnit unit = units.FirstOrDefault(u => u.UnitID == unitID);
+        if (unit.Faction == Faction.Monster)
+        {
+            DestroyImmediate(unit);
+            Log("Unit " + unitID + " has been slain!");
+        }
+        else
+        {
+            string characterName = Convert.ToString(DatabaseManager.Instance.ExecuteScalar(
+                $"SELECT name FROM saved_pcs WHERE id = {unitID}"
+            ));
+            Log(characterName + " has fallen unconscious!");
+        }
+
+        unit.UnitPrefab.occupiedTile.EmptyTile();
+
     }
 
     public int GetAC(int unitID)
     {
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                "SELECT AC FROM unit_stats WHERE id = @unitID",
-                ("@unitID", unitID)
+                $"SELECT AC FROM unit_stats WHERE id = {unitID}"
             ));
     }
     
@@ -305,12 +319,11 @@ public class CombatUnitManager : MonoBehaviour
         if (isProficient)
         {
             return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                "SELECT proficiency FROM unit_stats WHERE id = (@unitID)",
-                ("@unitID", unitID)
+                $"SELECT proficiency FROM unit_stats WHERE id = {unitID}"
             ));
         }
 
-        Debug.Log("Not proficient");
+        Log("Not proficient");
         return 0;
     }
 
