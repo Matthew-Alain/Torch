@@ -6,6 +6,7 @@ public class ScriptableUnit : ScriptableObject
 {
     public Faction Faction;
     public BaseUnit UnitPrefab;
+    public Sprite UnitSprite;
     public int UnitID;
 
 }

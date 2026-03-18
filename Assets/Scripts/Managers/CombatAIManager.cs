@@ -1,10 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class CombatAIManager : MonoBehaviour
 {
     
-    public void CheckUnitsInRange()
-    {
-        
-    }
 }

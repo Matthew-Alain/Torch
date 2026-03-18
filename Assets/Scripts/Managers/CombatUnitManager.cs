@@ -11,6 +11,7 @@ using Unity.VisualScripting;
 public class CombatUnitManager : MonoBehaviour
 {
     private List<ScriptableUnit> units;
+    private List<BaseUnit> baseUnits = new List<BaseUnit>();
     public BasePC SelectedPC; //We only ever want a PC to be actionable
     public static CombatUnitManager Instance;
 
@@ -41,7 +42,7 @@ public class CombatUnitManager : MonoBehaviour
     public void SpawnPCs(int encounterID)
     {
         int numberOfPCs = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                $"SELECT COUNT(*) FROM grid_contents WHERE encounter_id = {encounterID} AND content IN (0,1,2,3,4)"
+                $"SELECT COUNT(*) FROM grid_contents WHERE encounter_id = {encounterID} AND unit_id IN (0,1,2,3,4)"
             ));
 
         for (int i = 0; i < numberOfPCs; i++) //For each PC
@@ -58,9 +59,15 @@ public class CombatUnitManager : MonoBehaviour
                 return;
             }
 
-            UpdatePCPrefab(pcToSpawn);
-
             var spawnedPC = Instantiate(pcToSpawn.UnitPrefab); //Creates the PC unit
+            UpdatePCName(spawnedPC);
+            baseUnits.Add(spawnedPC);
+            
+            var sr = spawnedPC.GetComponent<SpriteRenderer>();
+            if (sr != null && pcToSpawn.UnitSprite != null)
+                sr.sprite = pcToSpawn.UnitSprite;
+
+
             var spawnTile = CombatGridManager.Instance.GetPCSpawnTile(i, encounterID); //Gets which tile that PC is supposed to spawn on
 
             spawnTile.SetUnit(spawnedPC); //Set that spawn tile's unit to the spawned PC
@@ -69,27 +76,27 @@ public class CombatUnitManager : MonoBehaviour
         CombatStateManager.Instance.ChangeState(GameState.SpawnMonsters);
     }
 
-    private void UpdatePCPrefab(ScriptableUnit pc)
+    private void UpdatePCName(BaseUnit pc)
     {
         string savedName = Convert.ToString(DatabaseManager.Instance.ExecuteScalar(
                 $"SELECT name FROM saved_pcs WHERE id = {pc.UnitID}"
             ));
-        pc.UnitPrefab.UnitName = savedName;
+        pc.UnitName = savedName;
     }
 
     public void SpawnMonsters(int encounterID)
     {
         int enemyCount = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-            $"SELECT COUNT(*) FROM grid_contents WHERE encounter_id = {encounterID} AND content > 4"
+            $"SELECT COUNT(*) FROM grid_contents WHERE encounter_id = {encounterID} AND unit_id > 4"
         ));
         
         DatabaseManager.Instance.ExecuteReader(
-            $"SELECT content FROM grid_contents WHERE encounter_id = {encounterID} AND content > 4",
+            $"SELECT unit_id FROM grid_contents WHERE encounter_id = {encounterID} AND unit_id > 4",
             reader =>
             {
                 while (reader.Read())
                 {
-                    int monsterID = Convert.ToInt32(reader["content"]);
+                    int monsterID = Convert.ToInt32(reader["unit_id"]);
 
                     ScriptableUnit monsterToSpawn = units.FirstOrDefault(u => u.UnitID == monsterID); //Get the PCs from the list of units (based on the fact PC unitIDs are manually assigned)
 
@@ -103,8 +110,14 @@ public class CombatUnitManager : MonoBehaviour
                         return;
                     }
 
-                    var spawnedMonster = Instantiate(monsterToSpawn.UnitPrefab); //Creates the PC unit
-                    var spawnTile = CombatGridManager.Instance.GetPCSpawnTile(monsterID, encounterID); //Gets which tile that PC is supposed to spawn on
+                    var spawnedMonster = Instantiate(monsterToSpawn.UnitPrefab); //Creates the monster unit
+                    baseUnits.Add(spawnedMonster);
+
+                    var sr = spawnedMonster.GetComponent<SpriteRenderer>();
+                    if (sr != null && monsterToSpawn.UnitSprite != null)
+                        sr.sprite = monsterToSpawn.UnitSprite;
+
+                    var spawnTile = CombatGridManager.Instance.GetMonsterSpawnTile(monsterID, encounterID); //Gets which tile that PC is supposed to spawn on
 
                     spawnTile.SetUnit(spawnedMonster); //Set that spawn tile's unit to the spawned PC
 
@@ -123,15 +136,10 @@ public class CombatUnitManager : MonoBehaviour
 
     public void RefreshUnitSpeed(int unitID)
     {
-        ScriptableUnit unit = units.FirstOrDefault(u => u.UnitID == unitID); //Get the unit object from the list of units
+        BaseUnit unit = baseUnits.FirstOrDefault(u => u.UnitID == unitID); //Get the unit object from the list of units
         if (unit == null)
         {
-            Log($"No ScriptableUnit found with UnitID {unitID}");
-        }
-        if (unit.UnitPrefab == null)
-        {
-            LogError($"ScriptableUnit {unit.UnitPrefab} has no prefab assigned!");
-            return;
+            Log($"No unit found with UnitID {unitID}");
         }
 
         int maxSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
@@ -145,15 +153,10 @@ public class CombatUnitManager : MonoBehaviour
 
     public void RefreshUnitActions(int unitID)
     {
-        ScriptableUnit unit = units.FirstOrDefault(u => u.UnitID == unitID); //Get the unit object from the list of units
+        BaseUnit unit = baseUnits.FirstOrDefault(u => u.UnitID == unitID); //Get the unit object from the list of units
         if (unit == null)
         {
-            Log($"No ScriptableUnit found with UnitID {unitID}");
-        }
-        if (unit.UnitPrefab == null)
-        {
-            LogError($"ScriptableUnit {unit.UnitPrefab} has no prefab assigned!");
-            return;
+            Log($"No unit found with UnitID {unitID}");
         }
 
         DatabaseManager.Instance.ExecuteNonQuery(
@@ -284,10 +287,11 @@ public class CombatUnitManager : MonoBehaviour
     
     public void KillUnit(int unitID)
     {
-        ScriptableUnit unit = units.FirstOrDefault(u => u.UnitID == unitID);
+        BaseUnit unit = baseUnits.FirstOrDefault(u => u.UnitID == unitID);
+        
         if (unit.Faction == Faction.Monster)
         {
-            DestroyImmediate(unit);
+            Destroy(unit.gameObject);
             Log("Unit " + unitID + " has been slain!");
         }
         else
@@ -298,7 +302,7 @@ public class CombatUnitManager : MonoBehaviour
             Log(characterName + " has fallen unconscious!");
         }
 
-        unit.UnitPrefab.occupiedTile.EmptyTile();
+        unit.occupiedTile.EmptyTile();
 
     }
 
@@ -308,10 +312,10 @@ public class CombatUnitManager : MonoBehaviour
                 $"SELECT AC FROM unit_stats WHERE id = {unitID}"
             ));
     }
-    
+
     public int GetProficiency(int unitID, string proficiency)
     {
-        Log("Getting "+proficiency+" proficiency for unit " + unitID);
+        Log("Getting " + proficiency + " proficiency for unit " + unitID);
         bool isProficient = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar(
             $"SELECT {proficiency} FROM pc_proficiencies WHERE id = {unitID}"
         ));
@@ -325,6 +329,11 @@ public class CombatUnitManager : MonoBehaviour
 
         Log("Not proficient");
         return 0;
+    }
+    
+    public BaseUnit GetUnitByID(int id)
+    {
+        return baseUnits.FirstOrDefault(u => u.UnitID == id);
     }
 
 }

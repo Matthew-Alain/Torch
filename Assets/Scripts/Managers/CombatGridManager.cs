@@ -12,7 +12,9 @@ public class CombatGridManager : MonoBehaviour
     [SerializeField] private Tile grassTile, mountainTile;
     [SerializeField] private Transform cam;
 
-    private Dictionary<Vector2, Tile> tiles;
+
+    public List<Tile> tilesList = new List<Tile>();
+    public Dictionary<Vector2, Tile> tiles;
 
     void Awake()
     {
@@ -39,13 +41,11 @@ public class CombatGridManager : MonoBehaviour
     public void GenerateGrid(int encounterID)
     {
         width = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(   //Get the width of the grid
-            "SELECT MAX(x) FROM grid_contents WHERE encounter_id = (@encounterID)",
-            ("@encounterID", encounterID)
+            $"SELECT MAX(x) FROM grid_contents WHERE encounter_id = {encounterID}"
         ));
 
         height = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(    //Get the height of the grid
-            "SELECT MAX(y) FROM grid_contents WHERE encounter_id = (@encounterID)",
-            ("@encounterID", encounterID)
+            $"SELECT MAX(y) FROM grid_contents WHERE encounter_id = {encounterID}"
         ));
 
 
@@ -54,15 +54,20 @@ public class CombatGridManager : MonoBehaviour
         {
             for (int x = 0; x <= width; x++)
             {
-                int tileID = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar( //Get the character's species
-                    "SELECT tile FROM grid_contents WHERE encounter_id = (@encounterID) AND x = (@x) AND y = (@y)",
-                    ("@encounterID", encounterID),
-                    ("@x", x),
-                    ("@y", y)
-                ));
+                int tileID = 0;
+                int tileType = 0;
+                
+                DatabaseManager.Instance.ExecuteReader( //Get the character's species
+                    $"SELECT tile_type, tile_id FROM grid_contents WHERE encounter_id = {encounterID} AND x = {x} AND y = {y}",
+                    reader =>
+                    {
+                        tileType = Convert.ToInt32(reader["tile_type"]);
+                        tileID = Convert.ToInt32(reader["tile_id"]);
+                    }
+                );
 
                 Tile tileToSpawn = grassTile;
-                switch (tileID)
+                switch (tileType)
                 {
                     case 0:
                         tileToSpawn = grassTile;
@@ -71,14 +76,16 @@ public class CombatGridManager : MonoBehaviour
                         tileToSpawn = mountainTile;
                         break;
                     default:
-                        Debug.Log("No tile information found for "+x+", "+y+" - defaulting to grass tile");
+                        Log("No tile information found for "+x+", "+y+" - defaulting to grass tile");
                         break;
                 }
                 
                 var spawnedTile = Instantiate(tileToSpawn, new Vector3(x, y), Quaternion.identity); //Create that tile
                 spawnedTile.name = $"Tile {x}, {y}"; //Name the tile for tracking purposes
 
-                spawnedTile.Init(encounterID, x, y); //Initialize the tile
+                spawnedTile.Init(encounterID, tileID, x, y); //Initialize the tile
+
+                tilesList.Add(spawnedTile);
 
                 tiles[new Vector2(x, y)] = spawnedTile; //Add the tile to the tiles array
 
@@ -94,9 +101,9 @@ public class CombatGridManager : MonoBehaviour
     {
         int x = -1;
         int y = -1;
-        // return tiles.Where(t => t.Key.x < width / 2 && t.Value.Walkable).OrderBy(t => UnityEngine.Random.value).First().Value;
+
         DatabaseManager.Instance.ExecuteReader(
-            "SELECT x, y FROM grid_contents WHERE content = @PCID AND encounter_id = @encounter_id",
+            $"SELECT x, y FROM grid_contents WHERE unit_id = {PCID} AND encounter_id = {encounterID}",
             reader =>
             {
                 while (reader.Read())
@@ -104,9 +111,7 @@ public class CombatGridManager : MonoBehaviour
                     x = Convert.ToInt32(reader["x"]);
                     y = Convert.ToInt32(reader["y"]);
                 }
-            },
-            ("@PCID", PCID),
-            ("@encounter_id",encounterID)
+            }
         );
 
         Vector2 key = new Vector2(x, y);
@@ -116,17 +121,17 @@ public class CombatGridManager : MonoBehaviour
         }
         else
         {
+            LogWarning("There is a missing tile for unit " + PCID);
             return null; // or handle missing tile
         }
     }
 
     public Tile GetMonsterSpawnTile(int monsterID, int encounterID)
     {
-        // return tiles.Where(t => t.Key.x > width / 2 && t.Value.Walkable).OrderBy(t => UnityEngine.Random.value).First().Value;
         int x = -1;
         int y = -1;
         DatabaseManager.Instance.ExecuteReader(
-            "SELECT x, y FROM grid_contents WHERE content = @PCID AND encounter_id = @encounter_id",
+            $"SELECT x, y FROM grid_contents WHERE unit_id = {monsterID} AND encounter_id = {encounterID}",
             reader =>
             {
                 while (reader.Read())
@@ -134,9 +139,7 @@ public class CombatGridManager : MonoBehaviour
                     x = Convert.ToInt32(reader["x"]);
                     y = Convert.ToInt32(reader["y"]);
                 }
-            },
-            ("@PCID", monsterID),
-            ("@encounter_id",encounterID)
+            }
         );
 
         Vector2 key = new Vector2(x, y);

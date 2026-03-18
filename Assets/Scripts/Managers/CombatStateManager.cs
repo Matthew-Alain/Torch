@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -83,6 +84,7 @@ public class CombatStateManager : MonoBehaviour
                 StartMonsterTurn();
                 break;
             case GameState.MonsterTurn:
+                TakeMonsterTurn();
                 ChangeState(GameState.StartPlayerTurn);
                 break;
             default:
@@ -104,14 +106,57 @@ public class CombatStateManager : MonoBehaviour
 
     private void StartMonsterTurn()
     {
+        DatabaseManager.Instance.ExecuteReader(
+            $"SELECT unit_id FROM grid_contents WHERE unit_id > 4 AND encounter_id = {DatabaseManager.Instance.encounterToLoad}",
+            reader =>
+            {
+                while (reader.Read())
+                {
+                    int monsterID = Convert.ToInt32(reader["unit_id"]);
+                    CombatUnitManager.Instance.RefreshUnitActions(monsterID);
+                    CombatUnitManager.Instance.RefreshUnitSpeed(monsterID);
+                }
+            }
+        );
+
         ChangeState(GameState.MonsterTurn);
     }
-    
+
     public void DeclareAttack(int weaponID)
     {
         declaredWeapon = weaponID;
         ChangeState(GameState.SelectAttackTarget);
         Debug.Log("Selecting attack target");
+    }
+    
+    private void TakeMonsterTurn()
+    {
+        List<int> monsterIDList = new List<int>();
+
+        DatabaseManager.Instance.ExecuteReader(
+            $"SELECT unit_id FROM grid_contents WHERE unit_id > 4 AND encounter_id = {DatabaseManager.Instance.encounterToLoad}",
+            reader =>
+            {
+                while (reader.Read())
+                {
+                    monsterIDList.Add(Convert.ToInt32(reader["unit_id"]));
+                }
+            }
+        );
+
+        for(int i = 0; i < monsterIDList.Count; i++)
+        {
+            BaseMonster currentMonster = (BaseMonster)CombatUnitManager.Instance.GetUnitByID(monsterIDList[i]);
+            currentMonster.CheckValidActions();
+            if(currentMonster.validActions != null)
+            {
+                int targetID = currentMonster.ChooseTarget();
+                int attackID = currentMonster.ChooseAttack();
+                currentMonster.MoveToUnit(targetID);
+                
+                currentMonster.AttackTarget(targetID, attackID);            
+            }
+        }
     }
 }
 

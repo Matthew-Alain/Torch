@@ -5,7 +5,6 @@ using UnityEngine;
 public class CombatDiceRollingManager : MonoBehaviour
 {
     [SerializeField] private static GameObject diceRollInfo, diceRollStatus;
-    private static int PCID = CombatUnitManager.Instance.SelectedPC.UnitID;
 
     public static bool CalculateResult(int dieResult, int modifier, int proficiency, int DC)
     {

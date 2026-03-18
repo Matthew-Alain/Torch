@@ -10,15 +10,16 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     [SerializeField] private GameObject highlight;
     [SerializeField] private bool isWalkable;
     public string TileName;
-    public int tileEncounter, tileX, tileY;
+    public int tileEncounter, tileID, tileX, tileY;
 
     public BaseUnit OccupiedUnit;
     public bool Walkable => isWalkable && OccupiedUnit == null;
 
     //This logic runs on all tiles, but each tile has the chance to override it
-    public virtual void Init(int encounterID, int x, int y)
+    public virtual void Init(int encounterID, int id, int x, int y)
     {
         tileEncounter = encounterID;
+        tileID = id;
         tileX = x;
         tileY = y;
     }
@@ -45,7 +46,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             int oldY = unit.occupiedTile.tileY;
 
             DatabaseManager.Instance.ExecuteNonQuery(
-                $"UPDATE grid_contents SET content = NULL WHERE encounter_id = {tileEncounter} AND x = {oldX} AND y = {oldY}"
+                $"UPDATE grid_contents SET unit_id = NULL WHERE encounter_id = {tileEncounter} AND x = {oldX} AND y = {oldY}"
             );
             unit.occupiedTile.OccupiedUnit = null;
         }
@@ -54,7 +55,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         unit.occupiedTile = this;
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            $"UPDATE grid_contents SET content = {unit.UnitID} WHERE encounter_id = {tileEncounter} AND x = {tileX} AND y = {tileY}"
+            $"UPDATE grid_contents SET unit_id = {unit.UnitID} WHERE encounter_id = {tileEncounter} AND x = {tileX} AND y = {tileY}"
         );
     }
 
@@ -97,7 +98,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                     }
                     else if (isWalkable)
                     {
-                        int distance = CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile, this);
+                        int distance = CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile);
                         bool hasEnoughSpeed = CheckWithinUnitSpeed(distance, CombatUnitManager.Instance.SelectedPC);
                         if (hasEnoughSpeed)
                         {
@@ -146,7 +147,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
                     if(OccupiedUnit!= null && OccupiedUnit.Faction == Faction.Monster)
                     {
-                        int distance = CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile, this) * 5;
+                        int distance = CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile) * 5;
                         if (distance <= melee_range)
                         {
                             CombatActions.MeleeWeaponAttack(CombatUnitManager.Instance.SelectedPC.UnitID, CombatStateManager.Instance.declaredWeapon, OccupiedUnit.UnitID);
@@ -199,10 +200,10 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     }
 
     //Returns the number of tiles between two tiles
-    public int CheckDistance(Tile originTile, Tile targetTile)
+    public int CheckDistance(Tile targetTile)
     {
-        int xDifference = Mathf.Abs(originTile.tileX - targetTile.tileX);
-        int yDifference = Mathf.Abs(originTile.tileY - targetTile.tileY);
+        int xDifference = Mathf.Abs(tileX - targetTile.tileX);
+        int yDifference = Mathf.Abs(tileY - targetTile.tileY);
 
         return Mathf.Max(xDifference, yDifference);
     }
@@ -218,14 +219,14 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         return numberOfTiles <= speedInTiles;
     }
 
-    private void MoveUnit(BaseUnit movingUnit)
+    public void MoveUnit(BaseUnit movingUnit)
     {
         int unitSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
             $"SELECT current_speed FROM unit_resources WHERE id = {movingUnit.UnitID}"
         ));
 
         //If tile is difficult terrain, multiply by 10 instead
-        int amountMoved = CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile, this) * 5;
+        int amountMoved = CheckDistance(movingUnit.occupiedTile) * 5;
 
         int newSpeed = unitSpeed - amountMoved;
 
@@ -249,7 +250,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         Destroy(OccupiedUnit.gameObject);
         OccupiedUnit = null;
         DatabaseManager.Instance.ExecuteNonQuery(
-            $"UPDATE grid_contents SET content = NULL WHERE x = {tileX} AND y = {tileY}"
+            $"UPDATE grid_contents SET unit_id = NULL WHERE x = {tileX} AND y = {tileY}"
         );
     }
 }
