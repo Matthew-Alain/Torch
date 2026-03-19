@@ -13,6 +13,7 @@ public class BaseMonster : BaseUnit
     public void EndTurn()
     {
         validActions.Clear();
+        validTargets.Clear();
     }
 
     public void CheckValidActions()
@@ -63,29 +64,30 @@ public class BaseMonster : BaseUnit
                         for (int i = 0; i < targetTiles.Count; i++)
                         {
                             validTargets.Add(targetTiles[i].OccupiedUnit.UnitID);
+                            Debug.Log("Added unitID "+targetTiles[i].OccupiedUnit.UnitID+" as a valid target");
                             valid = true;
                         }
                     }
 
-                    if (maxNormalRange > 0)
-                    {
-                        List<Tile> targetTiles = CheckUnitsInRange(maxMeleeRange / 5);
-                        for (int i = 0; i < targetTiles.Count; i++)
-                        {
-                            validTargets.Add(targetTiles[i].OccupiedUnit.UnitID);
-                            valid = true;
-                        }
-                    }
+                    // if (maxNormalRange > 0)
+                    // {
+                    //     List<Tile> targetTiles = CheckUnitsInRange(maxNormalRange / 5);
+                    //     for (int i = 0; i < targetTiles.Count; i++)
+                    //     {
+                    //         validTargets.Add(targetTiles[i].OccupiedUnit.UnitID);
+                    //         valid = true;
+                    //     }
+                    // }
                     
-                    if (maxLongRange > 0)
-                    {
-                        List<Tile> targetTiles = CheckUnitsInRange(maxMeleeRange / 5);
-                        for(int i = 0; i < targetTiles.Count; i++)
-                        {
-                            validTargets.Add(targetTiles[i].OccupiedUnit.UnitID);
-                            valid = true;
-                        }
-                    }
+                    // if (maxLongRange > 0)
+                    // {
+                    //     List<Tile> targetTiles = CheckUnitsInRange(maxLongRange / 5);
+                    //     for(int i = 0; i < targetTiles.Count; i++)
+                    //     {
+                    //         validTargets.Add(targetTiles[i].OccupiedUnit.UnitID);
+                    //         valid = true;
+                    //     }
+                    // }
 
                 }
             }
@@ -96,12 +98,12 @@ public class BaseMonster : BaseUnit
 
     public int ChooseTarget()
     {
-        return UnityEngine.Random.Range(0, validTargets.Count);
+        return validTargets[UnityEngine.Random.Range(0, validTargets.Count)];
     }
 
     public int ChooseAttack()
     {
-        return UnityEngine.Random.Range(0, validActions.Count);
+        return validActions[UnityEngine.Random.Range(0, validActions.Count)];
     }
 
     public void AttackTarget(int targetID, int attackID)
@@ -111,23 +113,23 @@ public class BaseMonster : BaseUnit
         switch (attackID)
         {
             case 0:
-                Debug.Log("Targeting unit "+targetID+" with attack 1: "+validActions[attackID]);
-                damage = 1;
+                Debug.Log("Targeting unit " + targetID + " with attack 1");
+                damage = 10;
                 break;
             case 1:
-                Debug.Log("Targeting unit "+targetID+" with attack 2: "+validActions[attackID]);
-                damage = 2;
+                Debug.Log("Targeting unit " + targetID + " with attack 2");
+                damage = 20;
                 break;
             case 2:
-                Debug.Log("Targeting unit "+targetID+" with attack 3: "+validActions[attackID]);
-                damage = 3;
+                Debug.Log("Targeting unit " + targetID + " with attack 3");
+                damage = 30;
                 break;
             default:
                 Debug.Log("Invalid attack");
                 break;
         }
 
-        CombatUnitManager.Instance.DamageUnit(targetID, damage, false);
+        CombatUnitManager.Instance.GetUnitByID(targetID).TakeDamage(damage, false);
     }
 
     public List<Tile> CheckUnitsInRange(int range)
@@ -135,15 +137,19 @@ public class BaseMonster : BaseUnit
         List<Tile> localTileList = CombatGridManager.Instance.tilesList;
         List<Tile> validTargetTileList = new List<Tile>();
 
-        for (int i = 0; i < localTileList.Count; i++)
+        for (int i = 0; i < localTileList.Count; i++) //Check each tile
         {
-            if(localTileList[i].OccupiedUnit != null && localTileList[i].OccupiedUnit.UnitID < 5) 
+            if(localTileList[i].OccupiedUnit != null && localTileList[i].OccupiedUnit.UnitID < 5) //If there is a unit in the tile, and the unit is a PC
             {
                 int distance = occupiedTile.CheckDistance(localTileList[i]);
                 if (distance <= range)
                 {
-                    Debug.Log("There is a valid target " + distance + " tiles away");
+                    Debug.Log("There is a valid target " + distance + " tiles away, which contains unitID "+localTileList[i].OccupiedUnit.UnitID);
                     validTargetTileList.Add(localTileList[i]);
+                }
+                else
+                {
+                    Debug.Log("There is a unit that is out of range at " + localTileList[i].OccupiedUnit.occupiedTile.tileX + ", " + localTileList[i].OccupiedUnit.occupiedTile.tileY);
                 }
             }
         }
@@ -156,6 +162,7 @@ public class BaseMonster : BaseUnit
         int maxMovement = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
             $"SELECT current_speed FROM unit_resources WHERE id = {UnitID}"));
 
+        Debug.Log("Attempting to target unit " + targetID);
         Tile targetUnitTile = CombatUnitManager.Instance.GetUnitByID(targetID).occupiedTile;
 
         List<Tile> path = GetPath(occupiedTile, targetUnitTile, maxMovement);
@@ -183,18 +190,11 @@ public class BaseMonster : BaseUnit
         return null;
     }
 
-    public int GetCurrentSpeed()
-    {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(   //Get the width of the grid
-            $"SELECT current_speed FROM unit_resources WHERE id = {UnitID}"
-        ));
-    }
-
     public bool FindPathRecursive(Tile currentTile, Tile targetTile, HashSet<Vector2Int> visited, List<Tile> path, int stepsRemaining)
     {
         // Debug.Log("Trying tile " +currentTile.tileX+", "+currentTile.tileY);
 
-        if (stepsRemaining < 0)
+        if (stepsRemaining <= 0)
         {
             // Debug.Log("No more steps remaining, stopped at tile " +currentTile.tileX+", "+currentTile.tileY);
             return false;
@@ -248,7 +248,7 @@ public class BaseMonster : BaseUnit
             // Debug.Log(nextTile == null);
             if (nextTile != null)
             {
-                if (FindPathRecursive(nextTile, targetTile, visited, path, stepsRemaining - 1))
+                if (FindPathRecursive(nextTile, targetTile, visited, path, stepsRemaining - 5))
                     return true;
             }
         }

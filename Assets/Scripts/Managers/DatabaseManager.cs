@@ -15,7 +15,7 @@ public class DatabaseManager : MonoBehaviour
     private SqliteConnection connection;
 
     //Data flags to be used between scenes, but not stored in the database
-    public int lastPCEdited;
+    public BasePC lastPCEdited;
     public int lastScene;
     public int encounterToLoad;
 

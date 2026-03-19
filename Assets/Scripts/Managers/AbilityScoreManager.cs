@@ -50,11 +50,11 @@ public class AbilityScoreManager : MonoBehaviour
     public Button btnBack;
     
 
-    private int PCID;
+    private BasePC currentPC;
 
     void Awake()
     {
-        PCID = DatabaseManager.Instance.lastPCEdited;
+        currentPC = DatabaseManager.Instance.lastPCEdited;
 
         DatabaseManager.Instance.ExecuteReader(
             "SELECT base_str, base_dex, base_con, base_int, base_wis, base_cha, " +
@@ -62,7 +62,7 @@ public class AbilityScoreManager : MonoBehaviour
                 "asi_str, asi_dex, asi_con, asi_int, asi_wis, asi_cha, " +
 
                 "current_point_buy, current_origin_points " +
-                $"FROM pc_character_creation_stats WHERE id = {PCID}",
+                $"FROM pc_character_creation_stats WHERE id = {currentPC.UnitID}",
             reader =>
             {
                 while (reader.Read())
@@ -94,29 +94,19 @@ public class AbilityScoreManager : MonoBehaviour
             }
         );
 
-        DatabaseManager.Instance.ExecuteReader(
-            "SELECT strength, dexterity, constitution, intelligence, wisdom, charisma, mSTR, mDEX, mCON, mINT, mWIS, mCHA " +
-                $"FROM unit_stats WHERE id = {PCID}",
-            reader =>
-            {
-                while (reader.Read())
-                {
-                    strength = Convert.ToInt32(reader["strength"]);
-                    dexterity = Convert.ToInt32(reader["dexterity"]);
-                    constitution = Convert.ToInt32(reader["constitution"]);
-                    intelligence = Convert.ToInt32(reader["intelligence"]);
-                    wisdom = Convert.ToInt32(reader["wisdom"]);
-                    charisma = Convert.ToInt32(reader["charisma"]);
+        strength = currentPC.GetStat("strength");
+        dexterity = currentPC.GetStat("dexterity");
+        constitution = currentPC.GetStat("constitution");
+        intelligence = currentPC.GetStat("intelligence");
+        wisdom = currentPC.GetStat("wisdom");
+        charisma = currentPC.GetStat("charisma");
 
-                    mSTR = Convert.ToInt32(reader["mSTR"]);
-                    mDEX = Convert.ToInt32(reader["mDEX"]);
-                    mCON = Convert.ToInt32(reader["mCON"]);
-                    mINT = Convert.ToInt32(reader["mINT"]);
-                    mWIS = Convert.ToInt32(reader["mWIS"]);
-                    mCHA = Convert.ToInt32(reader["mCHA"]);
-                }
-            }
-        );
+        mSTR = currentPC.GetModifier("mSTR");
+        mDEX = currentPC.GetModifier("mDEX");
+        mCON = currentPC.GetModifier("mCON");
+        mINT = currentPC.GetModifier("mINT");
+        mWIS = currentPC.GetModifier("mWIS");
+        mCHA = currentPC.GetModifier("mCHA");
     }
 
     void Start()
@@ -409,7 +399,7 @@ public class AbilityScoreManager : MonoBehaviour
                 $"base_int = {baseStatList[3]}, base_wis = {baseStatList[4]}, base_cha = {baseStatList[5]}, " +
                 $"origin_str = {originStatList[0]}, origin_dex = {originStatList[1]}, origin_con = {originStatList[2]}, " +
                 $"origin_int = {originStatList[3]}, origin_wis = {originStatList[4]}, origin_cha = {originStatList[5]}, " +
-                $"current_point_buy = {currentPointBuy}, current_origin_points = {currentOriginPoints} WHERE id = {PCID}"
+                $"current_point_buy = {currentPointBuy}, current_origin_points = {currentOriginPoints} WHERE id = {currentPC.UnitID}"
         );
 
         DatabaseManager.Instance.ExecuteNonQuery(
@@ -417,7 +407,7 @@ public class AbilityScoreManager : MonoBehaviour
                 $"strength = {finalStatsList[0]}, dexterity = {finalStatsList[1]}, constitution = {finalStatsList[2]}, "+
                 $"intelligence = {finalStatsList[3]}, wisdom = {finalStatsList[4]}, charisma = {finalStatsList[5]}, " +
                 $"mSTR = {modsList[0]}, mDEX = {modsList[1]}, mCON = {modsList[2]}, mINT = {modsList[3]}, mWIS = {modsList[4]}, mCHA = {modsList[5]} " +
-                $"WHERE id = {PCID}"
+                $"WHERE id = {currentPC.UnitID}"
         );
     }
 

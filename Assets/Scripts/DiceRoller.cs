@@ -7,23 +7,10 @@ public class DiceRoller
     public static int Roll(string diceToRoll)
     {
         string[] parts = diceToRoll.Split('d');
-
         int diceNumber = int.Parse(parts[0]);
         int diceSize = int.Parse(parts[1]);
 
-        int total = 0;
-
-        Debug.Log("You are rolling " + diceNumber + "d" + diceSize + " for damage.");
-
-        for (int i = 1; i <= diceNumber; i++)
-        {
-            int result = UnityEngine.Random.Range(1, diceSize + 1);
-            Debug.Log("For roll " + i + "/" + diceNumber + ", you rolled: " + result);
-            total += result;
-        }
-        Debug.Log("For a total of " + total+" damage");
-
-        return total;
+        return Roll(diceNumber, diceSize);
     }
 
     public static int Roll(int diceNumber, int diceSize)
@@ -49,7 +36,6 @@ public class DiceRoller
 
         return Rolld20(withAdvantage, withDisadvantage);
     }
-
 
     public static int Rolld20(bool withAdvantage, bool withDisadvantage)
     {
@@ -83,7 +69,6 @@ public class DiceRoller
 
         return dieRoll;
     }
-
     public static bool CheckForAdvantage()
     {
         bool hasAdvantage = false;

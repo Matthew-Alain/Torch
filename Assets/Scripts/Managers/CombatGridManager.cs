@@ -57,7 +57,7 @@ public class CombatGridManager : MonoBehaviour
                 int tileID = 0;
                 int tileType = 0;
                 
-                DatabaseManager.Instance.ExecuteReader( //Get the character's species
+                DatabaseManager.Instance.ExecuteReader(
                     $"SELECT tile_type, tile_id FROM grid_contents WHERE encounter_id = {encounterID} AND x = {x} AND y = {y}",
                     reader =>
                     {
@@ -166,7 +166,7 @@ public class CombatGridManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        GenerateGrid(DatabaseManager.Instance.encounterToLoad);
+        // GenerateGrid(DatabaseManager.Instance.encounterToLoad);
     }
 
     public void OnPointerClick(PointerEventData eventData)

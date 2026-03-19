@@ -150,16 +150,16 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                         int distance = CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile) * 5;
                         if (distance <= melee_range)
                         {
-                            CombatActions.MeleeWeaponAttack(CombatUnitManager.Instance.SelectedPC.UnitID, CombatStateManager.Instance.declaredWeapon, OccupiedUnit.UnitID);
+                            CombatActions.MeleeWeaponAttack(CombatUnitManager.Instance.SelectedPC, CombatStateManager.Instance.declaredWeapon, OccupiedUnit);
                             
                         }
                         else if (distance <= normal_range)
                         {
-                            CombatActions.RangedWeaponAttack(CombatUnitManager.Instance.SelectedPC.UnitID, OccupiedUnit.UnitID);
+                            CombatActions.RangedWeaponAttack(CombatUnitManager.Instance.SelectedPC, OccupiedUnit);
                         }
                         else if (distance <= long_range)
                         {
-                            CombatActions.LongRangeWeaponAttack(CombatUnitManager.Instance.SelectedPC.UnitID, OccupiedUnit.UnitID);
+                            CombatActions.LongRangeWeaponAttack(CombatUnitManager.Instance.SelectedPC, OccupiedUnit);
                         }
                         else
                         {
@@ -247,8 +247,15 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     
     public void EmptyTile()
     {
-        Destroy(OccupiedUnit.gameObject);
-        OccupiedUnit = null;
+        if(OccupiedUnit != null)
+        {
+            Destroy(OccupiedUnit.gameObject);
+            OccupiedUnit = null;
+        }
+        else
+        {
+            LogWarning("This tile was already empty");
+        }
         DatabaseManager.Instance.ExecuteNonQuery(
             $"UPDATE grid_contents SET unit_id = NULL WHERE x = {tileX} AND y = {tileY}"
         );

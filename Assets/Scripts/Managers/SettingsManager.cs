@@ -5,11 +5,6 @@ using TMPro;
 
 public class SettingsManager : MonoBehaviour
 {
-    
-    private void Awake()
-    {
-        
-    }
 
     public void LoadLastScene()
     {

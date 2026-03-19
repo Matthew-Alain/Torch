@@ -28,7 +28,7 @@ public class DNDClassManager : MonoBehaviour
     public GameObject featurePanel;
 
     //Current PC information
-    public int PCID;
+    public BasePC currentPC;
     private int classWithSubclass = -1;
     int lastClassWithSubclass;
     bool firstLoad = true;
@@ -38,7 +38,7 @@ public class DNDClassManager : MonoBehaviour
 
     void Awake()
     {
-        PCID = DatabaseManager.Instance.lastPCEdited;
+        currentPC = DatabaseManager.Instance.lastPCEdited;
         buttonList.AddRange(row1.GetComponentsInChildren<Button>());
         buttonList.AddRange(row2.GetComponentsInChildren<Button>());
         buttonList.AddRange(row3.GetComponentsInChildren<Button>());
@@ -66,7 +66,7 @@ public class DNDClassManager : MonoBehaviour
     void GetDefaultInfo()
     {
         DatabaseManager.Instance.ExecuteReader(
-            $"SELECT level, dnd_class_1, dnd_class_2, dnd_class_3, dnd_class_4, dnd_class_5, subclass FROM saved_pcs WHERE id = {PCID}",
+            $"SELECT level, dnd_class_1, dnd_class_2, dnd_class_3, dnd_class_4, dnd_class_5, subclass FROM saved_pcs WHERE id = {currentPC.UnitID}",
             reader =>
             {
                 while (reader.Read())
@@ -334,28 +334,28 @@ public class DNDClassManager : MonoBehaviour
     {
         DatabaseManager.Instance.ExecuteNonQuery(
             $"UPDATE saved_pcs SET dnd_class_1 = {dndClass1.value}, dnd_class_2 = {dndClass2.value}, dnd_class_3 = {dndClass3.value}, " +
-            $"dnd_class_4 = {dndClass4.value}, dnd_class_5 = {dndClass5.value}, subclass = {subclass.value}, level = {level.value + 1} WHERE id = {PCID}"
+            $"dnd_class_4 = {dndClass4.value}, dnd_class_5 = {dndClass5.value}, subclass = {subclass.value}, level = {level.value + 1} WHERE id = {currentPC.UnitID}"
         );
 
         if (level.value < 1)
-            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET dnd_class_2 = null WHERE id = {PCID}");
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET dnd_class_2 = null WHERE id = {currentPC.UnitID}");
 
         if (level.value < 2)
-            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET dnd_class_3 = null WHERE id = {PCID}");
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET dnd_class_3 = null WHERE id = {currentPC.UnitID}");
 
         if (level.value < 3)
-            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET dnd_class_4 = null WHERE id = {PCID}");
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET dnd_class_4 = null WHERE id = {currentPC.UnitID}");
 
         if (level.value < 4)
-            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET dnd_class_5 = null WHERE id = {PCID}");
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET dnd_class_5 = null WHERE id = {currentPC.UnitID}");
 
         if (level.value == 4)
-            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_stats SET proficiency = 3 WHERE id = {PCID}");
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_stats SET proficiency = 3 WHERE id = {currentPC.UnitID}");
         else
-            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_stats SET proficiency = 2 WHERE id = {PCID}");
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_stats SET proficiency = 2 WHERE id = {currentPC.UnitID}");
 
         if (classWithSubclass == -1)
-            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET subclass = null WHERE id = {PCID}");
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET subclass = null WHERE id = {currentPC.UnitID}");
 
         UpdateProficiencies();
     }
@@ -414,7 +414,7 @@ public class DNDClassManager : MonoBehaviour
             $"martial_light = {martial_light}, " +
             $"martial_finesse = {martial_finesse}, " +
             $"all_martial = {all_martial} " +
-            $"WHERE id = {PCID}"
+            $"WHERE id = {currentPC.UnitID}"
         );
     }
 
@@ -469,7 +469,7 @@ public class DNDClassManager : MonoBehaviour
         }
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            $"UPDATE pc_proficiencies SET light_armor = {light}, medium_armor = {medium}, heavy_armor = {heavy}, shields = {shields} WHERE id = {PCID}"
+            $"UPDATE pc_proficiencies SET light_armor = {light}, medium_armor = {medium}, heavy_armor = {heavy}, shields = {shields} WHERE id = {currentPC.UnitID}"
         );
     }
     
@@ -514,7 +514,7 @@ public class DNDClassManager : MonoBehaviour
 
         DatabaseManager.Instance.ExecuteNonQuery(
             $"UPDATE pc_proficiencies SET str_save = {str_save}, dex_save = {dex_save}, con_save = {con_save}, "+
-            $"int_save = {int_save}, wis_save = {wis_save}, cha_save = {cha_save} WHERE id = {PCID}"
+            $"int_save = {int_save}, wis_save = {wis_save}, cha_save = {cha_save} WHERE id = {currentPC.UnitID}"
         );
     }
 

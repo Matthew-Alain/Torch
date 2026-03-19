@@ -4,26 +4,55 @@ using UnityEngine;
 
 public class BasePC : BaseUnit
 {
-    public string GetClass()
+    public string GetClassName()
     {
-        int class_id = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar( //Get the character's level
-            "SELECT dnd_class_1 FROM saved_pcs WHERE id = (@PCID)",
-            ("@PCID", UnitID)
-        ));
-
-        string dnd_class_1 = Convert.ToString(DatabaseManager.Instance.ExecuteScalar( //Get the character's level
-            "SELECT name FROM dndclasses WHERE id = (@PCID)",
-            ("@PCID", class_id)
-        ));
-        return dnd_class_1;
+        int class_id = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dnd_class_1 FROM saved_pcs WHERE id = {UnitID}"));
+        return Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT name FROM dndclasses WHERE id = {class_id}"));
     }
 
-    public int GetSpeed()
+    public int GetClassID()
     {
-        int savedSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar( //Get the character's level
-            "SELECT speed FROM saved_pcs WHERE id = (@PCID)",
-            ("@PCID", UnitID)
-        ));
-        return savedSpeed;
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dnd_class_1 FROM saved_pcs WHERE id = {UnitID}"));
     }
+
+    public int GetSpecies()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT species FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public int GetOriginFeat()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT origin_feat FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public int GetMainhandID()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT main_hand_item FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public string GetMainhandName()
+    {
+        return Convert.ToString($"SELECT name FROM weapons WHERE id = {GetMainhandID()}");
+    }
+
+    public int GetOffhandID()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT off_hand_item FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public string GetOffhandName()
+    {
+        return Convert.ToString($"SELECT name FROM weapons WHERE id = {GetOffhandID()}");
+    }
+
+    public int GetArmorID()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT equipped_armor FROM saved_pcs WHERE id = {UnitID}"));
+    }
+    
+    public string GetArmorName()
+    {
+        return Convert.ToString($"SELECT name FROM weapons WHERE id = {GetArmorID()}");
+    }
+
 }

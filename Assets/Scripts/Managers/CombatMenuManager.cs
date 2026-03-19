@@ -139,7 +139,7 @@ public class CombatMenuManager : MonoBehaviour
         List<MenuOption> majorOptions = new List<MenuOption>()
         {
             new MenuOption("Attack", OpenAttackMenu),
-            new MenuOption("Dash", () => CombatActions.Dash(CombatUnitManager.Instance.SelectedPC.UnitID)),
+            new MenuOption("Dash", () => CombatActions.Dash(CombatUnitManager.Instance.SelectedPC)),
             new MenuOption("Disengage", () => Debug.Log("Disengage")),
             new MenuOption("Dodge", () => Debug.Log("Dodge")),
             new MenuOption("Help", () => Debug.Log("Help")),
@@ -147,7 +147,7 @@ public class CombatMenuManager : MonoBehaviour
         };
 
         // Conditional option
-        if (CombatUnitManager.Instance.SelectedPC.GetClass() == "Wizard")
+        if (CombatUnitManager.Instance.SelectedPC.GetClassName() == "Wizard")
         {
             majorOptions.Add(new MenuOption("Magic", () => Debug.Log("Magic")));
         }
@@ -177,16 +177,16 @@ public class CombatMenuManager : MonoBehaviour
 
         List<MenuOption> attackOptions = new List<MenuOption>();
 
-        if (mainHand != 39)
+        string mainHandText = CombatUnitManager.Instance.SelectedPC.GetMainhandName();
+        if (mainHandText != "Shield")
         {
-            string mainHandText = Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT name FROM weapons WHERE id = {mainHand}"));
-            attackOptions.Add(new MenuOption("Mainhand (" + mainHandText + ")", () => CombatStateManager.Instance.DeclareAttack(mainHand)));
+            attackOptions.Add(new MenuOption($"Mainhand ({mainHandText})", () => CombatStateManager.Instance.DeclareAttack(mainHand)));
         }
         
-        if(offHand != 39)
+        string offHandText = CombatUnitManager.Instance.SelectedPC.GetOffhandName();
+        if(offHandText != "Shield")
         {
-            string offHandText = Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT name FROM weapons WHERE id = {offHand}"));
-            attackOptions.Add(new MenuOption("Offhand (" + offHandText + ")", () => CombatStateManager.Instance.DeclareAttack(offHand)));
+            attackOptions.Add(new MenuOption($"Offhand ({offHandText})", () => CombatStateManager.Instance.DeclareAttack(offHand)));
         }
 
         // Back option
@@ -203,9 +203,9 @@ public class CombatMenuManager : MonoBehaviour
         };
 
         // Conditional option
-        if (CombatUnitManager.Instance.SelectedPC.GetClass() == "Barbarian")
+        if (CombatUnitManager.Instance.SelectedPC.GetClassName() == "Barbarian")
         {
-            minorOptions.Add(new MenuOption("Rage", () => CombatUnitManager.Instance.HealUnit(CombatUnitManager.Instance.SelectedPC.UnitID, 1)));
+            minorOptions.Add(new MenuOption("Rage", () => CombatUnitManager.Instance.SelectedPC.RestoreHealth(1)));
         }
 
         // Back option

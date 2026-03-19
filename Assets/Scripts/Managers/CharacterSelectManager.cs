@@ -37,7 +37,7 @@ public class CharacterSelectManager : MonoBehaviour
 
     }
     
-    public void SetPCToEdit(int PCID)
+    public void SetPCToEdit(BasePC PCID)
     {
         DatabaseManager.Instance.lastPCEdited = PCID;
     }

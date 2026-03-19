@@ -242,10 +242,10 @@ MonoBehaviour:
       - m_Target: {fileID: 1956368707}
         m_TargetAssemblyTypeName: CharacterSelectManager, Assembly-CSharp
         m_MethodName: SetPCToEdit
-        m_Mode: 3
+        m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_ObjectArgument: {fileID: 5860176531196710031, guid: 4baf09885d9b0fb4badc0d2817360e01, type: 3}
+          m_ObjectArgumentAssemblyTypeName: BasePC, Assembly-CSharp
           m_IntArgument: 4
           m_FloatArgument: 0
           m_StringArgument: 
@@ -660,10 +660,10 @@ MonoBehaviour:
       - m_Target: {fileID: 1956368707}
         m_TargetAssemblyTypeName: CharacterSelectManager, Assembly-CSharp
         m_MethodName: SetPCToEdit
-        m_Mode: 3
+        m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_ObjectArgument: {fileID: 5860176531196710031, guid: 67558e858820f724295ecd057586a0c5, type: 3}
+          m_ObjectArgumentAssemblyTypeName: BasePC, Assembly-CSharp
           m_IntArgument: 2
           m_FloatArgument: 0
           m_StringArgument: 
@@ -804,10 +804,10 @@ MonoBehaviour:
       - m_Target: {fileID: 1956368707}
         m_TargetAssemblyTypeName: CharacterSelectManager, Assembly-CSharp
         m_MethodName: SetPCToEdit
-        m_Mode: 3
+        m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_ObjectArgument: {fileID: 5860176531196710031, guid: cf4c457106ea8b4499ade51f8b989c52, type: 3}
+          m_ObjectArgumentAssemblyTypeName: BasePC, Assembly-CSharp
           m_IntArgument: 3
           m_FloatArgument: 0
           m_StringArgument: 
@@ -948,10 +948,10 @@ MonoBehaviour:
       - m_Target: {fileID: 1956368707}
         m_TargetAssemblyTypeName: CharacterSelectManager, Assembly-CSharp
         m_MethodName: SetPCToEdit
-        m_Mode: 3
+        m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_ObjectArgument: {fileID: 5860176531196710031, guid: 3eb42f04d2cf80f41a6c4f5815e432a3, type: 3}
+          m_ObjectArgumentAssemblyTypeName: BasePC, Assembly-CSharp
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -1229,10 +1229,10 @@ MonoBehaviour:
       - m_Target: {fileID: 1956368707}
         m_TargetAssemblyTypeName: CharacterSelectManager, Assembly-CSharp
         m_MethodName: SetPCToEdit
-        m_Mode: 3
+        m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_ObjectArgument: {fileID: 5860176531196710031, guid: bb84bcb96c2f60244844d205012ba567, type: 3}
+          m_ObjectArgumentAssemblyTypeName: BasePC, Assembly-CSharp
           m_IntArgument: 1
           m_FloatArgument: 0
           m_StringArgument: 

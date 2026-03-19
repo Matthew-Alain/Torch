@@ -17,11 +17,12 @@ public class EquipmentManager : MonoBehaviour
 
     public TMP_Text baseACLabel, dexBonusLabel, totalACLabel, minStrLabel, loudLabel;
     public Button btnBack;
-    private int PCID;
+    private BasePC currentPC;
     
     void Awake()
     {
-        PCID = DatabaseManager.Instance.lastPCEdited;
+        currentPC = DatabaseManager.Instance.lastPCEdited;
+        
         mainRow.AddRange(mainTextElements.GetComponentsInChildren<TMP_Text>());
         offRow.AddRange(offTextElements.GetComponentsInChildren<TMP_Text>());
 
@@ -42,21 +43,8 @@ public class EquipmentManager : MonoBehaviour
 
     void GetDefaultInfo()
     {
-        DatabaseManager.Instance.ExecuteReader(
-            $"SELECT main_hand_item, off_hand_item, equipped_armor FROM saved_pcs WHERE id = {PCID}",
-            reader =>
-            {
-                while (reader.Read())
-                {
-                    mainHand.value = Convert.ToInt32(reader["main_hand_item"]);
-                    offHand.value = Convert.ToInt32(reader["off_hand_item"]);
-                    armor.value = Convert.ToInt32(reader["equipped_armor"]);
-
-                    UpdateMainHand(mainHand.value);
-                    UpdateArmor(armor.value);
-                }
-            }
-        );
+        UpdateMainHand(currentPC.GetMainhandID());
+        UpdateArmor(currentPC.GetArmorID());
     }
 
     void UpdateMainHand(int index)
@@ -266,10 +254,7 @@ public class EquipmentManager : MonoBehaviour
 
                     baseACLabel.text = baseAC.ToString();
 
-                    int dexBonus = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                            "SELECT mDEX FROM unit_stats WHERE id = @PCID",
-                            ("@PCID", PCID)
-                        ));
+                    int dexBonus = currentPC.GetModifier("mDEX");
 
                     if (armorType == 2)
                     {
@@ -317,11 +302,11 @@ public class EquipmentManager : MonoBehaviour
     void SaveEquipment()
     {
         DatabaseManager.Instance.ExecuteNonQuery(
-            $"UPDATE saved_pcs SET main_hand_item = {mainHand.value}, off_hand_item = {offHand.value}, equipped_armor = {armor.value} WHERE id = {PCID}"
+            $"UPDATE saved_pcs SET main_hand_item = {mainHand.value}, off_hand_item = {offHand.value}, equipped_armor = {armor.value} WHERE id = {currentPC.UnitID}"
         );
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            $"UPDATE unit_stats SET AC = {totalACLabel.text} WHERE id = {PCID}"
+            $"UPDATE unit_stats SET AC = {totalACLabel.text} WHERE id = {currentPC.UnitID}"
         );
     }
 }

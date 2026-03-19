@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class CombatStateManager : MonoBehaviour
 {
@@ -95,10 +96,13 @@ public class CombatStateManager : MonoBehaviour
 
     private void StartPlayerTurn()
     {
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < CombatUnitManager.Instance.activePCIDs.Count; i++)
         {
-            CombatUnitManager.Instance.RefreshUnitSpeed(i);
-            CombatUnitManager.Instance.RefreshUnitActions(i);
+            int currentUnitID = CombatUnitManager.Instance.activePCIDs[i];
+            BaseUnit currentUnitBase = CombatUnitManager.Instance.GetUnitByID(currentUnitID);
+
+            currentUnitBase.RefreshSpeed();
+            currentUnitBase.RefreshActions();
         }
 
         ChangeState(GameState.PlayerTurn);
@@ -106,18 +110,30 @@ public class CombatStateManager : MonoBehaviour
 
     private void StartMonsterTurn()
     {
-        DatabaseManager.Instance.ExecuteReader(
-            $"SELECT unit_id FROM grid_contents WHERE unit_id > 4 AND encounter_id = {DatabaseManager.Instance.encounterToLoad}",
-            reader =>
-            {
-                while (reader.Read())
-                {
-                    int monsterID = Convert.ToInt32(reader["unit_id"]);
-                    CombatUnitManager.Instance.RefreshUnitActions(monsterID);
-                    CombatUnitManager.Instance.RefreshUnitSpeed(monsterID);
-                }
-            }
-        );
+        // DatabaseManager.Instance.ExecuteReader(
+        //     $"SELECT unit_id FROM grid_contents WHERE unit_id > 4 AND encounter_id = {DatabaseManager.Instance.encounterToLoad}",
+        //     reader =>
+        //     {
+        //         while (reader.Read())
+        //         {
+        //             int monsterID = Convert.ToInt32(reader["unit_id"]);
+        //             CombatUnitManager.Instance.RefreshUnitActions(monsterID);
+        //             CombatUnitManager.Instance.RefreshUnitSpeed(monsterID);
+        //         }
+        //     }
+        // );
+
+        List<int> monsterIDList = CombatUnitManager.Instance.activeMonsterIDs;
+
+        for (int i = 0; i < CombatUnitManager.Instance.activeMonsterIDs.Count; i++)
+        {
+            int currentMonsterID = CombatUnitManager.Instance.activeMonsterIDs[i];
+            BaseUnit currentMonsterBase = CombatUnitManager.Instance.GetUnitByID(currentMonsterID);
+
+            currentMonsterBase.RefreshSpeed();
+            currentMonsterBase.RefreshActions();
+
+        }
 
         ChangeState(GameState.MonsterTurn);
     }
@@ -128,34 +144,55 @@ public class CombatStateManager : MonoBehaviour
         ChangeState(GameState.SelectAttackTarget);
         Debug.Log("Selecting attack target");
     }
-    
+
     private void TakeMonsterTurn()
     {
-        List<int> monsterIDList = new List<int>();
+        // List<int> monsterIDList = new List<int>();
 
-        DatabaseManager.Instance.ExecuteReader(
-            $"SELECT unit_id FROM grid_contents WHERE unit_id > 4 AND encounter_id = {DatabaseManager.Instance.encounterToLoad}",
-            reader =>
-            {
-                while (reader.Read())
-                {
-                    monsterIDList.Add(Convert.ToInt32(reader["unit_id"]));
-                }
-            }
-        );
+        // DatabaseManager.Instance.ExecuteReader(
+        //     $"SELECT unit_id FROM grid_contents WHERE unit_id > 4 AND encounter_id = {DatabaseManager.Instance.encounterToLoad}",
+        //     reader =>
+        //     {
+        //         while (reader.Read())
+        //         {
+        //             monsterIDList.Add(Convert.ToInt32(reader["unit_id"]));
+        //             Debug.Log($"Unit id: {Convert.ToInt32(reader["unit_id"])}");
+        //         }
+        //     }
+        // );
 
-        for(int i = 0; i < monsterIDList.Count; i++)
+        List<int> monsterIDList = CombatUnitManager.Instance.activeMonsterIDs;
+
+        for (int i = 0; i < CombatUnitManager.Instance.activeMonsterIDs.Count; i++)
         {
+                    Debug.Log("GetUnitByID: " + CombatUnitManager.Instance.GetUnitByID(monsterIDList[i]) + ", Type: " +
+                    CombatUnitManager.Instance.GetUnitByID(monsterIDList[i]).GetType().ToString());
+            
             BaseMonster currentMonster = (BaseMonster)CombatUnitManager.Instance.GetUnitByID(monsterIDList[i]);
             currentMonster.CheckValidActions();
-            if(currentMonster.validActions != null)
+            if (currentMonster.validActions != null)
             {
                 int targetID = currentMonster.ChooseTarget();
                 int attackID = currentMonster.ChooseAttack();
                 currentMonster.MoveToUnit(targetID);
-                
-                currentMonster.AttackTarget(targetID, attackID);            
+
+                currentMonster.AttackTarget(targetID, attackID);
+                currentMonster.EndTurn();
             }
+        }
+    }
+    
+    public void CheckForGameOver()
+    {
+        if (Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar("SELECT COUNT(*) FROM grid_contents WHERE unit_id > 4")) <= 0)
+        {
+            Debug.LogWarning("The last monster has been killed, you win!");
+            SceneManager.LoadScene(0);
+        }
+        else if (Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar("SELECT COUNT(*) FROM grid_contents WHERE unit_id <= 4")) <= 0)
+        {
+            Debug.LogWarning("The last PC has been killed, you lose...");
+            SceneManager.LoadScene(0);
         }
     }
 }

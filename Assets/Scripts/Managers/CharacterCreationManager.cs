@@ -14,11 +14,11 @@ public class CharacterCreationManager : MonoBehaviour
     public Button btnSaveCharacter;
 
     //Current PC information
-    public int PCID;
+    public BasePC currentPC;
 
     void Awake()
     {
-        PCID = DatabaseManager.Instance.lastPCEdited;
+        currentPC = DatabaseManager.Instance.lastPCEdited;
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -30,27 +30,14 @@ public class CharacterCreationManager : MonoBehaviour
             Debug.Log("No character name assigned");
             return;
         }
-        GetCharacterName(); //Populate the character name
+        characterName.text = currentPC.GetName(); //Populate the character name
 
         btnSaveCharacter.onClick.AddListener(SaveCharacter);
     }
 
-    void GetCharacterName()
-    {
-        string savedName = Convert.ToString(DatabaseManager.Instance.ExecuteScalar( //Get the character's name
-            $"SELECT name FROM saved_pcs WHERE id = {PCID}"
-        ));
-        characterName.text = savedName;
-        
-    }
-
     void SaveCharacter()
     {
-        int rowsAffected = DatabaseManager.Instance.ExecuteNonQuery(
-            $"UPDATE saved_pcs SET name = \"{characterName.text}\" WHERE id = {PCID}"
-        );
-
-        // Debug.Log("Rows updated: " + rowsAffected);
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET name = \"{characterName.text}\" WHERE id = {currentPC.UnitID}");
     }
 
 }

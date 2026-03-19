@@ -107,4 +107,7 @@ MonoBehaviour:
   occupiedTile: {fileID: 0}
   Faction: 1
   UnitName: Barbarian
-  UnitID: 6
+  UnitID: 5
+  actionList: 0000000001000000
+  validActions: 
+  validTargets: 

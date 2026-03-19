@@ -12,6 +12,8 @@ public class CombatUnitManager : MonoBehaviour
 {
     private List<ScriptableUnit> units;
     private List<BaseUnit> baseUnits = new List<BaseUnit>();
+    public List<int> activePCIDs = new List<int>();
+    public List<int> activeMonsterIDs = new List<int>();
     public BasePC SelectedPC; //We only ever want a PC to be actionable
     public static CombatUnitManager Instance;
 
@@ -41,17 +43,16 @@ public class CombatUnitManager : MonoBehaviour
 
     public void SpawnPCs(int encounterID)
     {
-        int numberOfPCs = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                $"SELECT COUNT(*) FROM grid_contents WHERE encounter_id = {encounterID} AND unit_id IN (0,1,2,3,4)"
-            ));
 
-        for (int i = 0; i < numberOfPCs; i++) //For each PC
+        UpdateActivePCList();
+
+        for (int i = 0; i < activePCIDs.Count; i++) //For each PC
         {
-            ScriptableUnit pcToSpawn = units.FirstOrDefault(u => u.UnitID == i); //Get the PCs from the list of units (based on the fact PC unitIDs are manually assigned)
+            ScriptableUnit pcToSpawn = units.FirstOrDefault(u => u.UnitID == activePCIDs[i]); //Get the PCs from the list of units (based on the fact PC unitIDs are manually assigned)
 
             if (pcToSpawn == null)
             {
-                Log($"No ScriptableUnit found with UnitID {i}");
+                Log($"No ScriptableUnit found with UnitID {activePCIDs[i]}");
             }
             if (pcToSpawn.UnitPrefab == null)
             {
@@ -60,7 +61,7 @@ public class CombatUnitManager : MonoBehaviour
             }
 
             var spawnedPC = Instantiate(pcToSpawn.UnitPrefab); //Creates the PC unit
-            UpdatePCName(spawnedPC);
+            spawnedPC.SetName(spawnedPC.GetName());
             baseUnits.Add(spawnedPC);
             
             var sr = spawnedPC.GetComponent<SpriteRenderer>();
@@ -68,7 +69,7 @@ public class CombatUnitManager : MonoBehaviour
                 sr.sprite = pcToSpawn.UnitSprite;
 
 
-            var spawnTile = CombatGridManager.Instance.GetPCSpawnTile(i, encounterID); //Gets which tile that PC is supposed to spawn on
+            var spawnTile = CombatGridManager.Instance.GetPCSpawnTile(activePCIDs[i], encounterID); //Gets which tile that PC is supposed to spawn on
 
             spawnTile.SetUnit(spawnedPC); //Set that spawn tile's unit to the spawned PC
         }
@@ -76,54 +77,39 @@ public class CombatUnitManager : MonoBehaviour
         CombatStateManager.Instance.ChangeState(GameState.SpawnMonsters);
     }
 
-    private void UpdatePCName(BaseUnit pc)
-    {
-        string savedName = Convert.ToString(DatabaseManager.Instance.ExecuteScalar(
-                $"SELECT name FROM saved_pcs WHERE id = {pc.UnitID}"
-            ));
-        pc.UnitName = savedName;
-    }
-
     public void SpawnMonsters(int encounterID)
     {
-        int enemyCount = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-            $"SELECT COUNT(*) FROM grid_contents WHERE encounter_id = {encounterID} AND unit_id > 4"
-        ));
+        // int enemyCount = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
+        //     $"SELECT COUNT(*) FROM grid_contents WHERE encounter_id = {encounterID} AND unit_id > 4"
+        // ));
+
+        UpdateActiveMonsterList();
         
-        DatabaseManager.Instance.ExecuteReader(
-            $"SELECT unit_id FROM grid_contents WHERE encounter_id = {encounterID} AND unit_id > 4",
-            reader =>
+        for(int i = 0; i < activeMonsterIDs.Count; i++)
+        {
+            ScriptableUnit monsterToSpawn = units.FirstOrDefault(u => u.UnitID == activeMonsterIDs[i]); //Get the PCs from the list of units (based on the fact PC unitIDs are manually assigned)
+
+            if (monsterToSpawn == null)
             {
-                while (reader.Read())
-                {
-                    int monsterID = Convert.ToInt32(reader["unit_id"]);
-
-                    ScriptableUnit monsterToSpawn = units.FirstOrDefault(u => u.UnitID == monsterID); //Get the PCs from the list of units (based on the fact PC unitIDs are manually assigned)
-
-                    if (monsterToSpawn == null)
-                    {
-                        Log($"No ScriptableUnit found with UnitID {monsterID}");
-                    }
-                    if (monsterToSpawn.UnitPrefab == null)
-                    {
-                        LogError($"ScriptableUnit {monsterToSpawn.UnitPrefab} has no prefab assigned!");
-                        return;
-                    }
-
-                    var spawnedMonster = Instantiate(monsterToSpawn.UnitPrefab); //Creates the monster unit
-                    baseUnits.Add(spawnedMonster);
-
-                    var sr = spawnedMonster.GetComponent<SpriteRenderer>();
-                    if (sr != null && monsterToSpawn.UnitSprite != null)
-                        sr.sprite = monsterToSpawn.UnitSprite;
-
-                    var spawnTile = CombatGridManager.Instance.GetMonsterSpawnTile(monsterID, encounterID); //Gets which tile that PC is supposed to spawn on
-
-                    spawnTile.SetUnit(spawnedMonster); //Set that spawn tile's unit to the spawned PC
-
-                }
+                Log($"No ScriptableUnit found with UnitID {activeMonsterIDs[i]}");
             }
-        );
+            if (monsterToSpawn.UnitPrefab == null)
+            {
+                LogError($"ScriptableUnit {monsterToSpawn.UnitPrefab} has no prefab assigned!");
+                return;
+            }
+
+            var spawnedMonster = Instantiate(monsterToSpawn.UnitPrefab); //Creates the monster unit
+            baseUnits.Add(spawnedMonster);
+
+            var sr = spawnedMonster.GetComponent<SpriteRenderer>();
+            if (sr != null && monsterToSpawn.UnitSprite != null)
+                sr.sprite = monsterToSpawn.UnitSprite;
+
+            var spawnTile = CombatGridManager.Instance.GetMonsterSpawnTile(activeMonsterIDs[i], encounterID); //Gets which tile that PC is supposed to spawn on
+
+            spawnTile.SetUnit(spawnedMonster); //Set that spawn tile's unit to the spawned PC
+        }
 
         CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
     }
@@ -134,161 +120,29 @@ public class CombatUnitManager : MonoBehaviour
         CombatMenuManager.Instance.ShowSelectedPC(pc);
     }
 
-    public void RefreshUnitSpeed(int unitID)
+    public void FallUnconscious(int unitID)
     {
-        BaseUnit unit = baseUnits.FirstOrDefault(u => u.UnitID == unitID); //Get the unit object from the list of units
-        if (unit == null)
-        {
-            Log($"No unit found with UnitID {unitID}");
-        }
-
-        int maxSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-            $"SELECT base_speed FROM unit_resources WHERE id = {unitID}"
-        ));
-
-        DatabaseManager.Instance.ExecuteNonQuery(
-            $"UPDATE unit_resources SET current_speed = {maxSpeed} WHERE id = {unitID}"
-        );
-    }
-
-    public void RefreshUnitActions(int unitID)
-    {
-        BaseUnit unit = baseUnits.FirstOrDefault(u => u.UnitID == unitID); //Get the unit object from the list of units
-        if (unit == null)
-        {
-            Log($"No unit found with UnitID {unitID}");
-        }
-
-        DatabaseManager.Instance.ExecuteNonQuery(
-        $"UPDATE unit_resources SET major_action = 1, minor_action = 1, reaction = 1 WHERE id = {unitID}"
-        );
-    }
-
-    public void DamageUnit(int unitID, int damage, bool wasCrit)
-    {
-        int damageRemaining = damage;
-        int currentHP = 0;
-        int tempHP = 0;
-        int maxHP = 0;
-
-        DatabaseManager.Instance.ExecuteReader(
-            $"SELECT current_hp, temp_hp, max_hp FROM unit_resources WHERE id = {unitID}",
-            reader =>
-            {
-                while (reader.Read())
-                {
-                    currentHP = Convert.ToInt32(reader["current_hp"]);
-                    tempHP = Convert.ToInt32(reader["temp_hp"]);
-                    maxHP = Convert.ToInt32(reader["max_hp"]);
-                }
-            }
-        );
-
-        if (tempHP > 0 && tempHP >= damageRemaining)
-        {
-            Log("The target had "+tempHP+" temp HP.");
-            tempHP -= damageRemaining;
-            damageRemaining = 0;
-            Log("They now have "+tempHP+" left.");
-        }
-        else if(tempHP > 0)
-        {
-            Log("The target had "+tempHP+" temp HP, which is now all gone.");
-            damageRemaining -= tempHP;
-            tempHP = 0;
-        }
-
-        if (currentHP > 0 && currentHP > damageRemaining)
-        {
-            currentHP -= damageRemaining;
-            Log("The attacker dealt " + damageRemaining + " damage to the target, who now has " + currentHP + " HP left.");
-        }
-        else if (currentHP > 0)
-        {
-            int damageDealt = damageRemaining;
-            damageRemaining -= currentHP;
-            if (damageRemaining >= maxHP)
-            {
-                //Unit dies
-                Log("The attacker dealt " + damageDealt + " damage to the target, which was enough to instantly kill them!");
-            }
-            else
-            {
-                currentHP = 0;
-                Log("The attacker dealt " + damageDealt + " damage to the target, which knocks them unconscious!");
-            }
-        }
-        else
-        {
-            KillUnit(unitID);
-            if (damageRemaining >= maxHP)
-            {
-                //Unit dies
-            }
-            else if (wasCrit)
-            {
-                //Unit fails two death saves
-                //Check for death
-            }
-            else
-            {
-                //Unit fails one death save
-                //Check for death
-            }
-        }
+        BaseUnit unit = GetUnitByID(unitID);
         
-
-        // Log("Unit's current HP is: " + currentHP);
-
-
-        DatabaseManager.Instance.ExecuteNonQuery(
-            $"UPDATE unit_resources SET temp_hp = {tempHP}, current_hp = {currentHP} WHERE id = {unitID}"
-        );
-    }
-
-    public void HealUnit(int unitID, int healing)
-    {
-        int currentHP = 0;
-        int maxHP = 0;
-        DatabaseManager.Instance.ExecuteReader(
-            $"SELECT current_hp, max_hp FROM unit_resources WHERE id = {unitID}",
-            reader =>
-            {
-                while (reader.Read())
-                {
-                    currentHP = Convert.ToInt32(reader["current_hp"]);
-                    maxHP = Convert.ToInt32(reader["max_hp"]);
-                }
-            }
-        );
-
-        if (currentHP + healing >= maxHP)
+        if (unit.Faction == Faction.Monster)
         {
-            currentHP = maxHP;
-            Log("You healed the target to full hit points!");
+            LogWarning("Tried to knock a monster unconscious, killing unit instead.");
+            KillUnit(unitID);
         }
         else
         {
-            if (currentHP == 0) //And unit is not dead
-            {
-                //Clear death saves
-            }
-
-            currentHP += healing;
-            Log("You healed the target by " + healing + " HP!");
+            string characterName = Convert.ToString(DatabaseManager.Instance.ExecuteScalar(
+                $"SELECT name FROM saved_pcs WHERE id = {unitID}"
+            ));
+            Log(characterName + " has fallen unconscious!");
         }
 
-        Log("Unit's current HP is: " + currentHP);
-
-        DatabaseManager.Instance.ExecuteNonQuery(
-            $"UPDATE unit_resources SET current_hp = {currentHP} WHERE id = {unitID}"
-        );
     }
-    
+
     public void KillUnit(int unitID)
     {
-        BaseUnit unit = baseUnits.FirstOrDefault(u => u.UnitID == unitID);
-        
+        BaseUnit unit = GetUnitByID(unitID);
+
         if (unit.Faction == Faction.Monster)
         {
             Destroy(unit.gameObject);
@@ -299,18 +153,15 @@ public class CombatUnitManager : MonoBehaviour
             string characterName = Convert.ToString(DatabaseManager.Instance.ExecuteScalar(
                 $"SELECT name FROM saved_pcs WHERE id = {unitID}"
             ));
-            Log(characterName + " has fallen unconscious!");
+            LogWarning(characterName + " has been killed!");
         }
 
         unit.occupiedTile.EmptyTile();
 
-    }
+        UpdateActivePCList();
+        UpdateActivePCList();
 
-    public int GetAC(int unitID)
-    {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                $"SELECT AC FROM unit_stats WHERE id = {unitID}"
-            ));
+        CombatStateManager.Instance.CheckForGameOver();
     }
 
     public int GetProficiency(int unitID, string proficiency)
@@ -330,10 +181,40 @@ public class CombatUnitManager : MonoBehaviour
         Log("Not proficient");
         return 0;
     }
-    
+
     public BaseUnit GetUnitByID(int id)
     {
         return baseUnits.FirstOrDefault(u => u.UnitID == id);
+    }
+
+    public void UpdateActivePCList()
+    {
+        activePCIDs.Clear();
+        DatabaseManager.Instance.ExecuteReader(
+            $"SELECT unit_id FROM grid_contents WHERE unit_id <= 4 AND encounter_id = {DatabaseManager.Instance.encounterToLoad}",
+            reader =>
+            {
+                while (reader.Read())
+                {
+                    activePCIDs.Add(Convert.ToInt32(reader["unit_id"]));
+                }
+            }
+        );
+    }
+    
+    public void UpdateActiveMonsterList()
+    {
+        activeMonsterIDs.Clear();
+        DatabaseManager.Instance.ExecuteReader(
+            $"SELECT unit_id FROM grid_contents WHERE unit_id > 4 AND encounter_id = {DatabaseManager.Instance.encounterToLoad}",
+            reader =>
+            {
+                while (reader.Read())
+                {
+                    activeMonsterIDs.Add(Convert.ToInt32(reader["unit_id"]));
+                }
+            }
+        );
     }
 
 }
