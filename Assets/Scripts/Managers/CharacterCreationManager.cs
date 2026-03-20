@@ -24,15 +24,22 @@ public class CharacterCreationManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+
         if (characterName == null)
         {
             Debug.Log("No character name assigned");
             return;
         }
-        characterName.text = currentPC.GetName(); //Populate the character name
+        characterName.text = GetCharacterName(); //Populate the character name
 
         btnSaveCharacter.onClick.AddListener(SaveCharacter);
+    }
+    
+    string GetCharacterName()
+    {
+        return Convert.ToString(DatabaseManager.Instance.ExecuteScalar( //Get the character's name
+            $"SELECT name FROM saved_pcs WHERE id = {currentPC.UnitID}"
+        ));        
     }
 
     void SaveCharacter()

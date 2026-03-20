@@ -43,8 +43,21 @@ public class EquipmentManager : MonoBehaviour
 
     void GetDefaultInfo()
     {
-        UpdateMainHand(currentPC.GetMainhandID());
-        UpdateArmor(currentPC.GetArmorID());
+        DatabaseManager.Instance.ExecuteReader(
+            $"SELECT main_hand_item, off_hand_item, equipped_armor FROM saved_pcs WHERE id = {currentPC.UnitID}",
+            reader =>
+            {
+                while (reader.Read())
+                {
+                    mainHand.value = Convert.ToInt32(reader["main_hand_item"]);
+                    offHand.value = Convert.ToInt32(reader["off_hand_item"]);
+                    armor.value = Convert.ToInt32(reader["equipped_armor"]);
+
+                    UpdateMainHand(mainHand.value);
+                    UpdateArmor(armor.value);
+                }
+            }
+        );
     }
 
     void UpdateMainHand(int index)
@@ -254,7 +267,7 @@ public class EquipmentManager : MonoBehaviour
 
                     baseACLabel.text = baseAC.ToString();
 
-                    int dexBonus = currentPC.GetModifier("mDEX");
+                    int dexBonus = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT mDEX FROM unit_stats WHERE id = {currentPC.UnitID}"));
 
                     if (armorType == 2)
                     {

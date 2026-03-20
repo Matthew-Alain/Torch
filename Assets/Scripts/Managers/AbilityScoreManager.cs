@@ -49,7 +49,6 @@ public class AbilityScoreManager : MonoBehaviour
     private int currentOriginPoints;
     public Button btnBack;
     
-
     private BasePC currentPC;
 
     void Awake()
@@ -94,19 +93,29 @@ public class AbilityScoreManager : MonoBehaviour
             }
         );
 
-        strength = currentPC.GetStat("strength");
-        dexterity = currentPC.GetStat("dexterity");
-        constitution = currentPC.GetStat("constitution");
-        intelligence = currentPC.GetStat("intelligence");
-        wisdom = currentPC.GetStat("wisdom");
-        charisma = currentPC.GetStat("charisma");
+        DatabaseManager.Instance.ExecuteReader(
+            "SELECT strength, dexterity, constitution, intelligence, wisdom, charisma, mSTR, mDEX, mCON, mINT, mWIS, mCHA " +
+                $"FROM unit_stats WHERE id = {currentPC.UnitID}",
+            reader =>
+            {
+                while (reader.Read())
+                {
+                    strength = Convert.ToInt32(reader["strength"]);
+                    dexterity = Convert.ToInt32(reader["dexterity"]);
+                    constitution = Convert.ToInt32(reader["constitution"]);
+                    intelligence = Convert.ToInt32(reader["intelligence"]);
+                    wisdom = Convert.ToInt32(reader["wisdom"]);
+                    charisma = Convert.ToInt32(reader["charisma"]);
 
-        mSTR = currentPC.GetModifier("mSTR");
-        mDEX = currentPC.GetModifier("mDEX");
-        mCON = currentPC.GetModifier("mCON");
-        mINT = currentPC.GetModifier("mINT");
-        mWIS = currentPC.GetModifier("mWIS");
-        mCHA = currentPC.GetModifier("mCHA");
+                    mSTR = Convert.ToInt32(reader["mSTR"]);
+                    mDEX = Convert.ToInt32(reader["mDEX"]);
+                    mCON = Convert.ToInt32(reader["mCON"]);
+                    mINT = Convert.ToInt32(reader["mINT"]);
+                    mWIS = Convert.ToInt32(reader["mWIS"]);
+                    mCHA = Convert.ToInt32(reader["mCHA"]);
+                }
+            }
+        );
     }
 
     void Start()
