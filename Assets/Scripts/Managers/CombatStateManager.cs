@@ -17,7 +17,6 @@ public class CombatStateManager : MonoBehaviour
         //Check if an instance already exists that isn't this
         if (Instance != null && Instance != this)
         {
-            // CombatGridManager.Instance.GenerateGrid(DatabaseManager.Instance.encounterToLoad);
             //If it does, destroy it
             Destroy(gameObject);
             return;
@@ -125,9 +124,9 @@ public class CombatStateManager : MonoBehaviour
 
         List<int> monsterIDList = CombatUnitManager.Instance.activeMonsterIDs;
 
-        for (int i = 0; i < CombatUnitManager.Instance.activeMonsterIDs.Count; i++)
+        for (int i = 0; i < monsterIDList.Count; i++)
         {
-            int currentMonsterID = CombatUnitManager.Instance.activeMonsterIDs[i];
+            int currentMonsterID = monsterIDList[i];
             BaseUnit currentMonsterBase = CombatUnitManager.Instance.GetUnitByID(currentMonsterID);
 
             currentMonsterBase.RefreshSpeed();
@@ -147,20 +146,6 @@ public class CombatStateManager : MonoBehaviour
 
     private void TakeMonsterTurn()
     {
-        // List<int> monsterIDList = new List<int>();
-
-        // DatabaseManager.Instance.ExecuteReader(
-        //     $"SELECT unit_id FROM grid_contents WHERE unit_id > 4 AND encounter_id = {DatabaseManager.Instance.encounterToLoad}",
-        //     reader =>
-        //     {
-        //         while (reader.Read())
-        //         {
-        //             monsterIDList.Add(Convert.ToInt32(reader["unit_id"]));
-        //             Debug.Log($"Unit id: {Convert.ToInt32(reader["unit_id"])}");
-        //         }
-        //     }
-        // );
-
         List<int> monsterIDList = CombatUnitManager.Instance.activeMonsterIDs;
 
         for (int i = 0; i < CombatUnitManager.Instance.activeMonsterIDs.Count; i++)
@@ -187,13 +172,17 @@ public class CombatStateManager : MonoBehaviour
         if (Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar("SELECT COUNT(*) FROM grid_contents WHERE unit_id > 4")) <= 0)
         {
             Debug.LogWarning("The last monster has been killed, you win!");
-            SceneManager.LoadScene(0);
         }
         else if (Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar("SELECT COUNT(*) FROM grid_contents WHERE unit_id <= 4")) <= 0)
         {
             Debug.LogWarning("The last PC has been killed, you lose...");
-            SceneManager.LoadScene(0);
         }
+        else
+        {
+            return;
+        }
+        SceneManager.LoadScene(0);
+        DatabaseManager.Instance.DeleteEncounterDatabase(DatabaseManager.Instance.currentEncounter);
     }
 }
 

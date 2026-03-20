@@ -17,7 +17,7 @@ public class DatabaseManager : MonoBehaviour
     //Data flags to be used between scenes, but not stored in the database
     public BasePC lastPCEdited;
     public int lastScene;
-    public int encounterToLoad;
+    public int currentEncounter;
 
     void Awake()
     {

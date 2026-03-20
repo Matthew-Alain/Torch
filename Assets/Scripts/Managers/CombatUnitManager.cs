@@ -79,10 +79,6 @@ public class CombatUnitManager : MonoBehaviour
 
     public void SpawnMonsters(int encounterID)
     {
-        // int enemyCount = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-        //     $"SELECT COUNT(*) FROM grid_contents WHERE encounter_id = {encounterID} AND unit_id > 4"
-        // ));
-
         UpdateActiveMonsterList();
         
         for(int i = 0; i < activeMonsterIDs.Count; i++)
@@ -191,7 +187,7 @@ public class CombatUnitManager : MonoBehaviour
     {
         activePCIDs.Clear();
         DatabaseManager.Instance.ExecuteReader(
-            $"SELECT unit_id FROM grid_contents WHERE unit_id <= 4 AND encounter_id = {DatabaseManager.Instance.encounterToLoad}",
+            $"SELECT unit_id FROM grid_contents WHERE unit_id <= 4 AND encounter_id = {DatabaseManager.Instance.currentEncounter}",
             reader =>
             {
                 while (reader.Read())
@@ -206,7 +202,7 @@ public class CombatUnitManager : MonoBehaviour
     {
         activeMonsterIDs.Clear();
         DatabaseManager.Instance.ExecuteReader(
-            $"SELECT unit_id FROM grid_contents WHERE unit_id > 4 AND encounter_id = {DatabaseManager.Instance.encounterToLoad}",
+            $"SELECT unit_id FROM grid_contents WHERE unit_id > 4 AND encounter_id = {DatabaseManager.Instance.currentEncounter}",
             reader =>
             {
                 while (reader.Read())

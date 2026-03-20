@@ -19,13 +19,21 @@ public class EncounterSelectManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        DatabaseManager.Instance.encounterToLoad = 0;
-        btnStartEncounter.onClick.AddListener(() => SceneManager.LoadScene(DatabaseManager.Instance.encounterToLoad + 25));
+        DatabaseManager.Instance.currentEncounter = 0;
+        btnStartEncounter.onClick.AddListener(StartEncounter);
     }
 
     void ChangeEncounter(int index)
     {
-        DatabaseManager.Instance.encounterToLoad = index;
+        DatabaseManager.Instance.currentEncounter = index;
+    }
+
+    void StartEncounter()
+    {
+        
+        DatabaseManager.Instance.CreateEncounterDatabase(DatabaseManager.Instance.currentEncounter);
+
+        SceneManager.LoadScene(DatabaseManager.Instance.currentEncounter + 25);
     }
 
 
