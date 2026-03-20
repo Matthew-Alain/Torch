@@ -36,7 +36,17 @@ public class CombatStateManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        ChangeState(GameState.GenerateGrid);
+        // ChangeState(GameState.GenerateGrid);
+    }
+
+    void OnEnable()
+    {
+        DatabaseManager.Instance.SwitchDatabase(DatabaseManager.Instance.currentEncounter);
+    }
+
+    void OnDisable()
+    {
+        DatabaseManager.Instance.SwitchDatabase(-1);
     }
 
     public void EndPlayerTurn()
@@ -55,13 +65,13 @@ public class CombatStateManager : MonoBehaviour
         switch (newState)
         {
             case GameState.GenerateGrid:
-                CombatGridManager.Instance.GenerateGrid(DatabaseManager.Instance.encounterToLoad);
+                CombatGridManager.Instance.GenerateGrid(DatabaseManager.Instance.currentEncounter);
                 break;
             case GameState.SpawnHeroes:
-                CombatUnitManager.Instance.SpawnPCs(DatabaseManager.Instance.encounterToLoad);
+                CombatUnitManager.Instance.SpawnPCs(DatabaseManager.Instance.currentEncounter);
                 break;
             case GameState.SpawnMonsters:
-                CombatUnitManager.Instance.SpawnMonsters(DatabaseManager.Instance.encounterToLoad);
+                CombatUnitManager.Instance.SpawnMonsters(DatabaseManager.Instance.currentEncounter);
                 break;
             case GameState.Precombat:
                 break;

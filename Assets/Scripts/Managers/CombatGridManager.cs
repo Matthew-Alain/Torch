@@ -166,7 +166,7 @@ public class CombatGridManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        // GenerateGrid(DatabaseManager.Instance.encounterToLoad);
+        GenerateGrid(DatabaseManager.Instance.currentEncounter);
     }
 
     public void OnPointerClick(PointerEventData eventData)

@@ -4,12 +4,15 @@ using System.Collections;
 using System.Data;
 using Mono.Data.Sqlite;
 using System;
+using System.Collections.Generic;
 
 public class DatabaseManager : MonoBehaviour
 {
 
     //Database configurations
-    private const string dbName = "torch.db";
+    private const string baseDBName = "torch.db";
+    private string dbName = "torch.db";
+    public List<string> encounterDBNames = new List<string> {"encounter_1.db", "encounter_2.db" };
     public static DatabaseManager Instance;
     private string dbPath;
     private SqliteConnection connection;
@@ -59,6 +62,36 @@ public class DatabaseManager : MonoBehaviour
 
         File.Copy(sourcePath, dbPath);
         Debug.Log("New database copy created.");
+    }
+
+    public void CreateEncounterDatabase(int encounterID)
+    {
+        string baseDB = Path.Combine(Application.persistentDataPath, baseDBName);
+        string encounterDBPath = Path.Combine(Application.persistentDataPath, encounterDBNames[encounterID]);
+
+        if (File.Exists(encounterDBPath)) //If the database already exists, do nothing
+        {
+            // Debug.Log("Database already exists");
+            return;
+        }
+
+        File.Copy(baseDB, encounterDBPath);
+        Debug.Log("New database copy created.");
+    }
+    
+    public void DeleteEncounterDatabase(int encounterID)
+    {
+        string encounterDBPath = Path.Combine(Application.persistentDataPath, encounterDBNames[encounterID]);
+
+        if (!File.Exists(encounterDBPath)) //If the database already exists, do nothing
+        {
+            Debug.Log("Database does not exist to delete");
+            return;
+        }
+
+        SwitchDatabase(-1);
+        File.Delete(encounterDBPath);
+
     }
 
     private void OpenConnection()
@@ -148,10 +181,44 @@ public class DatabaseManager : MonoBehaviour
 
     public string GetDamageType(int damageTypeID)
     {
-        return Convert.ToString(Instance.ExecuteScalar(
-                    "SELECT name FROM damage_types WHERE id = @damageTypeID",
-                    ("@damageTypeID", damageTypeID)
-                ));
+        return Convert.ToString(Instance.ExecuteScalar($"SELECT name FROM damage_types WHERE id = {damageTypeID}"));
+    }
+
+    public void SwitchDatabase(int encounterID)
+    {
+        if (connection != null)
+        {
+            // Debug.Log("Closing current DB connection");
+            connection.Close();
+            connection.Dispose();
+            connection = null;
+        }
+
+        if (encounterID == -1)
+        {
+            dbName = baseDBName;
+        }
+        else
+        {
+            dbName = encounterDBNames[encounterID];
+        }
+
+        dbPath = Path.Combine(Application.persistentDataPath, dbName);
+
+        InitializeDatabase();
+        // Debug.Log("Now editing " + dbName);
+    }
+    
+    public int GetCurrentDatabase()
+    {
+        if (dbName == baseDBName)
+        {
+            return -1;
+        }
+        else
+        {
+            return currentEncounter;
+        }
     }
 
 }

@@ -30,7 +30,7 @@ public class EncounterSelectManager : MonoBehaviour
 
     void StartEncounter()
     {
-        
+
         DatabaseManager.Instance.CreateEncounterDatabase(DatabaseManager.Instance.currentEncounter);
 
         SceneManager.LoadScene(DatabaseManager.Instance.currentEncounter + 25);

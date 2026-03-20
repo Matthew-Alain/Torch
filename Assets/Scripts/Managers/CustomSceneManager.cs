@@ -33,7 +33,10 @@ public class CustomSceneManager : MonoBehaviour
         // If the user is on a non-setting scene and presses escape...
         if (SceneManager.GetActiveScene().buildIndex != 1 && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
-            DatabaseManager.Instance.lastScene = SceneManager.GetActiveScene().buildIndex;
+            if(SceneManager.GetActiveScene().buildIndex != 2) //If you're on the tutorials scene, just go back to settings, don't update last scene
+            {
+                DatabaseManager.Instance.lastScene = SceneManager.GetActiveScene().buildIndex;
+            }
             // Then load the setting scene
             LoadScene(Scene.Settings);
         }
@@ -57,6 +60,7 @@ public class CustomSceneManager : MonoBehaviour
 
     private void LoadScene(Scene sceneName)
     {
+        
         SceneManager.LoadScene((int)sceneName);
     }
     
