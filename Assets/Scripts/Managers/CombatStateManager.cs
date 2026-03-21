@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Unity.VisualScripting;
@@ -94,7 +95,7 @@ public class CombatStateManager : MonoBehaviour
                 StartMonsterTurn();
                 break;
             case GameState.MonsterTurn:
-                TakeMonsterTurn();
+                StartCoroutine(TakeMonsterTurn());
                 ChangeState(GameState.StartPlayerTurn);
                 break;
             default:
@@ -154,29 +155,35 @@ public class CombatStateManager : MonoBehaviour
         Debug.Log("Selecting attack target");
     }
 
-    private void TakeMonsterTurn()
+    IEnumerator TakeMonsterTurn()
     {
         List<int> monsterIDList = CombatUnitManager.Instance.activeMonsterIDs;
 
         for (int i = 0; i < CombatUnitManager.Instance.activeMonsterIDs.Count; i++)
         {
-                    Debug.Log("GetUnitByID: " + CombatUnitManager.Instance.GetUnitByID(monsterIDList[i]) + ", Type: " +
-                    CombatUnitManager.Instance.GetUnitByID(monsterIDList[i]).GetType().ToString());
-            
             BaseMonster currentMonster = (BaseMonster)CombatUnitManager.Instance.GetUnitByID(monsterIDList[i]);
             currentMonster.CheckValidActions();
+            
             if (currentMonster.validActions != null)
             {
                 int targetID = currentMonster.ChooseTarget();
-                int attackID = currentMonster.ChooseAttack();
-                currentMonster.MoveToUnit(targetID);
 
-                currentMonster.AttackTarget(targetID, attackID);
+                if(!(targetID == -1))
+                {
+                    int attackID = currentMonster.ChooseAttack();
+                    if(!(attackID == -1))
+                    {
+                        yield return StartCoroutine(currentMonster.MoveToUnit(targetID));
+                        yield return new WaitForSeconds(0.5f);
+                        currentMonster.AttackTarget(targetID, attackID);
+                    }
+                }
+
                 currentMonster.EndTurn();
             }
         }
     }
-    
+
     public void CheckForGameOver()
     {
         if (Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar("SELECT COUNT(*) FROM grid_contents WHERE unit_id > 4")) <= 0)
@@ -194,7 +201,24 @@ public class CombatStateManager : MonoBehaviour
         SceneManager.LoadScene(0);
         DatabaseManager.Instance.DeleteEncounterDatabase(DatabaseManager.Instance.currentEncounter);
     }
+    
+    public void Pause(float time)
+    {
+        StartCoroutine(Pause());
+
+        IEnumerator Pause()
+        {
+            Debug.Log("Before pause");
+
+            yield return new WaitForSeconds(time);
+
+            Debug.Log("After 0.5 seconds");
+        }
+    }
+    
+
 }
+
 
 public enum GameState
 {

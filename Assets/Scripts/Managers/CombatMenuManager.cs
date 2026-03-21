@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -8,12 +9,11 @@ public class CombatMenuManager : MonoBehaviour
 {
     public static CombatMenuManager Instance;
     [SerializeField] private GameObject selectedPCObject, tileObject, tileUnitObject;
-    [SerializeField] public GameObject pcTurnMenu;
-    
-    public GameObject menuPanel;
+    [SerializeField] public GameObject turnMenuPanel;
+    [SerializeField] private ScrollRect scrollRect;
     public Transform buttonContainer;
     public GameObject buttonPrefab;
-    
+    public GameObject displayText;
 
     private Stack<List<MenuOption>> menuStack = new Stack<List<MenuOption>>();
 
@@ -45,7 +45,7 @@ public class CombatMenuManager : MonoBehaviour
             return;
         }
 
-        selectedPCObject.GetComponentInChildren<TMP_Text>().text = pc.UnitName;
+        selectedPCObject.GetComponentInChildren<TMP_Text>().text = pc.GetName();
         selectedPCObject.SetActive(true);
     }
 
@@ -88,7 +88,7 @@ public class CombatMenuManager : MonoBehaviour
         }
         else
         {
-            menuPanel.SetActive(false);
+            turnMenuPanel.SetActive(false);
             menuStack.Clear();
             CombatUnitManager.Instance.SetSelectedPC(null);
             CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
@@ -97,14 +97,14 @@ public class CombatMenuManager : MonoBehaviour
 
     public void CloseAllMenus()
     {
-        menuPanel.SetActive(false);
+        turnMenuPanel.SetActive(false);
         menuStack.Clear();
         CombatUnitManager.Instance.SetSelectedPC(null);
     }
 
     void RenderMenu(List<MenuOption> options)
     {
-        menuPanel.SetActive(true);
+        turnMenuPanel.SetActive(true);
 
         foreach (Transform child in buttonContainer)
             Destroy(child.gameObject);
@@ -118,6 +118,16 @@ public class CombatMenuManager : MonoBehaviour
             btn.GetComponentInChildren<TextMeshProUGUI>().text = option.Label;
             btn.GetComponent<Button>().onClick.AddListener(() => option.Action());
         }
+
+        StartCoroutine(ResetScrollPosition());
+    }
+
+    IEnumerator ResetScrollPosition()
+    {
+        yield return null; // wait 1 frame for layout groups
+
+        Canvas.ForceUpdateCanvases();
+        scrollRect.verticalNormalizedPosition = 1f;
     }
 
     public void OpenRootMenu()
@@ -212,5 +222,11 @@ public class CombatMenuManager : MonoBehaviour
         minorOptions.Add(new MenuOption("Back", () => CloseMenu()));
 
         OpenMenu(minorOptions);
+    }
+
+    public void SetDisplayText(string message)
+    {
+        displayText.SetActive(true);
+        displayText.GetComponentInChildren<TMP_Text>().text = message;
     }
 }

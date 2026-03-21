@@ -155,7 +155,7 @@ public class CombatUnitManager : MonoBehaviour
         unit.occupiedTile.EmptyTile();
 
         UpdateActivePCList();
-        UpdateActivePCList();
+        UpdateActiveMonsterList();
 
         CombatStateManager.Instance.CheckForGameOver();
     }

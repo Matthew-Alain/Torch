@@ -15,9 +15,10 @@ public class BaseUnit : MonoBehaviour
         return Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT name FROM saved_pcs WHERE id = {UnitID}"));
     }
 
-    public string SetName(string newName)
+    public void SetName(string newName)
     {
-        return Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT name FROM saved_pcs WHERE id = {UnitID}"));
+        // DatabaseManager.Instance.ExecuteScalar($"UPDATE saved_pcs SET name = '{newName}' WHERE id = {UnitID}");
+        UnitName = newName;
     }
 
     public int GetCurrentSpeed()
@@ -52,7 +53,7 @@ public class BaseUnit : MonoBehaviour
 
     public int GetTempHP()
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT max_hp FROM unit_resources WHERE id = {UnitID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT temp_hp FROM unit_resources WHERE id = {UnitID}"));
     }
 
     public void SetTempHP(int newTempHP)

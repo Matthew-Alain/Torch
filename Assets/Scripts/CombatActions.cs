@@ -69,6 +69,7 @@ public class CombatActions
             if (totalResult >= target.GetAC())
             {
                 Debug.Log($"The target's AC is {target.GetAC()}, so you hit!");
+                CombatMenuManager.Instance.SetDisplayText($"The target's AC is {target.GetAC()}, so you hit!");
 
                 if (dieRoll == 20)
                 {
@@ -81,7 +82,7 @@ public class CombatActions
             }
             else
             {
-                Debug.Log($"The target's AC is {target.GetAC()}, so you missed...");
+                CombatMenuManager.Instance.SetDisplayText($"The target's AC is {target.GetAC()}, so you miss...");
             }
 
         }

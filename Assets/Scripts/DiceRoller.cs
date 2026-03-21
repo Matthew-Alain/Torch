@@ -24,7 +24,8 @@ public class DiceRoller
             Debug.Log("For roll " + i + "/" + diceNumber + ", you rolled: " + result);
             total += result;
         }
-        Debug.Log("For a total of " + total+" damage");
+        Debug.Log("For a total of " + total + " damage");
+        CombatMenuManager.Instance.SetDisplayText($"You did {total} damage");
 
         return total;
     }

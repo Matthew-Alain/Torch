@@ -32,7 +32,7 @@ public class BasePC : BaseUnit
 
     public string GetMainhandName()
     {
-        return Convert.ToString($"SELECT name FROM weapons WHERE id = {GetMainhandID()}");
+        return Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT name FROM weapons WHERE id = {GetMainhandID()}"));
     }
 
     public int GetOffhandID()
@@ -42,7 +42,7 @@ public class BasePC : BaseUnit
 
     public string GetOffhandName()
     {
-        return Convert.ToString($"SELECT name FROM weapons WHERE id = {GetOffhandID()}");
+        return Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT name FROM weapons WHERE id = {GetOffhandID()}"));
     }
 
     public int GetArmorID()

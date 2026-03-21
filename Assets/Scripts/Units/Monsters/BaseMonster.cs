@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
@@ -98,11 +99,23 @@ public class BaseMonster : BaseUnit
 
     public int ChooseTarget()
     {
+        if(validTargets.Count == 0)
+        {
+            Debug.Log("No valid targets found");
+            CombatMenuManager.Instance.SetDisplayText($"{UnitName} is too far away to target any PC with attacks");
+            return -1;
+        }
         return validTargets[UnityEngine.Random.Range(0, validTargets.Count)];
     }
 
     public int ChooseAttack()
     {
+        if(validActions.Count == 0)
+        {
+            Debug.Log("No valid attacks found");
+            CombatMenuManager.Instance.SetDisplayText("The enemy has no valid attacks to make");
+            return -1;
+        }
         return validActions[UnityEngine.Random.Range(0, validActions.Count)];
     }
 
@@ -130,6 +143,7 @@ public class BaseMonster : BaseUnit
         }
 
         CombatUnitManager.Instance.GetUnitByID(targetID).TakeDamage(damage, false);
+
     }
 
     public List<Tile> CheckUnitsInRange(int range)
@@ -157,7 +171,7 @@ public class BaseMonster : BaseUnit
         return validTargetTileList;
     }
 
-    public void MoveToUnit(int targetID)
+    public IEnumerator MoveToUnit(int targetID)
     {
         int maxMovement = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
             $"SELECT current_speed FROM unit_resources WHERE id = {UnitID}"));
@@ -167,13 +181,18 @@ public class BaseMonster : BaseUnit
 
         List<Tile> path = GetPath(occupiedTile, targetUnitTile, maxMovement);
 
-        if(path != null)
+        if (path != null)
         {
-            for(int i = 0; i < path.Count; i++)
+            for (int i = 0; i < path.Count; i++)
             {
                 path[i].MoveUnit(this);
                 Debug.Log("Monster moved to tile: (" + occupiedTile.tileX + ", " + occupiedTile.tileY + ")");
+                yield return new WaitForSeconds(0.5f);
             }
+        }
+        else
+        {
+            
         }
 
     }
