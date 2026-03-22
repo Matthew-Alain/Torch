@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -63,7 +61,9 @@ public class CombatStateManager : MonoBehaviour
         if (GameState == newState) return;
         GameState = newState;
 
-        switch (newState)
+        // Debug.Log("New state: "+GameState);
+
+        switch (GameState)
         {
             case GameState.GenerateGrid:
                 CombatGridManager.Instance.GenerateGrid(DatabaseManager.Instance.currentEncounter);
@@ -79,24 +79,25 @@ public class CombatStateManager : MonoBehaviour
             case GameState.RollInitiative:
                 break;
             case GameState.StartPlayerTurn:
-                StartPlayerTurn();
+                StartCoroutine(StartPlayerTurn());
                 break;
             case GameState.PlayerTurn:
+                CheckForGameOver();
                 break;
             case GameState.MovingPC:
-                Debug.Log("Select the space to move to.");
+                CombatMenuManager.Instance.DisplayText($"{CombatUnitManager.Instance.SelectedPC.UnitName} is now moving");
+                // Debug.Log("Select the space to move to.");
                 break;
             case GameState.SelectWeapon:
                 break;
             case GameState.SelectAttackTarget:
                 break;
             case GameState.StartMonsterTurn:
-                Debug.Log("It is now the monster's turn");
-                StartMonsterTurn();
+                // Debug.Log("It is now the monster's turn");
+                StartCoroutine(StartMonsterTurn());
                 break;
             case GameState.MonsterTurn:
                 StartCoroutine(TakeMonsterTurn());
-                ChangeState(GameState.StartPlayerTurn);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(newState), newState, null);
@@ -104,34 +105,28 @@ public class CombatStateManager : MonoBehaviour
 
     }
 
-    private void StartPlayerTurn()
+    private IEnumerator StartPlayerTurn()
     {
         for (int i = 0; i < CombatUnitManager.Instance.activePCIDs.Count; i++)
         {
             int currentUnitID = CombatUnitManager.Instance.activePCIDs[i];
-            BaseUnit currentUnitBase = CombatUnitManager.Instance.GetUnitByID(currentUnitID);
+            BaseUnit currentUnit = CombatUnitManager.Instance.GetUnitByID(currentUnitID);
 
-            currentUnitBase.RefreshSpeed();
-            currentUnitBase.RefreshActions();
+            currentUnit.RefreshSpeed();
+            currentUnit.RefreshActions();
+
+            if (currentUnit.GetCondition("dying"))
+            {
+                yield return StartCoroutine(currentUnit.MakeDeathSave());
+            }
         }
 
         ChangeState(GameState.PlayerTurn);
     }
 
-    private void StartMonsterTurn()
+    private IEnumerator StartMonsterTurn()
     {
-        // DatabaseManager.Instance.ExecuteReader(
-        //     $"SELECT unit_id FROM grid_contents WHERE unit_id > 4 AND encounter_id = {DatabaseManager.Instance.encounterToLoad}",
-        //     reader =>
-        //     {
-        //         while (reader.Read())
-        //         {
-        //             int monsterID = Convert.ToInt32(reader["unit_id"]);
-        //             CombatUnitManager.Instance.RefreshUnitActions(monsterID);
-        //             CombatUnitManager.Instance.RefreshUnitSpeed(monsterID);
-        //         }
-        //     }
-        // );
+        CombatMenuManager.Instance.DisplayText($"It is now the monster's turn");
 
         List<int> monsterIDList = CombatUnitManager.Instance.activeMonsterIDs;
 
@@ -142,7 +137,7 @@ public class CombatStateManager : MonoBehaviour
 
             currentMonsterBase.RefreshSpeed();
             currentMonsterBase.RefreshActions();
-
+            yield return null;
         }
 
         ChangeState(GameState.MonsterTurn);
@@ -163,36 +158,53 @@ public class CombatStateManager : MonoBehaviour
         {
             BaseMonster currentMonster = (BaseMonster)CombatUnitManager.Instance.GetUnitByID(monsterIDList[i]);
             currentMonster.CheckValidActions();
-            
+
             if (currentMonster.validActions != null)
             {
-                int targetID = currentMonster.ChooseTarget();
+                BaseUnit target = currentMonster.ChooseTarget();
 
-                if(!(targetID == -1))
+                if (target != null)
                 {
                     int attackID = currentMonster.ChooseAttack();
-                    if(!(attackID == -1))
+                    if (!(attackID == -1))
                     {
-                        yield return StartCoroutine(currentMonster.MoveToUnit(targetID));
+                        CombatMenuManager.Instance.DisplayText($"{currentMonster.UnitName} is attacking {target.UnitName}");
+                        yield return new WaitForSeconds(1.5f);
+                        yield return StartCoroutine(currentMonster.MoveToUnit(target));
                         yield return new WaitForSeconds(0.5f);
-                        currentMonster.AttackTarget(targetID, attackID);
+                        yield return StartCoroutine(currentMonster.AttackTarget(target, attackID));
                     }
                 }
 
                 currentMonster.EndTurn();
             }
         }
+
+        ChangeState(GameState.StartPlayerTurn);
+
     }
 
     public void CheckForGameOver()
     {
+        int numberOfActivePCs = 0;
+
+        for (int i = 0; i < CombatUnitManager.Instance.activePCIDs.Count; i++)
+        {
+            BaseUnit currentPC = CombatUnitManager.Instance.GetUnitByID(CombatUnitManager.Instance.activePCIDs[i]);
+            if (!(currentPC.GetCondition("dying") || currentPC.GetCondition("unconscious") || currentPC.GetCondition("dead")))
+            {
+                numberOfActivePCs += 1;
+            }
+        }
+
         if (Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar("SELECT COUNT(*) FROM grid_contents WHERE unit_id > 4")) <= 0)
         {
             Debug.LogWarning("The last monster has been killed, you win!");
+            //Create a canvas window that announces this, with a button to reset
         }
-        else if (Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar("SELECT COUNT(*) FROM grid_contents WHERE unit_id <= 4")) <= 0)
+        else if (numberOfActivePCs <= 0)
         {
-            Debug.LogWarning("The last PC has been killed, you lose...");
+            Debug.LogWarning("You have no more active PCs, you lose...");
         }
         else
         {
@@ -201,21 +213,6 @@ public class CombatStateManager : MonoBehaviour
         SceneManager.LoadScene(0);
         DatabaseManager.Instance.DeleteEncounterDatabase(DatabaseManager.Instance.currentEncounter);
     }
-    
-    public void Pause(float time)
-    {
-        StartCoroutine(Pause());
-
-        IEnumerator Pause()
-        {
-            Debug.Log("Before pause");
-
-            yield return new WaitForSeconds(time);
-
-            Debug.Log("After 0.5 seconds");
-        }
-    }
-    
 
 }
 

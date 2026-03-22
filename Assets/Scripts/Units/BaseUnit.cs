@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using Unity.Profiling;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class BaseUnit : MonoBehaviour
@@ -76,14 +78,14 @@ public class BaseUnit : MonoBehaviour
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT AC FROM unit_stats WHERE id = {UnitID}"));
     }
 
-    public int GetModifier(string modifier)
+    public int GetModifier(StatModifier modifier)
     {
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT {modifier} FROM unit_stats WHERE id = {UnitID}"));
     }
 
-    public int GetStat(string stat)
+    public int GetStat(Stat stat)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT {stat.ToLower()} FROM unit_stats WHERE id = {UnitID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT {stat.ToString().ToLower()} FROM unit_stats WHERE id = {UnitID}"));
     }
 
     public int GetProficiency(string proficiency)
@@ -106,7 +108,7 @@ public class BaseUnit : MonoBehaviour
         string category = "";
         bool light = false;
         bool finesse = false;
-        
+
         DatabaseManager.Instance.ExecuteReader(
             $"SELECT stat, category, light FROM weapons WHERE id = {weaponID}",
             reader =>
@@ -133,6 +135,21 @@ public class BaseUnit : MonoBehaviour
         {
             return GetProficiency("all_martial");
         }
+    }
+
+    public bool GetCondition(string condition)
+    {
+        return Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT {condition} FROM unit_conditions WHERE id = {UnitID}"));
+    }
+    
+    public void SetCondition(string condition, bool status)
+    {
+        int value = 0;
+        if (status)
+        {
+            value = 1;
+        }
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_conditions SET {condition} = {value} WHERE id = {UnitID}");
     }
 
     public bool UseMajorAction()
@@ -200,6 +217,11 @@ public class BaseUnit : MonoBehaviour
 
     public void TakeDamage(int damage, bool wasCrit)
     {
+        CombatMenuManager menu = CombatMenuManager.Instance;
+        menu.DisplayText($"{UnitName} is taking {damage} damage");
+
+        // yield return new WaitForSeconds(0.5f);
+
         int damageRemaining = damage;
         int currentHP = GetCurrentHP();
         int maxHP = GetMaxHP();
@@ -210,13 +232,17 @@ public class BaseUnit : MonoBehaviour
         {
             tempHP -= damageRemaining;
             damageRemaining = 0;
-            Debug.Log($"{UnitName} had {GetTempHP()} temp HP, they now have {tempHP}");
+            menu.DisplayText($"{UnitName} had {GetTempHP()} temp HP, they now have {tempHP}");
+            // Debug.Log($"{UnitName} had {GetTempHP()} temp HP, they now have {tempHP}");
+            // yield return new WaitForSeconds(0.5f);
         }
         else if (tempHP > 0)
         {
             damageRemaining -= tempHP;
             tempHP = 0;
-            Debug.Log($"{UnitName} had {GetTempHP()} temp HP, they now have {tempHP}");
+            menu.DisplayText($"{UnitName} had {GetTempHP()} temp HP, they now have {tempHP}");
+            // Debug.Log($"{UnitName} had {GetTempHP()} temp HP, they now have {tempHP}");
+            // yield return new WaitForSeconds(0.5f);
         }
         SetTempHP(tempHP);
 
@@ -224,14 +250,17 @@ public class BaseUnit : MonoBehaviour
         if (currentHP > damageRemaining && currentHP > 0)
         {
             currentHP -= damageRemaining;
-            Debug.Log($"The attacker dealt {damageRemaining} damage to {UnitName}, they now have {currentHP} HP left.");
+            menu.DisplayText($"The attacker dealt {damageRemaining} damage to {UnitName}, they now have {currentHP} HP left.");
+            // Debug.Log($"The attacker dealt {damageRemaining} damage to {UnitName}, they now have {currentHP} HP left.");
+            // yield return new WaitForSeconds(0.5f);
         }
         else if (currentHP > 0) //If the damage remaining is greater than the unit's current HP, but they aren't unconscious yet
         {
             currentHP = 0;
             if (Faction == Faction.Monster)
             {
-                CombatUnitManager.Instance.KillUnit(UnitID);
+                menu.DisplayText($"The attacker dealt {damageRemaining} damage to {UnitName}.");
+                CombatUnitManager.Instance.KillUnit(this);
             }
             else
             {
@@ -239,15 +268,18 @@ public class BaseUnit : MonoBehaviour
                 damageRemaining -= currentHP;
                 if (damageRemaining >= maxHP)
                 {
-                    //Unit dies
-                    Debug.Log($"The attacker dealt {damageDealt} damage to {UnitName}, which was enough to instantly kill them!");
-                    CombatUnitManager.Instance.KillUnit(UnitID);
+                    
+                    menu.DisplayText($"The attacker dealt {damageDealt} damage to {UnitName}, which was enough to instantly kill them!");
+
+                    // Debug.Log($"The attacker dealt {damageDealt} damage to {UnitName}, which was enough to instantly kill them!");
+                    CombatUnitManager.Instance.KillUnit(this);
                 }
                 else
                 {
                     currentHP = 0;
-                    Debug.Log($"The attacker dealt {damageDealt} damage to {UnitName}, which knocks them unconscious!");
-                    CombatUnitManager.Instance.FallUnconscious(UnitID);
+                    menu.DisplayText($"The attacker dealt {damageDealt} damage to {UnitName}, which knocks them unconscious!");
+                    // Debug.Log($"The attacker dealt {damageDealt} damage to {UnitName}, which knocks them unconscious!");
+                    CombatUnitManager.Instance.FallUnconscious(this);
                 }
             }
         }
@@ -255,50 +287,120 @@ public class BaseUnit : MonoBehaviour
         {
             if (damageRemaining >= maxHP)
             {
-                Debug.Log($"The attacker dealt {damageRemaining} damage to {UnitName}, which was enough to instantly kill them!");
-                CombatUnitManager.Instance.KillUnit(UnitID);
-                //Unit dies
+                // Debug.Log($"The attacker dealt {damageRemaining} damage to {UnitName}, which was enough to instantly kill them!");
+                CombatUnitManager.Instance.KillUnit(this);                
             }
             else if (wasCrit)
             {
-                //Unit fails two death saves
-                //Check for death
+                FailDeathSave(2);
             }
             else
             {
-                //Unit fails one death save
-                //Check for death
+                FailDeathSave(1);
             }
         }
 
         SetCurrentHP(currentHP);
     }
-    
+
     public void RestoreHealth(int amount)
     {
-        int currentHP = GetCurrentHP();
-        int maxHP = GetMaxHP();
+        if (!GetCondition("dead"))
+        {
+            int currentHP = GetCurrentHP();
+            int maxHP = GetMaxHP();
 
-        if (currentHP + amount >= maxHP)
-        {
-            currentHP = maxHP;
-            Debug.Log($"You healed {UnitName} to full hit points!");
-        }
-        else
-        {
-            if (currentHP == 0) //And unit is not dead
+            if (currentHP + amount >= maxHP)
             {
-                //Clear death saves
+                currentHP = maxHP;
+                CombatMenuManager.Instance.DisplayText($"You healed {UnitName} to full hit points!");
+                // Debug.Log($"You healed {UnitName} to full hit points!");
+            }
+            else
+            {
+                if (currentHP == 0) //And unit is not dead
+                {
+                    //Clear death saves
+                }
+
+                currentHP += amount;
+                CombatMenuManager.Instance.DisplayText($"You healed {UnitName} by {amount} HP!");
+
+                // Debug.Log($"You healed {UnitName} by {amount} HP!");
             }
 
-            currentHP += amount;
-            Debug.Log($"You healed {UnitName} by {amount} HP!");
+            CombatMenuManager.Instance.DisplayText($"{UnitName} now has {currentHP} HP.");
+
+            // Debug.Log($"{UnitName} now has {currentHP} HP.");
+
+            SetCurrentHP(currentHP);
+
+            ClearDeathSaves();
         }
-
-        Debug.Log($"{UnitName} now has {currentHP} HP.");
-
-        SetCurrentHP(currentHP);
     }
 
+    public IEnumerator MakeDeathSave()
+    {
+        if (GetCondition("dying"))
+        {
+            CombatMenuManager.Instance.DisplayText($"{UnitName} is dying");
+            yield return new WaitForSeconds(1f);
+            int result = DiceRoller.Rolld20(false, false);
+            yield return new WaitForSeconds(1f);
+
+            if (result == 1)
+            {
+                FailDeathSave(2);
+            }
+            else if (result < 10)
+            {
+                FailDeathSave(1);
+            }
+            else if (result == 20)
+            {
+                RestoreHealth(1);
+            }
+            else
+            {
+                PassDeathSave(1);
+            }
+        }
+    }
+
+
+    public void FailDeathSave(int number)
+    {
+        int currentFails = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT death_save_fails FROM unit_resources WHERE id = {UnitID}"));
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET death_save_fails = {currentFails + number} WHERE id = {UnitID}");
+        CheckForDeath(currentFails);
+    }
+
+    public void PassDeathSave(int number)
+    {
+        int currentPasses = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT death_save_successes FROM unit_resources WHERE id = {UnitID}"));
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET death_save_successes = {currentPasses + number} WHERE id = {UnitID}");
+        CheckForStable(currentPasses);
+    }
+
+    public void CheckForDeath(int currentFails)
+    {
+        if (currentFails >= 3)
+        {
+            CombatUnitManager.Instance.KillUnit(this);
+        }
+    }
+
+    public void CheckForStable(int currentPasses)
+    {
+        if (currentPasses >= 3)
+        {
+            SetCondition("dying", false);
+        }
+    }
+
+    public void ClearDeathSaves()
+    {
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET death_save_successes = 0, death_save_fails = 0 WHERE id = {UnitID}");
+    }
     
 }

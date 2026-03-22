@@ -1,5 +1,7 @@
 using UnityEngine;
 using System;
+using System.Collections;
+using Unity.VisualScripting;
 
 
 public class CombatActions
@@ -37,8 +39,8 @@ public class CombatActions
                 }
             );
 
-            int mSTR = attacker.GetModifier("mSTR");
-            int mDEX = attacker.GetModifier("mDEX");
+            int mSTR = attacker.GetModifier(StatModifier.mSTR);
+            int mDEX = attacker.GetModifier(StatModifier.mDEX);
 
             int attackModifier = 0;
             if (attackStat == "STR" || (attackStat == "Finesse" && mSTR > mDEX))
@@ -69,7 +71,7 @@ public class CombatActions
             if (totalResult >= target.GetAC())
             {
                 Debug.Log($"The target's AC is {target.GetAC()}, so you hit!");
-                CombatMenuManager.Instance.SetDisplayText($"The target's AC is {target.GetAC()}, so you hit!");
+                CombatMenuManager.Instance.DisplayText($"The target's AC is {target.GetAC()}, so you hit!");
 
                 if (dieRoll == 20)
                 {
@@ -82,7 +84,7 @@ public class CombatActions
             }
             else
             {
-                CombatMenuManager.Instance.SetDisplayText($"The target's AC is {target.GetAC()}, so you miss...");
+                CombatMenuManager.Instance.DisplayText($"The target's AC is {target.GetAC()}, so you miss...");
             }
 
         }
@@ -100,8 +102,57 @@ public class CombatActions
     {
         if (attacker.UseMajorAction())
         {
-
+            //If user has sharpshooter, just make a ranged weapon attack
         }
     }
 
+    public static IEnumerator MonsterAttack(BaseMonster attacker, BaseUnit target, int attackID)
+    {
+        if (attacker.UseMajorAction())
+        {
+            int dieRoll = DiceRoller.Rolld20();
+
+            int hitMod = 0;
+            int dice_number = 0;
+            int dice_size = 0;
+            int damageBonus = 0;
+            DatabaseManager.Instance.ExecuteReader(
+                $"SELECT * FROM monster_attacks WHERE id = {attackID}",
+                reader =>
+                {
+                    hitMod = Convert.ToInt32(reader["hit_modifier"]);
+                    dice_number = Convert.ToInt32(reader["dice_number"]);
+                    dice_size = Convert.ToInt32(reader["dice_size"]);
+                    damageBonus = Convert.ToInt32(reader["damage_bonus"]);
+                }
+            );
+
+            int totalResult = dieRoll + hitMod;
+
+            CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} is attacking {target.UnitName}");
+            yield return new WaitForSeconds(1.5f);
+
+            if (totalResult >= target.GetAC())
+            {
+
+                if (dieRoll == 20)
+                {
+                    CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled a natural 20 to hit!");
+                    yield return new WaitForSeconds(1.5f);
+                    target.TakeDamage(DiceRoller.Roll(dice_number * 2, dice_size)+damageBonus, true);
+                }
+                else
+                {
+                    CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled a {totalResult} to hit, which hits!");
+                    yield return new WaitForSeconds(1.5f);
+                    target.TakeDamage(DiceRoller.Roll(dice_number, dice_size)+damageBonus, false);
+                }
+            }
+            else
+            {
+                CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled a {totalResult} to hit, which misses!");
+            }
+
+        }
+    }
 }

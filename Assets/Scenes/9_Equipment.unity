@@ -434,6 +434,7 @@ GameObject:
   - component: {fileID: 76367236}
   - component: {fileID: 76367235}
   - component: {fileID: 76367234}
+  - component: {fileID: 76367237}
   m_Layer: 5
   m_Name: List Armor
   m_TagString: Untagged
@@ -601,6 +602,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 76367232}
   m_CullTransparentMesh: 1
+--- !u!114 &76367237
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 76367232}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dcdf0d366ed03842adb84d4b6c1cbcc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ElementChangeTracker
 --- !u!1 &78956237
 GameObject:
   m_ObjectHideFlags: 0
@@ -2090,6 +2103,7 @@ GameObject:
   - component: {fileID: 399288912}
   - component: {fileID: 399288911}
   - component: {fileID: 399288910}
+  - component: {fileID: 399288913}
   m_Layer: 5
   m_Name: List Off Hand
   m_TagString: Untagged
@@ -2332,6 +2346,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 399288908}
   m_CullTransparentMesh: 1
+--- !u!114 &399288913
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 399288908}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dcdf0d366ed03842adb84d4b6c1cbcc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ElementChangeTracker
 --- !u!1 &417224290
 GameObject:
   m_ObjectHideFlags: 0
@@ -8366,19 +8392,6 @@ MonoBehaviour:
   mainHand: {fileID: 2090961661}
   offHand: {fileID: 399288910}
   armor: {fileID: 76367234}
-  mainDamage: {fileID: 1567284343}
-  mainType: {fileID: 460229498}
-  mainRange: {fileID: 1194829588}
-  mainStat: {fileID: 429518608}
-  offDamage: {fileID: 1532680405}
-  offType: {fileID: 1392189436}
-  offRange: {fileID: 687531963}
-  offStat: {fileID: 919307559}
-  baseACLabel: {fileID: 1664101804}
-  dexBonusLabel: {fileID: 1528284441}
-  totalACLabel: {fileID: 479564148}
-  minStrLabel: {fileID: 1420654669}
-  loudLabel: {fileID: 1270772789}
   mainProperties: {fileID: 1802876648}
   offProperties: {fileID: 239140117}
   propertyPanel: {fileID: 417224290}
@@ -8387,6 +8400,11 @@ MonoBehaviour:
   weaponName: {fileID: 1918714870}
   weaponDescription: {fileID: 1097523523}
   btnClosePropertyWindow: {fileID: 1914315875}
+  baseACLabel: {fileID: 1664101804}
+  dexBonusLabel: {fileID: 1528284441}
+  totalACLabel: {fileID: 479564148}
+  minStrLabel: {fileID: 1420654669}
+  loudLabel: {fileID: 1270772789}
   btnBack: {fileID: 842175717}
 --- !u!1 &1528284439
 GameObject:
@@ -11265,6 +11283,7 @@ GameObject:
   - component: {fileID: 2090961663}
   - component: {fileID: 2090961662}
   - component: {fileID: 2090961661}
+  - component: {fileID: 2090961664}
   m_Layer: 5
   m_Name: List Main Hand
   m_TagString: Untagged
@@ -11507,6 +11526,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2090961659}
   m_CullTransparentMesh: 1
+--- !u!114 &2090961664
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2090961659}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dcdf0d366ed03842adb84d4b6c1cbcc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ElementChangeTracker
 --- !u!1 &2091722023
 GameObject:
   m_ObjectHideFlags: 0

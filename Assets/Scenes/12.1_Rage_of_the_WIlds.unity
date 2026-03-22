@@ -1917,6 +1917,89 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1488635919}
   m_CullTransparentMesh: 1
+--- !u!1 &1558383030
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1558383032}
+  - component: {fileID: 1558383033}
+  m_Layer: 0
+  m_Name: DNDClassManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1558383032
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1558383030}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 735.49915, y: 520.78357, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1558383033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1558383030}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24c4236fb005ce7439ad19ae0c8e03cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DNDClassManager
+  dndClass1: {fileID: 0}
+  dndClass2: {fileID: 0}
+  dndClass3: {fileID: 0}
+  dndClass4: {fileID: 0}
+  dndClass5: {fileID: 0}
+  subclass: {fileID: 0}
+  level: {fileID: 0}
+  row1: {fileID: 0}
+  row2: {fileID: 0}
+  row3: {fileID: 0}
+  row4: {fileID: 0}
+  row5: {fileID: 0}
+  btnBack: {fileID: 791574356}
+  lvl1feat1: {fileID: 0}
+  lvl1feat2: {fileID: 0}
+  lvl1feat3: {fileID: 0}
+  lvl1feat4: {fileID: 0}
+  lvl2feat1: {fileID: 0}
+  lvl2feat2: {fileID: 0}
+  lvl2feat3: {fileID: 0}
+  lvl2feat4: {fileID: 0}
+  lvl3feat1: {fileID: 0}
+  lvl3feat2: {fileID: 0}
+  lvl3feat3: {fileID: 0}
+  lvl3feat4: {fileID: 0}
+  lvl4feat1: {fileID: 0}
+  lvl4feat2: {fileID: 0}
+  lvl4feat3: {fileID: 0}
+  lvl4feat4: {fileID: 0}
+  lvl5feat1: {fileID: 0}
+  lvl5feat2: {fileID: 0}
+  lvl5feat3: {fileID: 0}
+  lvl5feat4: {fileID: 0}
+  featureName: {fileID: 0}
+  featureText: {fileID: 0}
+  btnClose: {fileID: 0}
+  btnNextScene: {fileID: 0}
+  featurePanel: {fileID: 0}
+  PCID: 0
 --- !u!1 &1626279096
 GameObject:
   m_ObjectHideFlags: 0
@@ -2300,5 +2383,6 @@ SceneRoots:
   m_Roots:
   - {fileID: 983914856}
   - {fileID: 1900838022}
+  - {fileID: 1558383032}
   - {fileID: 1144561255}
   - {fileID: 527177902}

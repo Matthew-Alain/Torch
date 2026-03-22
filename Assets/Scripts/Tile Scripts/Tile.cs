@@ -61,6 +61,8 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     public void OnPointerClick(PointerEventData eventData)
     {
+        CombatMenuManager menu = CombatMenuManager.Instance;
+
         bool leftClick = eventData.button == PointerEventData.InputButton.Left;
         GameState currentState = CombatStateManager.Instance.GameState;
 
@@ -72,15 +74,28 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             currentState == GameState.MonsterTurn
         ) return; //If it's not your turn, you can't click
 
+        if (!leftClick)
+        {
+            menu.CloseMenu();
+            return;
+        }
+
         switch (currentState)
         {
             case GameState.PlayerTurn:
-                if (leftClick)
+                if (OccupiedUnit != null)
                 {
-                    if (OccupiedUnit != null && OccupiedUnit.Faction == Faction.PC) //If you click on tile containing a PC
+                    if(OccupiedUnit.Faction == Faction.PC)
                     {
+                        if(OccupiedUnit.GetCondition("dying") || OccupiedUnit.GetCondition("unconscious") || OccupiedUnit.GetCondition("dead"))
+                        {
+                            menu.DisplayText($"{OccupiedUnit.UnitName} is unable to act this turn.");
+                            return;
+                        }
+
                         SelectPC(); //Select that PC
                     }
+                    
                 }
                 else
                 {
@@ -89,44 +104,34 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 break;
             
             case GameState.MovingPC:
-                if (leftClick)
+                if (isWalkable)
                 {
-                    if(OccupiedUnit != null)
+                    int distance = CheckDistanceInTiles(CombatUnitManager.Instance.SelectedPC.occupiedTile);
+                    bool hasEnoughSpeed = CheckWithinUnitSpeed(distance, CombatUnitManager.Instance.SelectedPC);
+                    if (hasEnoughSpeed)
                     {
-                        Log("You cannot move through units");
-                        //Check if halfling
-                    }
-                    else if (isWalkable)
-                    {
-                        int distance = CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile);
-                        bool hasEnoughSpeed = CheckWithinUnitSpeed(distance, CombatUnitManager.Instance.SelectedPC);
-                        if (hasEnoughSpeed)
+                        if(distance == 1)
                         {
-                            if(distance == 1)
-                            {
-                                MoveUnit(CombatUnitManager.Instance.SelectedPC);
-                            }
-                            else
-                            {
-                                Log("Please move one tile at a time");
-                            }
+                            MoveUnit(CombatUnitManager.Instance.SelectedPC);
                         }
                         else
                         {
-                            Log("Tile out of range");
+                            // Log("Please move one tile at a time");
                         }
+                    }
+                    else
+                    {
+                        // Log("Tile out of range");
                     }
                 }
                 else
                 {
-                    CombatStateManager.Instance.ChangeState(GameState.PlayerTurn); //Cancel moving
-                    ClearUnitSelection();
-                    Log("No longer moving");
+                    menu.DisplayText("That tile is not walkable");
                 }
                 break;
             
             case GameState.SelectAttackTarget:
-                if (leftClick)
+                if (OccupiedUnit != null && OccupiedUnit.Faction == Faction.Monster)
                 {
                     int melee_range = 0;
                     int normal_range = 0;
@@ -145,37 +150,29 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                         }
                     );
 
-                    if(OccupiedUnit!= null && OccupiedUnit.Faction == Faction.Monster)
+                    int distance = CheckDistanceInTiles(CombatUnitManager.Instance.SelectedPC.occupiedTile) * 5;
+                    if (distance <= melee_range)
                     {
-                        int distance = CheckDistance(CombatUnitManager.Instance.SelectedPC.occupiedTile) * 5;
-                        if (distance <= melee_range)
-                        {
-                            CombatActions.MeleeWeaponAttack(CombatUnitManager.Instance.SelectedPC, CombatStateManager.Instance.declaredWeapon, OccupiedUnit);
-                            
-                        }
-                        else if (distance <= normal_range)
-                        {
-                            CombatActions.RangedWeaponAttack(CombatUnitManager.Instance.SelectedPC, OccupiedUnit);
-                        }
-                        else if (distance <= long_range)
-                        {
-                            CombatActions.LongRangeWeaponAttack(CombatUnitManager.Instance.SelectedPC, OccupiedUnit);
-                        }
-                        else
-                        {
-                            Log("The target is out of range");
-                        }
+                        CombatActions.MeleeWeaponAttack(CombatUnitManager.Instance.SelectedPC, CombatStateManager.Instance.declaredWeapon, OccupiedUnit);
+                        
+                    }
+                    else if (distance <= normal_range)
+                    {
+                        CombatActions.RangedWeaponAttack(CombatUnitManager.Instance.SelectedPC, OccupiedUnit);
+                    }
+                    else if (distance <= long_range)
+                    {
+                        CombatActions.LongRangeWeaponAttack(CombatUnitManager.Instance.SelectedPC, OccupiedUnit);
                     }
                     else
                     {
-                        Log("You can only attack monsters");
+                        menu.DisplayText("The target is out of range");
+                        // Log("The target is out of range");
                     }
-                    
                 }
                 else
                 {
-                    CombatStateManager.Instance.ChangeState(GameState.PlayerTurn); //Cancel moving
-                    Log("No longer attacking");
+                    menu.DisplayText("That's an invalid target");
                 }
                 break;
             
@@ -200,7 +197,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     }
 
     //Returns the number of tiles between two tiles
-    public int CheckDistance(Tile targetTile)
+    public int CheckDistanceInTiles(Tile targetTile)
     {
         int xDifference = Mathf.Abs(tileX - targetTile.tileX);
         int yDifference = Mathf.Abs(tileY - targetTile.tileY);
@@ -226,7 +223,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         ));
 
         //If tile is difficult terrain, multiply by 10 instead
-        int amountMoved = CheckDistance(movingUnit.occupiedTile) * 5;
+        int amountMoved = CheckDistanceInTiles(movingUnit.occupiedTile) * 5;
 
         int newSpeed = unitSpeed - amountMoved;
 
@@ -236,7 +233,8 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             $"UPDATE unit_resources SET current_speed = {newSpeed} WHERE id = {movingUnit.UnitID}"
         );
 
-        Log("Unit has " + newSpeed + " feet of movement left.");
+        CombatMenuManager.Instance.DisplayText($"{OccupiedUnit.UnitName} has {newSpeed} feet of movement left");
+        // Log("Unit has " + newSpeed + " feet of movement left.");
 
         if (newSpeed == 0)
         {
@@ -256,8 +254,6 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         {
             LogWarning("This tile was already empty");
         }
-        DatabaseManager.Instance.ExecuteNonQuery(
-            $"UPDATE grid_contents SET unit_id = NULL WHERE x = {tileX} AND y = {tileY}"
-        );
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE grid_contents SET unit_id = NULL WHERE x = {tileX} AND y = {tileY}");
     }
 }

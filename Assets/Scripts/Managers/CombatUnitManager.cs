@@ -16,6 +16,7 @@ public class CombatUnitManager : MonoBehaviour
     public List<int> activeMonsterIDs = new List<int>();
     public BasePC SelectedPC; //We only ever want a PC to be actionable
     public static CombatUnitManager Instance;
+    public int PCCount;
 
     void Awake()
     {
@@ -34,11 +35,13 @@ public class CombatUnitManager : MonoBehaviour
         }
 
         //Now safe to create a new instance
-        Instance = this;    
+        Instance = this;
         // DontDestroyOnLoad(gameObject);
 
         //Goes into resources folder, goes into units folder, look into all subfolders for all types of scriptable units and put them into this list
         units = Resources.LoadAll<ScriptableUnit>("Units").ToList();
+
+        PCCount = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT COUNT(*) FROM saved_pcs"));
     }
 
     public void SpawnPCs(int encounterID)
@@ -66,7 +69,10 @@ public class CombatUnitManager : MonoBehaviour
             
             var sr = spawnedPC.GetComponent<SpriteRenderer>();
             if (sr != null && pcToSpawn.UnitSprite != null)
+            {
                 sr.sprite = pcToSpawn.UnitSprite;
+                Log("Had to manually set Sprite Renderer for " + spawnedPC.UnitName);
+            }
 
 
             var spawnTile = CombatGridManager.Instance.GetPCSpawnTile(activePCIDs[i], encounterID); //Gets which tile that PC is supposed to spawn on
@@ -116,41 +122,45 @@ public class CombatUnitManager : MonoBehaviour
         CombatMenuManager.Instance.ShowSelectedPC(pc);
     }
 
-    public void FallUnconscious(int unitID)
+    public void FallUnconscious(BaseUnit unit)
     {
-        BaseUnit unit = GetUnitByID(unitID);
-        
+
         if (unit.Faction == Faction.Monster)
         {
             LogWarning("Tried to knock a monster unconscious, killing unit instead.");
-            KillUnit(unitID);
+            KillUnit(unit);
         }
         else
         {
-            string characterName = Convert.ToString(DatabaseManager.Instance.ExecuteScalar(
-                $"SELECT name FROM saved_pcs WHERE id = {unitID}"
-            ));
-            Log(characterName + " has fallen unconscious!");
+            unit.SetCondition("dying", true);
+            unit.SetCondition("unconscious", true);
+            CombatMenuManager.Instance.DisplayText($"{unit.UnitName} is dying!");
+            // Log($"{unit.UnitName} is dying!");
         }
+        
+        CombatStateManager.Instance.CheckForGameOver();
 
     }
 
-    public void KillUnit(int unitID)
+    public void KillUnit(BaseUnit unit)
     {
-        BaseUnit unit = GetUnitByID(unitID);
 
         if (unit.Faction == Faction.Monster)
         {
             Destroy(unit.gameObject);
-            Log("Unit " + unitID + " has been slain!");
+            CombatMenuManager.Instance.DisplayText($"{unit.UnitName} has been slain!");
+
+            // Log("Unit " + unitID + " has been slain!");
         }
         else
         {
-            string characterName = Convert.ToString(DatabaseManager.Instance.ExecuteScalar(
-                $"SELECT name FROM saved_pcs WHERE id = {unitID}"
-            ));
-            LogWarning(characterName + " has been killed!");
+            CombatMenuManager.Instance.DisplayText($"{unit.UnitName} has been killed!");
+
+            // LogWarning(characterName + " has been killed!");
         }
+
+        unit.SetCondition("dying", false);
+        unit.SetCondition("dead", true);
 
         unit.occupiedTile.EmptyTile();
 
@@ -160,23 +170,23 @@ public class CombatUnitManager : MonoBehaviour
         CombatStateManager.Instance.CheckForGameOver();
     }
 
-    public int GetProficiency(int unitID, string proficiency)
-    {
-        Log("Getting " + proficiency + " proficiency for unit " + unitID);
-        bool isProficient = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar(
-            $"SELECT {proficiency} FROM pc_proficiencies WHERE id = {unitID}"
-        ));
+    // public int GetProficiency(int unitID, string proficiency)
+    // {
+    //     Log("Getting " + proficiency + " proficiency for unit " + unitID);
+    //     bool isProficient = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar(
+    //         $"SELECT {proficiency} FROM pc_proficiencies WHERE id = {unitID}"
+    //     ));
 
-        if (isProficient)
-        {
-            return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                $"SELECT proficiency FROM unit_stats WHERE id = {unitID}"
-            ));
-        }
+    //     if (isProficient)
+    //     {
+    //         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
+    //             $"SELECT proficiency FROM unit_stats WHERE id = {unitID}"
+    //         ));
+    //     }
 
-        Log("Not proficient");
-        return 0;
-    }
+    //     Log("Not proficient");
+    //     return 0;
+    // }
 
     public BaseUnit GetUnitByID(int id)
     {
@@ -186,8 +196,11 @@ public class CombatUnitManager : MonoBehaviour
     public void UpdateActivePCList()
     {
         activePCIDs.Clear();
+
+        
+
         DatabaseManager.Instance.ExecuteReader(
-            $"SELECT unit_id FROM grid_contents WHERE unit_id <= 4 AND encounter_id = {DatabaseManager.Instance.currentEncounter}",
+            $"SELECT unit_id FROM grid_contents WHERE unit_id < {PCCount} AND encounter_id = {DatabaseManager.Instance.currentEncounter}",
             reader =>
             {
                 while (reader.Read())
@@ -197,12 +210,12 @@ public class CombatUnitManager : MonoBehaviour
             }
         );
     }
-    
+
     public void UpdateActiveMonsterList()
     {
         activeMonsterIDs.Clear();
         DatabaseManager.Instance.ExecuteReader(
-            $"SELECT unit_id FROM grid_contents WHERE unit_id > 4 AND encounter_id = {DatabaseManager.Instance.currentEncounter}",
+            $"SELECT unit_id FROM grid_contents WHERE unit_id >= {PCCount} AND encounter_id = {DatabaseManager.Instance.currentEncounter}",
             reader =>
             {
                 while (reader.Read())

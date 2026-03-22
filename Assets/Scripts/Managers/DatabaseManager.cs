@@ -223,3 +223,22 @@ public class DatabaseManager : MonoBehaviour
 
 }
 
+public enum StatModifier
+{
+    mSTR,
+    mDEX,
+    mCON,
+    mINT,
+    mWIS,
+    mCHA
+}
+
+public enum Stat
+{
+    Strength,
+    Dexterity,
+    Constitution,
+    Intelligence,
+    Wisdom,
+    Charisma
+}

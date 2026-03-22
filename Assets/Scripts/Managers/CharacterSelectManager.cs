@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 public class CharacterSelectManager : MonoBehaviour
 {
-    public TMP_Text characterLabel1, characterLabel2, characterLabel3, characterLabel4, characterLabel5;
+    public TMP_Text characterLabel1, characterLabel2, characterLabel3, characterLabel4, characterLabel5, characterLabel6;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -14,8 +14,7 @@ public class CharacterSelectManager : MonoBehaviour
 
         List<string> nameList = new List<string>();//Create the list of strings to hold the names
 
-        DatabaseManager.Instance.ExecuteReader(
-        "SELECT name FROM saved_pcs",             //Get the names from the database
+        DatabaseManager.Instance.ExecuteReader("SELECT name FROM saved_pcs",
         reader =>
         {
             while (reader.Read())
@@ -29,6 +28,7 @@ public class CharacterSelectManager : MonoBehaviour
         characterLabel3.text = nameList[2];
         characterLabel4.text = nameList[3];
         characterLabel5.text = nameList[4];
+        characterLabel6.text = nameList[5];
     }
 
     // Update is called once per frame

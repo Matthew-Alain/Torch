@@ -28,11 +28,9 @@ public class DNDClassManager : MonoBehaviour
     public GameObject featurePanel;
 
     //Current PC information
-    public BasePC currentPC;
+    private BasePC currentPC;
     private int classWithSubclass = -1;
     int lastClassWithSubclass;
-    bool firstLoad = true;
-    int lastSubclass;
     List<int> classIDs = new List<int>();
     List<int> classLevels = new List<int>();
 
@@ -73,16 +71,16 @@ public class DNDClassManager : MonoBehaviour
                 {
                     level.value = Convert.ToInt32(reader["level"]) - 1;
 
-                    if (level.value >= 0) { dndClass1.value = Convert.ToInt32(reader["dnd_class_1"]); }
-                    if (level.value >= 1) { dndClass2.value = Convert.ToInt32(reader["dnd_class_2"]); }
-                    if (level.value >= 2) { dndClass3.value = Convert.ToInt32(reader["dnd_class_3"]); }
-                    if (level.value >= 3) { dndClass4.value = Convert.ToInt32(reader["dnd_class_4"]); }
-                    if (level.value >= 4) { dndClass5.value = Convert.ToInt32(reader["dnd_class_5"]); }
+                    if (level.value >= 0) { dndClass1.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_1"])); }
+                    if (level.value >= 1) { dndClass2.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_2"])); }
+                    if (level.value >= 2) { dndClass3.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_3"])); }
+                    if (level.value >= 3) { dndClass4.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_4"])); }
+                    if (level.value >= 4) { dndClass5.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_5"])); }
 
                     var savedSubclass = reader["subclass"];
                     if (!(savedSubclass == DBNull.Value))
                     {
-                        lastSubclass = Convert.ToInt32(reader["subclass"]);
+                        subclass.SetValueWithoutNotify(Convert.ToInt32(reader["subclass"]));
                     }
                 }
             }
@@ -221,12 +219,7 @@ public class DNDClassManager : MonoBehaviour
         }
 
         // Preserve selection
-        if (firstLoad)
-        {
-            subclass.value = lastSubclass;
-            firstLoad = false;
-        }
-        else if (classWithSubclass != lastClassWithSubclass)
+        if (classWithSubclass != lastClassWithSubclass)
         {
             subclass.value = 0;
         }
@@ -330,7 +323,7 @@ public class DNDClassManager : MonoBehaviour
         );
     }
 
-    void SaveCharacter()
+    public void SaveCharacter()
     {
         DatabaseManager.Instance.ExecuteNonQuery(
             $"UPDATE saved_pcs SET dnd_class_1 = {dndClass1.value}, dnd_class_2 = {dndClass2.value}, dnd_class_3 = {dndClass3.value}, " +

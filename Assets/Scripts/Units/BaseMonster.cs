@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -65,7 +66,7 @@ public class BaseMonster : BaseUnit
                         for (int i = 0; i < targetTiles.Count; i++)
                         {
                             validTargets.Add(targetTiles[i].OccupiedUnit.UnitID);
-                            Debug.Log("Added unitID "+targetTiles[i].OccupiedUnit.UnitID+" as a valid target");
+                            // Debug.Log("Added unitID "+targetTiles[i].OccupiedUnit.UnitID+" as a valid target");
                             valid = true;
                         }
                     }
@@ -97,52 +98,59 @@ public class BaseMonster : BaseUnit
         return valid;
     }
 
-    public int ChooseTarget()
+    public BaseUnit ChooseTarget()
     {
         if(validTargets.Count == 0)
         {
             Debug.Log("No valid targets found");
-            CombatMenuManager.Instance.SetDisplayText($"{UnitName} is too far away to target any PC with attacks");
-            return -1;
+            CombatMenuManager.Instance.DisplayText($"{UnitName} is too far away to target any PC with attacks");
+            return null;
         }
-        return validTargets[UnityEngine.Random.Range(0, validTargets.Count)];
+        return CombatUnitManager.Instance.GetUnitByID(validTargets[UnityEngine.Random.Range(0, validTargets.Count)]);
     }
 
     public int ChooseAttack()
     {
         if(validActions.Count == 0)
         {
-            Debug.Log("No valid attacks found");
-            CombatMenuManager.Instance.SetDisplayText("The enemy has no valid attacks to make");
+            Debug.LogWarning("No valid attacks found");
+            CombatMenuManager.Instance.DisplayText("The enemy has no valid attacks to make");
             return -1;
         }
         return validActions[UnityEngine.Random.Range(0, validActions.Count)];
     }
 
-    public void AttackTarget(int targetID, int attackID)
+    public IEnumerator AttackTarget(BaseUnit target, int attackID)
     {
-        int damage = 0;
+        
+        int targetDistance = occupiedTile.CheckDistanceInTiles(target.occupiedTile);
 
-        switch (attackID)
+        if(targetDistance <= GetMeleeRange(attackID))
         {
-            case 0:
-                Debug.Log("Targeting unit " + targetID + " with attack 1");
-                damage = 10;
-                break;
-            case 1:
-                Debug.Log("Targeting unit " + targetID + " with attack 2");
-                damage = 20;
-                break;
-            case 2:
-                Debug.Log("Targeting unit " + targetID + " with attack 3");
-                damage = 30;
-                break;
-            default:
-                Debug.Log("Invalid attack");
-                break;
+            yield return StartCoroutine(CombatActions.MonsterAttack(this, target, attackID));
         }
 
-        CombatUnitManager.Instance.GetUnitByID(targetID).TakeDamage(damage, false);
+
+        // switch (attackID)
+        // {
+        //     case 0:
+        //         // Debug.Log("Targeting unit " + targetID + " with attack 1");
+        //         damage = 10;
+        //         break;
+        //     case 1:
+        //         // Debug.Log("Targeting unit " + targetID + " with attack 2");
+        //         damage = 20;
+        //         break;
+        //     case 2:
+        //         // Debug.Log("Targeting unit " + targetID + " with attack 3");
+        //         damage = 30;
+        //         break;
+        //     default:
+        //         Debug.LogWarning("Invalid attack");
+        //         break;
+        // }
+
+        // CombatUnitManager.Instance.GetUnitByID(targetID).TakeDamage(damage, false);
 
     }
 
@@ -153,40 +161,44 @@ public class BaseMonster : BaseUnit
 
         for (int i = 0; i < localTileList.Count; i++) //Check each tile
         {
-            if(localTileList[i].OccupiedUnit != null && localTileList[i].OccupiedUnit.UnitID < 5) //If there is a unit in the tile, and the unit is a PC
+            BaseUnit potentialTarget = localTileList[i].OccupiedUnit;
+            if (potentialTarget != null && potentialTarget.UnitID < 5) //If there is a unit in the tile, and the unit is a PC
             {
-                int distance = occupiedTile.CheckDistance(localTileList[i]);
-                if (distance <= range)
+                if (potentialTarget.GetCondition("dying") || potentialTarget.GetCondition("dead") || potentialTarget.GetCondition("unconscious"))
                 {
-                    Debug.Log("There is a valid target " + distance + " tiles away, which contains unitID "+localTileList[i].OccupiedUnit.UnitID);
-                    validTargetTileList.Add(localTileList[i]);
+                    // Debug.Log($"{potentialTarget.UnitName} is dying or dead.");
+                    continue;
+                }else if (occupiedTile.CheckDistanceInTiles(localTileList[i]) > range)
+                {
+                    //Debug.Log($"{potentialTarget.UnitName} is out of range at ({potentialTarget.occupiedTile.tileX}, {potentialTarget.occupiedTile.tileY}).");
+                    continue;
                 }
                 else
                 {
-                    Debug.Log("There is a unit that is out of range at " + localTileList[i].OccupiedUnit.occupiedTile.tileX + ", " + localTileList[i].OccupiedUnit.occupiedTile.tileY);
+                    // Debug.Log($"{potentialTarget.UnitName} is a valid target.");
+                    validTargetTileList.Add(localTileList[i]);    
                 }
+                
             }
         }
 
         return validTargetTileList;
     }
 
-    public IEnumerator MoveToUnit(int targetID)
+    public IEnumerator MoveToUnit(BaseUnit target)
     {
-        int maxMovement = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-            $"SELECT current_speed FROM unit_resources WHERE id = {UnitID}"));
+        int maxMovement = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT current_speed FROM unit_resources WHERE id = {UnitID}"));
 
-        Debug.Log("Attempting to target unit " + targetID);
-        Tile targetUnitTile = CombatUnitManager.Instance.GetUnitByID(targetID).occupiedTile;
+        // Debug.Log("Attempting to target unit " + target.UnitName);
 
-        List<Tile> path = GetPath(occupiedTile, targetUnitTile, maxMovement);
+        List<Tile> path = GetPath(occupiedTile, target.occupiedTile, maxMovement);
 
         if (path != null)
         {
             for (int i = 0; i < path.Count; i++)
             {
                 path[i].MoveUnit(this);
-                Debug.Log("Monster moved to tile: (" + occupiedTile.tileX + ", " + occupiedTile.tileY + ")");
+                // Debug.Log("Monster moved to tile: (" + occupiedTile.tileX + ", " + occupiedTile.tileY + ")");
                 yield return new WaitForSeconds(0.5f);
             }
         }
@@ -218,7 +230,7 @@ public class BaseMonster : BaseUnit
             // Debug.Log("No more steps remaining, stopped at tile " +currentTile.tileX+", "+currentTile.tileY);
             return false;
         }
-        
+
         Vector2Int current = new Vector2Int(currentTile.tileX, currentTile.tileY);
 
 
@@ -277,4 +289,72 @@ public class BaseMonster : BaseUnit
         visited.Remove(current);
         return false;
     }
+
+    public int GetHitMod(int attackID)
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT hit_modifier FROM monster_attacks WHERE id = {attackID}"));
+    }
+
+    public int GetDiceNumber(int attackID)
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dice_number FROM monster_attacks WHERE id = {attackID}"));
+    }
+
+    public int GetDiceSize(int attackID)
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dice_size FROM monster_attacks WHERE id = {attackID}"));
+    }
+
+    public int GetDamageBonus(int attackID)
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT damage_bonus FROM monster_attacks WHERE id = {attackID}"));
+    }
+
+    public int GetDamageType(int attackID)
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT damage_type FROM monster_attacks WHERE id = {attackID}"));
+    }
+
+    public int GetMeleeRange(int attackID)
+    {
+        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT melee_range FROM monster_attacks WHERE id = {attackID}");
+        
+        if(range == DBNull.Value)
+        {
+            return 0;
+        }
+        else
+        {
+            return Convert.ToInt32(range);
+        }
+    }
+
+    public int GetNormalRange(int attackID)
+    {
+        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT normal_range FROM monster_attacks WHERE id = {attackID}");
+        
+        if(range == DBNull.Value)
+        {
+            return 0;
+        }
+        else
+        {
+            return Convert.ToInt32(range);
+        }
+    }
+
+    public int GetLongRange(int attackID)
+    {
+        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT long_range FROM monster_attacks WHERE id = {attackID}");
+        
+        if(range == DBNull.Value)
+        {
+            return 0;
+        }
+        else
+        {
+            return Convert.ToInt32(range);
+        }
+    }
+
 }

@@ -179,7 +179,6 @@ public class CombatMenuManager : MonoBehaviour
                 while (reader.Read())
                 {
                     mainHand = Convert.ToInt32(reader["main_hand_item"]);
-                    Debug.Log(Convert.ToString(reader["main_hand_item"]));
                     offHand = Convert.ToInt32(reader["off_hand_item"]);
                 }
             }
@@ -224,7 +223,7 @@ public class CombatMenuManager : MonoBehaviour
         OpenMenu(minorOptions);
     }
 
-    public void SetDisplayText(string message)
+    public void DisplayText(string message)
     {
         displayText.SetActive(true);
         displayText.GetComponentInChildren<TMP_Text>().text = message;

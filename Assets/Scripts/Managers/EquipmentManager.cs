@@ -49,9 +49,9 @@ public class EquipmentManager : MonoBehaviour
             {
                 while (reader.Read())
                 {
-                    mainHand.value = Convert.ToInt32(reader["main_hand_item"]);
-                    offHand.value = Convert.ToInt32(reader["off_hand_item"]);
-                    armor.value = Convert.ToInt32(reader["equipped_armor"]);
+                    mainHand.SetValueWithoutNotify(Convert.ToInt32(reader["main_hand_item"]));
+                    offHand.SetValueWithoutNotify(Convert.ToInt32(reader["off_hand_item"]));
+                    armor.SetValueWithoutNotify(Convert.ToInt32(reader["equipped_armor"]));
 
                     UpdateMainHand(mainHand.value);
                     UpdateArmor(armor.value);

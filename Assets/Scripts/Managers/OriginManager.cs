@@ -23,30 +23,12 @@ public class OriginManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        GetCharacterSpecies(); //Populate the dropdown list
-        GetOriginFeat();
-
-        species.value = currentPC.GetSpecies(); //Populate the dropdown list
-        originFeat.value = currentPC.GetOriginFeat();
+        species.SetValueWithoutNotify(currentPC.GetSpecies());
+        originFeat.SetValueWithoutNotify(currentPC.GetOriginFeat());
 
         btnBack.onClick.AddListener(SaveCharacter);
     }
     
-    void GetCharacterSpecies()
-    {
-        int savedSpecies = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT species FROM saved_pcs WHERE id = {currentPC.UnitID}"));
-
-        species.value = savedSpecies;
-    }
-    
-    void GetOriginFeat()
-    {
-
-        int savedOriginFeat = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT origin_feat FROM saved_pcs WHERE id = {currentPC.UnitID}"));
-
-        originFeat.value = savedOriginFeat;
-    }
-
     void SaveCharacter()
     {
         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET species = {species.value}, origin_feat = {originFeat.value} WHERE id = {currentPC.UnitID}");

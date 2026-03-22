@@ -1053,6 +1053,7 @@ GameObject:
   - component: {fileID: 358070925}
   - component: {fileID: 358070924}
   - component: {fileID: 358070923}
+  - component: {fileID: 358070926}
   m_Layer: 5
   m_Name: Dropdown Origin
   m_TagString: Untagged
@@ -1208,6 +1209,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 358070921}
   m_CullTransparentMesh: 1
+--- !u!114 &358070926
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 358070921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dcdf0d366ed03842adb84d4b6c1cbcc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ElementChangeTracker
 --- !u!1 &360158187
 GameObject:
   m_ObjectHideFlags: 0
@@ -1540,6 +1553,7 @@ GameObject:
   - component: {fileID: 418648191}
   - component: {fileID: 418648190}
   - component: {fileID: 418648189}
+  - component: {fileID: 418648192}
   m_Layer: 5
   m_Name: Dropdown Species
   m_TagString: Untagged
@@ -1734,6 +1748,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 418648187}
   m_CullTransparentMesh: 1
+--- !u!114 &418648192
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 418648187}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dcdf0d366ed03842adb84d4b6c1cbcc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ElementChangeTracker
 --- !u!1 &516345216
 GameObject:
   m_ObjectHideFlags: 0
@@ -3159,7 +3185,7 @@ MonoBehaviour:
   species: {fileID: 418648189}
   originFeat: {fileID: 358070923}
   btnBack: {fileID: 1202441384}
-  PCID: 0
+  currentPC: {fileID: 0}
 --- !u!1 &1582650516
 GameObject:
   m_ObjectHideFlags: 0

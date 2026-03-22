@@ -30,7 +30,7 @@ public class CharacterCreationManager : MonoBehaviour
             Debug.Log("No character name assigned");
             return;
         }
-        characterName.text = GetCharacterName(); //Populate the character name
+        characterName.SetTextWithoutNotify(GetCharacterName()); //Populate the character name
 
         btnSaveCharacter.onClick.AddListener(SaveCharacter);
     }
@@ -42,7 +42,7 @@ public class CharacterCreationManager : MonoBehaviour
         ));        
     }
 
-    void SaveCharacter()
+    public void SaveCharacter()
     {
         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET name = \"{characterName.text}\" WHERE id = {currentPC.UnitID}");
     }
