@@ -401,6 +401,8 @@ public class BaseUnit : MonoBehaviour
     public void ClearDeathSaves()
     {
         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET death_save_successes = 0, death_save_fails = 0 WHERE id = {UnitID}");
+        SetCondition("dying", false);
+        SetCondition("unconscious", false);
     }
     
 }

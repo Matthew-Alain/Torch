@@ -94,7 +94,7 @@ public class CombatGridManager : MonoBehaviour
 
         // cam.transform.position = new Vector3((float)width / 2 - 0.5f, (float)height / 2 - 0.5f, -10); //Offset the camera for better viewing
 
-        CombatStateManager.Instance.ChangeState(GameState.SpawnHeroes); //Once the grid is generated, now spawn the heroes
+        StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.SpawnHeroes)); //Once the grid is generated, now spawn the heroes
     }
 
     public Tile GetPCSpawnTile(int PCID, int encounterID)

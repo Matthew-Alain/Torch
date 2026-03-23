@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 3897828687781263829}
   - component: {fileID: 5167313632957188762}
-  - component: {fileID: 1664401603266981527}
+  - component: {fileID: 7137314009471380798}
   m_Layer: 0
-  m_Name: Goblin
+  m_Name: Goblin Mage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -28,7 +28,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0.7647, y: -1.5120001, z: 0}
-  m_LocalScale: {x: 0.053188644, y: 0.043689013, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -82,7 +82,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 5694384248626871703, guid: 8bb234fad9af5114ca3c614edb36bece, type: 3}
+  m_Sprite: {fileID: 1492209891294395249, guid: 7b04b209becbcbc4bb3a588bb3c4f247, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -92,7 +92,7 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!114 &1664401603266981527
+--- !u!114 &7137314009471380798
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -101,13 +101,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 7089780268459073922}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1fd1db45cbeb9104fab53795fb328adf, type: 3}
+  m_Script: {fileID: 11500000, guid: 9bc73f1dd5ee8674f9406533beb008e1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Assembly-CSharp::GoblinMage
   occupiedTile: {fileID: 0}
   Faction: 1
-  UnitName: Goblin
-  UnitID: 6
-  actionList: 0000000001000000
+  UnitName: Goblin Mage
+  UnitID: 7
+  actionList: 
   validActions: 
-  validTargets: 

@@ -116,6 +116,7 @@ public class CombatActions
             int dice_number = 0;
             int dice_size = 0;
             int damageBonus = 0;
+            string attackName = "";
             DatabaseManager.Instance.ExecuteReader(
                 $"SELECT * FROM monster_attacks WHERE id = {attackID}",
                 reader =>
@@ -124,13 +125,14 @@ public class CombatActions
                     dice_number = Convert.ToInt32(reader["dice_number"]);
                     dice_size = Convert.ToInt32(reader["dice_size"]);
                     damageBonus = Convert.ToInt32(reader["damage_bonus"]);
+                    attackName = Convert.ToString(reader["name"]);
                 }
             );
 
             int totalResult = dieRoll + hitMod;
 
-            CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} is attacking {target.UnitName}");
-            yield return new WaitForSeconds(1.5f);
+            CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} is attacking {target.UnitName} with {attackName}");
+            yield return new WaitForSeconds(2f);
 
             if (totalResult >= target.GetAC())
             {

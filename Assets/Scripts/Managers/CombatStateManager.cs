@@ -53,12 +53,12 @@ public class CombatStateManager : MonoBehaviour
         CombatMenuManager.Instance.CloseMenu();
         CombatUnitManager.Instance.SetSelectedPC(null);
 
-        ChangeState(GameState.StartMonsterTurn);
+        StartCoroutine(ChangeState(GameState.StartMonsterTurn));
     }
 
-    public void ChangeState(GameState newState)
+    public IEnumerator ChangeState(GameState newState)
     {
-        if (GameState == newState) return;
+        if (GameState == newState) yield return null;
         GameState = newState;
 
         // Debug.Log("New state: "+GameState);
@@ -121,7 +121,7 @@ public class CombatStateManager : MonoBehaviour
             }
         }
 
-        ChangeState(GameState.PlayerTurn);
+        StartCoroutine(ChangeState(GameState.PlayerTurn));
     }
 
     private IEnumerator StartMonsterTurn()
@@ -140,13 +140,13 @@ public class CombatStateManager : MonoBehaviour
             yield return null;
         }
 
-        ChangeState(GameState.MonsterTurn);
+        StartCoroutine(ChangeState(GameState.MonsterTurn));
     }
 
     public void DeclareAttack(int weaponID)
     {
         declaredWeapon = weaponID;
-        ChangeState(GameState.SelectAttackTarget);
+        StartCoroutine(ChangeState(GameState.SelectAttackTarget));
         Debug.Log("Selecting attack target");
     }
 
@@ -157,31 +157,30 @@ public class CombatStateManager : MonoBehaviour
         for (int i = 0; i < CombatUnitManager.Instance.activeMonsterIDs.Count; i++)
         {
             BaseMonster currentMonster = (BaseMonster)CombatUnitManager.Instance.GetUnitByID(monsterIDList[i]);
-            currentMonster.CheckValidActions();
+            yield return StartCoroutine(currentMonster.CheckValidActions());
+            // Debug.Log("Finished finding valid actions for " + currentMonster.UnitName);
 
-            if (currentMonster.validActions != null)
+            if (currentMonster.validActions != null && currentMonster.validActions.Count > 0)
             {
-                BaseUnit target = currentMonster.ChooseTarget();
+                (BaseUnit, int) targetAndAttack = currentMonster.ChooseTargetAndAttack();
 
-                if (target != null)
+                if (targetAndAttack != (null, -1))
                 {
-                    int attackID = currentMonster.ChooseAttack();
-                    if (!(attackID == -1))
-                    {
-                        CombatMenuManager.Instance.DisplayText($"{currentMonster.UnitName} is attacking {target.UnitName}");
-                        yield return new WaitForSeconds(1.5f);
-                        yield return StartCoroutine(currentMonster.MoveToUnit(target));
-                        yield return new WaitForSeconds(0.5f);
-                        yield return StartCoroutine(currentMonster.AttackTarget(target, attackID));
-                    }
-                }
+                    BaseUnit target = targetAndAttack.Item1;
+                    int attackID = targetAndAttack.Item2;
+                    // CombatMenuManager.Instance.DisplayText($"{currentMonster.UnitName} is attacking {target.UnitName}");
 
+                    yield return StartCoroutine(currentMonster.MoveToTile(currentMonster.GetPathToBestAttackTile(target.occupiedTile, attackID)));
+                    yield return new WaitForSeconds(0.5f);
+                    yield return StartCoroutine(currentMonster.AttackTarget(target, attackID));
+                    yield return new WaitForSeconds(0.5f);
+                }
+                
                 currentMonster.EndTurn();
             }
         }
 
-        ChangeState(GameState.StartPlayerTurn);
-
+        yield return StartCoroutine(ChangeState(GameState.StartPlayerTurn));
     }
 
     public void CheckForGameOver()
@@ -197,7 +196,8 @@ public class CombatStateManager : MonoBehaviour
             }
         }
 
-        if (Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar("SELECT COUNT(*) FROM grid_contents WHERE unit_id > 4")) <= 0)
+        if (Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT COUNT(*) FROM grid_contents WHERE encounter_id = {DatabaseManager.Instance.currentEncounter} "+
+        $"AND unit_id NOT IN {CombatUnitManager.Instance.PCList}")) <= 0)
         {
             Debug.LogWarning("The last monster has been killed, you win!");
             //Create a canvas window that announces this, with a button to reset

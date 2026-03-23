@@ -16,7 +16,7 @@ public class CombatUnitManager : MonoBehaviour
     public List<int> activeMonsterIDs = new List<int>();
     public BasePC SelectedPC; //We only ever want a PC to be actionable
     public static CombatUnitManager Instance;
-    public int PCCount;
+    public string PCList = "(0,1,2,3,4,5)";
 
     void Awake()
     {
@@ -40,8 +40,6 @@ public class CombatUnitManager : MonoBehaviour
 
         //Goes into resources folder, goes into units folder, look into all subfolders for all types of scriptable units and put them into this list
         units = Resources.LoadAll<ScriptableUnit>("Units").ToList();
-
-        PCCount = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT COUNT(*) FROM saved_pcs"));
     }
 
     public void SpawnPCs(int encounterID)
@@ -80,7 +78,7 @@ public class CombatUnitManager : MonoBehaviour
             spawnTile.SetUnit(spawnedPC); //Set that spawn tile's unit to the spawned PC
         }
 
-        CombatStateManager.Instance.ChangeState(GameState.SpawnMonsters);
+        StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.SpawnMonsters));
     }
 
     public void SpawnMonsters(int encounterID)
@@ -113,7 +111,7 @@ public class CombatUnitManager : MonoBehaviour
             spawnTile.SetUnit(spawnedMonster); //Set that spawn tile's unit to the spawned PC
         }
 
-        CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
+        StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.PlayerTurn));
     }
 
     public void SetSelectedPC(BasePC pc)
@@ -132,8 +130,9 @@ public class CombatUnitManager : MonoBehaviour
         }
         else
         {
-            unit.SetCondition("dying", true);
             unit.SetCondition("unconscious", true);
+            unit.SetCondition("prone", true);
+            unit.SetCondition("dying", true);
             CombatMenuManager.Instance.DisplayText($"{unit.UnitName} is dying!");
             // Log($"{unit.UnitName} is dying!");
         }
@@ -159,6 +158,8 @@ public class CombatUnitManager : MonoBehaviour
             // LogWarning(characterName + " has been killed!");
         }
 
+        unit.SetCondition("unconscious", true);
+        unit.SetCondition("prone", true);
         unit.SetCondition("dying", false);
         unit.SetCondition("dead", true);
 
@@ -169,24 +170,6 @@ public class CombatUnitManager : MonoBehaviour
 
         CombatStateManager.Instance.CheckForGameOver();
     }
-
-    // public int GetProficiency(int unitID, string proficiency)
-    // {
-    //     Log("Getting " + proficiency + " proficiency for unit " + unitID);
-    //     bool isProficient = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar(
-    //         $"SELECT {proficiency} FROM pc_proficiencies WHERE id = {unitID}"
-    //     ));
-
-    //     if (isProficient)
-    //     {
-    //         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-    //             $"SELECT proficiency FROM unit_stats WHERE id = {unitID}"
-    //         ));
-    //     }
-
-    //     Log("Not proficient");
-    //     return 0;
-    // }
 
     public BaseUnit GetUnitByID(int id)
     {
@@ -200,7 +183,7 @@ public class CombatUnitManager : MonoBehaviour
         
 
         DatabaseManager.Instance.ExecuteReader(
-            $"SELECT unit_id FROM grid_contents WHERE unit_id < {PCCount} AND encounter_id = {DatabaseManager.Instance.currentEncounter}",
+            $"SELECT unit_id FROM grid_contents WHERE unit_id IN {PCList} AND encounter_id = {DatabaseManager.Instance.currentEncounter}",
             reader =>
             {
                 while (reader.Read())
@@ -215,7 +198,7 @@ public class CombatUnitManager : MonoBehaviour
     {
         activeMonsterIDs.Clear();
         DatabaseManager.Instance.ExecuteReader(
-            $"SELECT unit_id FROM grid_contents WHERE unit_id >= {PCCount} AND encounter_id = {DatabaseManager.Instance.currentEncounter}",
+            $"SELECT unit_id FROM grid_contents WHERE unit_id NOT IN {PCList} AND encounter_id = {DatabaseManager.Instance.currentEncounter}",
             reader =>
             {
                 while (reader.Read())

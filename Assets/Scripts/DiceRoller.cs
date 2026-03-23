@@ -17,15 +17,15 @@ public class DiceRoller
     {
         int total = 0;
 
-        Debug.Log("You are rolling " + diceNumber + "d" + diceSize + " for damage.");
+        // Debug.Log("You are rolling " + diceNumber + "d" + diceSize + " for damage.");
         for (int i = 1; i <= diceNumber; i++)
         {
             int result = UnityEngine.Random.Range(1, diceSize + 1);
-            Debug.Log("For roll " + i + "/" + diceNumber + ", you rolled: " + result);
+            // Debug.Log("For roll " + i + "/" + diceNumber + ", you rolled: " + result);
             total += result;
         }
-        Debug.Log("For a total of " + total + " damage");
-        CombatMenuManager.Instance.DisplayText($"You did {total} damage");
+        // Debug.Log("For a total of " + total + " damage");
+        // CombatMenuManager.Instance.DisplayText($"You did {total} damage");
 
         return total;
     }

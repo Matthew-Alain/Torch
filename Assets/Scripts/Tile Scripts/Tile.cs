@@ -8,12 +8,11 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 {
     [SerializeField] protected SpriteRenderer rend;     //Derived tiles can now access
     [SerializeField] private GameObject highlight;
-    [SerializeField] private bool isWalkable;
+    public bool isWalkable;
     public string TileName;
     public int tileEncounter, tileID, tileX, tileY;
 
     public BaseUnit OccupiedUnit;
-    public bool Walkable => isWalkable && OccupiedUnit == null;
 
     //This logic runs on all tiles, but each tile has the chance to override it
     public virtual void Init(int encounterID, int id, int x, int y)
@@ -104,7 +103,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 break;
             
             case GameState.MovingPC:
-                if (isWalkable)
+                if (isWalkable && OccupiedUnit == null)
                 {
                     int distance = CheckDistanceInTiles(CombatUnitManager.Instance.SelectedPC.occupiedTile);
                     bool hasEnoughSpeed = CheckWithinUnitSpeed(distance, CombatUnitManager.Instance.SelectedPC);
@@ -186,7 +185,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     {
         CombatMenuManager.Instance.CloseAllMenus();
         CombatUnitManager.Instance.SetSelectedPC(null);
-        CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
+        StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.PlayerTurn));
     }
 
     private void SelectPC()
@@ -236,11 +235,11 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         CombatMenuManager.Instance.DisplayText($"{OccupiedUnit.UnitName} has {newSpeed} feet of movement left");
         // Log("Unit has " + newSpeed + " feet of movement left.");
 
-        if (newSpeed == 0)
-        {
-            // CombatUnitManager.Instance.SetSelectedPC(null); //And deselect the PC
-            CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
-        }
+        // if (newSpeed == 0)
+        // {
+        //     // CombatUnitManager.Instance.SetSelectedPC(null); //And deselect the PC
+        //     CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
+        // }
     }
     
     public void EmptyTile()
