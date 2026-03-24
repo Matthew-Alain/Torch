@@ -1,7 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
-using TMPro;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
 
@@ -13,6 +11,7 @@ public class SettingsManager : MonoBehaviour
     public GameObject panelMain;
     public GameObject panelVolume;
     public GameObject panelTutorials;
+    public Button markAllTutorialsRead;
     public GameObject panelUnsavedWarning;
 
     private bool hasUnsavedChanges = false;
@@ -44,6 +43,7 @@ public class SettingsManager : MonoBehaviour
         }
 
         settingsCanvas.SetActive(false);
+        markAllTutorialsRead.onClick.AddListener(TutorialManager.MarkAllTutorialsRead);
     }
 
     void Update()

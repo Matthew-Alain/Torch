@@ -9,82 +9,79 @@ EditorBuildSettings:
     path: Assets/Scenes/0_Main_Menu.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
   - enabled: 1
-    path: Assets/Scenes/1_Settings.unity
-    guid: 8ad0dfcbe7fa9ee47895a40198e3ef8b
-  - enabled: 1
-    path: Assets/Scenes/2_Tutorials.unity
-    guid: 1a5f52564140ebb4988ba0792d7b0bbf
-  - enabled: 1
-    path: Assets/Scenes/3_Character_Select.unity
+    path: Assets/Scenes/1_Character_Select.unity
     guid: 4b4a6e8e4cafd8f4eb34191b6f82f2ee
   - enabled: 1
-    path: Assets/Scenes/4_Character_Creation.unity
+    path: Assets/Scenes/2_Character_Creation.unity
     guid: 8b0d8f21056d0a842bdd707d4e13b137
   - enabled: 1
-    path: Assets/Scenes/5_Origin_Features.unity
+    path: Assets/Scenes/3_Origin_Features.unity
     guid: d74da678fefb10d46b235fb470bc6124
   - enabled: 1
-    path: Assets/Scenes/6_Class_Features.unity
+    path: Assets/Scenes/4_Class_Features.unity
     guid: 51dc79d396b425e429a20b40f26015a7
   - enabled: 1
-    path: Assets/Scenes/7_Ability_Scores.unity
+    path: Assets/Scenes/5_Ability_Scores.unity
     guid: 627fd74c7b5992a44b25537cca0aebef
   - enabled: 1
-    path: Assets/Scenes/8_Skills.unity
+    path: Assets/Scenes/6_Skills.unity
     guid: e491e76d29a9c884f805b3963b7072e1
   - enabled: 1
-    path: Assets/Scenes/9_Equipment.unity
+    path: Assets/Scenes/7_Equipment.unity
     guid: 3c2ec5e356cc5c5499904bb5cbaec4fc
   - enabled: 1
-    path: Assets/Scenes/10_Feats.unity
+    path: Assets/Scenes/8_Feats.unity
     guid: 9fd29585de631734e9323d6e5450fa08
   - enabled: 1
-    path: Assets/Scenes/11_Weapon_Mastery.unity
+    path: Assets/Scenes/9_Weapon_Mastery.unity
     guid: affa246e625f0ea45b725fc9bd34dd5f
   - enabled: 1
-    path: Assets/Scenes/12.0_Spellcasting.unity
+    path: Assets/Scenes/10_Spellcasting.unity
     guid: 46adc16ab19a4a9439f911e65cf82468
   - enabled: 1
-    path: Assets/Scenes/13_Divine_Order.unity
+    path: Assets/Scenes/11_Rage_of_the_WIlds.unity
+    guid: fd9f64b149648e94fa2231ecb174f20c
+  - enabled: 1
+    path: Assets/Scenes/12_Divine_Order.unity
     guid: c555eec70dbb8cf4aacc0a07afb46647
   - enabled: 1
-    path: Assets/Scenes/14_Blessing_of_the_Trickster.unity
+    path: Assets/Scenes/13_Blessing_of_the_Trickster.unity
     guid: 34882e7229c926447bbef64125bdd9b6
   - enabled: 1
-    path: Assets/Scenes/15_Primal_Order.unity
+    path: Assets/Scenes/14_Primal_Order.unity
     guid: b1dfbb12f25330541a821751bfc1ee12
   - enabled: 1
-    path: Assets/Scenes/16_Wild_Shape.unity
+    path: Assets/Scenes/15_Wild_Shape.unity
     guid: dc45af15c7232da44853a909a0fa67b0
   - enabled: 1
-    path: Assets/Scenes/17_Land_Circle.unity
+    path: Assets/Scenes/16_Land_Circle.unity
     guid: 4a857e853dac34a419e66d440c9aadf6
   - enabled: 1
-    path: Assets/Scenes/18_Fighting_Style.unity
+    path: Assets/Scenes/17_Fighting_Style.unity
     guid: 2a4977aee45f1494da7a96dec27780ce
   - enabled: 1
-    path: Assets/Scenes/19_Combat_Superiority.unity
+    path: Assets/Scenes/18_Combat_Superiority.unity
     guid: 306c6c67602869a48b7654615e2eb332
   - enabled: 1
-    path: Assets/Scenes/20_Primal_Companion.unity
+    path: Assets/Scenes/19_Primal_Companion.unity
     guid: f39d2e3e03f7129479bb35c869e53c61
   - enabled: 1
-    path: Assets/Scenes/21_Hunter's_Prey.unity
+    path: Assets/Scenes/20_Hunter's_Prey.unity
     guid: 6747d9bc6e2988a44b0073f8700e5ee2
   - enabled: 1
-    path: Assets/Scenes/22_Metamagic.unity
+    path: Assets/Scenes/21_Metamagic.unity
     guid: 1c7efa82c928ea8459aa88bcc6f3fa8e
   - enabled: 1
-    path: Assets/Scenes/23_Eldritch_Invocations.unity
+    path: Assets/Scenes/22_Eldritch_Invocations.unity
     guid: 8addd8ce90edb574595487909c8475dc
   - enabled: 1
-    path: Assets/Scenes/24_Select_Encounter.unity
+    path: Assets/Scenes/23_Select_Encounter.unity
     guid: c587ba7961dd16c4089e57f8c7292618
   - enabled: 1
-    path: Assets/Scenes/25_Encounter_1.unity
+    path: Assets/Scenes/24_Encounter_1.unity
     guid: 9935610e7ac1ae44ab996bdb064c970c
   - enabled: 1
-    path: Assets/Scenes/26_Encounter_2.unity
+    path: Assets/Scenes/25_Encounter_2.unity
     guid: 0ab71739cc50114409135a536e22d1b6
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}

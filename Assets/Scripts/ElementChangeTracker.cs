@@ -38,7 +38,7 @@ public class ElementChangeTracker : MonoBehaviour
         var button = GetComponent<Button>();
         if (button != null)
         {
-            button.onClick.AddListener(() => {SettingsManager.Instance.MarkDirty(); });
+            button.onClick.AddListener(() => {SettingsManager.Instance.MarkAsUnsavedChanges(); });
         }
     }
 }

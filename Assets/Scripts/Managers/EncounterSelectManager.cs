@@ -33,7 +33,7 @@ public class EncounterSelectManager : MonoBehaviour
 
         DatabaseManager.Instance.CreateEncounterDatabase(DatabaseManager.Instance.currentEncounter);
 
-        SceneManager.LoadScene(DatabaseManager.Instance.currentEncounter + 25);
+        SceneManager.LoadScene(DatabaseManager.Instance.currentEncounter + 24);
     }
 
 
