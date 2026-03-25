@@ -71,17 +71,11 @@ public class DNDClassManager : MonoBehaviour
                 {
                     level.value = Convert.ToInt32(reader["level"]) - 1;
 
-                    // if (level.value >= 0) { dndClass1.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_1"])); }
-                    // if (level.value >= 1) { dndClass2.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_2"])); }
-                    // if (level.value >= 2) { dndClass3.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_3"])); }
-                    // if (level.value >= 3) { dndClass4.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_4"])); }
-                    // if (level.value >= 4) { dndClass5.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_5"])); }
-
-                    if (level.value >= 0) { dndClass1.value = (Convert.ToInt32(reader["dnd_class_1"])); }
-                    if (level.value >= 1) { dndClass2.value = (Convert.ToInt32(reader["dnd_class_2"])); }
-                    if (level.value >= 2) { dndClass3.value = (Convert.ToInt32(reader["dnd_class_3"])); }
-                    if (level.value >= 3) { dndClass4.value = (Convert.ToInt32(reader["dnd_class_4"])); }
-                    if (level.value >= 4) { dndClass5.value = (Convert.ToInt32(reader["dnd_class_5"])); }
+                    if (level.value >= 0) { dndClass1.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_1"])); }
+                    if (level.value >= 1) { dndClass2.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_2"])); }
+                    if (level.value >= 2) { dndClass3.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_3"])); }
+                    if (level.value >= 3) { dndClass4.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_4"])); }
+                    if (level.value >= 4) { dndClass5.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_5"])); }
 
                     if (reader["subclass"] != DBNull.Value)
                     {
@@ -90,10 +84,8 @@ public class DNDClassManager : MonoBehaviour
                         CheckForSubclass();
                         UpdateSubclassList();
                         UpdateClassFeatures();
-                        // subclass.SetValueWithoutNotify(Convert.ToInt32(reader["subclass"]));
                         // Debug.Log($"subclass value should be {Convert.ToInt32(reader["subclass"])}");
-                        // Debug.Log($"subclass.value is {subclass.value}");
-                        subclass.value = Convert.ToInt32(reader["subclass"]);
+                        subclass.SetValueWithoutNotify(Convert.ToInt32(reader["subclass"]));
                         // Debug.Log($"subclass.value is {subclass.value}");
                     }
                 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -9,12 +10,15 @@ using UnityEngine.UI;
 public class TutorialManager : MonoBehaviour
 {
     public static TutorialManager Instance;
-    public TMP_Text title, text;
+    public TMP_Text title, text, displayText;
     public Button btnShowTutorials, btnNext, btnBack, btnMarkAllAsRead;
     public GameObject tutorialPanel, tutorialCanvas;
 
     private int currentTutorialIndex = 0;
     private List<int> tutorialIDList = new List<int>();
+
+    public GameObject tutorialPrefab;
+    public Transform contentParent;
 
     void Awake()
     {
@@ -45,6 +49,7 @@ public class TutorialManager : MonoBehaviour
         btnNext.onClick.AddListener(NextTutorial);
         btnBack.onClick.AddListener(BackTutorial);
         btnMarkAllAsRead.onClick.AddListener(MarkAllTutorialsReadThisScene);
+        CreateTutorialPrefabs();
     }
     
     void OnEnable()
@@ -189,6 +194,10 @@ public class TutorialManager : MonoBehaviour
     public static void MarkAllTutorialsRead()
     {
         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE tutorials SET read = 1");
+        foreach (Transform child in Instance.contentParent)
+        {
+            child.GetComponent<TutorialItem>().btnIsRead.gameObject.SetActive(false);
+        }
     }
 
     public void CheckForUnreadTutorial()
@@ -208,6 +217,43 @@ public class TutorialManager : MonoBehaviour
         }
         currentTutorialIndex = 0;
         GetTutorialByID(tutorialIDList[currentTutorialIndex]);
+    }
+
+    public void CreateTutorialPrefabs()
+    {
+
+        DatabaseManager.Instance.ExecuteReader(
+            $"SELECT * FROM tutorials",
+            reader =>
+            {
+                while (reader.Read())
+                {
+                    GameObject obj = Instantiate(tutorialPrefab, contentParent);
+
+                    var ui = obj.GetComponent<TutorialItem>();
+
+                    ui.Setup(Convert.ToString(reader["name"]), Convert.ToBoolean(reader["read"]), Convert.ToInt32(reader["id"]));
+                }
+            }
+        );
+    }
+
+    public void DeleteTutorialPrefabs()
+    {
+        foreach (Transform child in contentParent)
+        {
+            Destroy(child.gameObject);
+        }
+    }
+    
+    public void UpdateDisplayText(int id)
+    {
+        displayText.text = Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT description FROM tutorials WHERE id = {id}"));
+        MarkTutorialAsRead(id);
+        foreach (Transform child in contentParent)
+        {
+            child.GetComponent<TutorialItem>().btnShowText.GetComponent<Image>().color = new Color(0.3f, 0.3f, 0.3f, 0.0f);
+        }
     }
 
 }

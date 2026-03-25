@@ -43,7 +43,7 @@ public class SettingsManager : MonoBehaviour
         }
 
         settingsCanvas.SetActive(false);
-        markAllTutorialsRead.onClick.AddListener(TutorialManager.MarkAllTutorialsRead);
+        markAllTutorialsRead.onClick.AddListener(() => TutorialManager.MarkAllTutorialsRead());
     }
 
     void Update()
@@ -84,6 +84,15 @@ public class SettingsManager : MonoBehaviour
         panelUnsavedWarning.SetActive(false);
 
         panel.SetActive(true);
+
+        if(panel == panelTutorials)
+        {
+            TutorialManager.Instance.CreateTutorialPrefabs();
+        }
+        else
+        {
+            TutorialManager.Instance.DeleteTutorialPrefabs();
+        }
     }
 
     public void MarkAsUnsavedChanges()
