@@ -71,16 +71,30 @@ public class DNDClassManager : MonoBehaviour
                 {
                     level.value = Convert.ToInt32(reader["level"]) - 1;
 
-                    if (level.value >= 0) { dndClass1.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_1"])); }
-                    if (level.value >= 1) { dndClass2.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_2"])); }
-                    if (level.value >= 2) { dndClass3.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_3"])); }
-                    if (level.value >= 3) { dndClass4.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_4"])); }
-                    if (level.value >= 4) { dndClass5.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_5"])); }
+                    // if (level.value >= 0) { dndClass1.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_1"])); }
+                    // if (level.value >= 1) { dndClass2.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_2"])); }
+                    // if (level.value >= 2) { dndClass3.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_3"])); }
+                    // if (level.value >= 3) { dndClass4.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_4"])); }
+                    // if (level.value >= 4) { dndClass5.SetValueWithoutNotify(Convert.ToInt32(reader["dnd_class_5"])); }
 
-                    var savedSubclass = reader["subclass"];
-                    if (!(savedSubclass == DBNull.Value))
+                    if (level.value >= 0) { dndClass1.value = (Convert.ToInt32(reader["dnd_class_1"])); }
+                    if (level.value >= 1) { dndClass2.value = (Convert.ToInt32(reader["dnd_class_2"])); }
+                    if (level.value >= 2) { dndClass3.value = (Convert.ToInt32(reader["dnd_class_3"])); }
+                    if (level.value >= 3) { dndClass4.value = (Convert.ToInt32(reader["dnd_class_4"])); }
+                    if (level.value >= 4) { dndClass5.value = (Convert.ToInt32(reader["dnd_class_5"])); }
+
+                    if (reader["subclass"] != DBNull.Value)
                     {
-                        subclass.SetValueWithoutNotify(Convert.ToInt32(reader["subclass"]));
+                        UpdateClassList();
+                        UpdateClassLevels();
+                        CheckForSubclass();
+                        UpdateSubclassList();
+                        UpdateClassFeatures();
+                        // subclass.SetValueWithoutNotify(Convert.ToInt32(reader["subclass"]));
+                        // Debug.Log($"subclass value should be {Convert.ToInt32(reader["subclass"])}");
+                        // Debug.Log($"subclass.value is {subclass.value}");
+                        subclass.value = Convert.ToInt32(reader["subclass"]);
+                        // Debug.Log($"subclass.value is {subclass.value}");
                     }
                 }
             }
@@ -98,6 +112,7 @@ public class DNDClassManager : MonoBehaviour
 
     void UpdateClassList()
     {
+        // Debug.LogWarning($"Subclass is {subclass.value} at beginning of UpdateClassList");
         classIDs.Clear();
 
         if (level.value >= 0)
@@ -134,11 +149,14 @@ public class DNDClassManager : MonoBehaviour
             row5.SetActive(true);
         }
         else { row5.SetActive(false); } 
+        // Debug.LogWarning($"Subclass is {subclass.value} at beginning of UpdateClassList");
 
     }
     
     void UpdateClassLevels()
     {
+        // Debug.LogWarning($"Subclass is {subclass.value} at beginning of UpdateClassLevels");
+
         classLevels.Clear();
         for (int i = 0; i < classIDs.Count; i++)
         {
@@ -156,21 +174,27 @@ public class DNDClassManager : MonoBehaviour
             classLevels.Add(count); //Add the count to the list of levels
         }
         // Now, each element in the classIDs list has what level of features it should display in the classLevelUnique list
+        // Debug.LogWarning($"Subclass is {subclass.value} at end of UpdateClassLevels");
     }
 
     void CheckForSubclass()
     {
+        // Debug.LogWarning($"Subclass is {subclass.value} at beginning of CheckForSubclass");
+
         subclass.gameObject.SetActive(false); //They cannot select a subclass
 
-        if (classIDs.Count >= 3)
+        if (classIDs.Count >= 3) //If there are at least three class levels
         {
             for (int i = 0; i < classLevels.Count; i++)
             {
                 if (classLevels[i] >= 3)
                 {
+                    // Debug.Log($"Class {classIDs[i]} is level {classLevels[i]}");
                     subclass.gameObject.SetActive(true);
                     lastClassWithSubclass = classWithSubclass;
+                    // Debug.Log("lastClassWithSubclass set to " + classWithSubclass);
                     classWithSubclass = classIDs[i];
+                    // Debug.Log("classWithSubclass set to " + classIDs[i]);
                 }
             }
         }
@@ -178,8 +202,10 @@ public class DNDClassManager : MonoBehaviour
         if (subclass.gameObject.activeSelf == false)
         {
             classWithSubclass = -1; //They do not have a subclass
-        }
+            // Debug.Log("classWithSubclass set to -1");
 
+        }
+        // Debug.LogWarning($"Subclass is {subclass.value} at end of CheckForSubclass");
     }
     
     void UpdateSubclassList()
@@ -187,12 +213,11 @@ public class DNDClassManager : MonoBehaviour
         if (classWithSubclass == -1) return;
 
         List<string> subclassList = new List<string>();
-        DatabaseManager.Instance.ExecuteReader(
-            $"SELECT name FROM subclasses WHERE dndclass = {classWithSubclass}",
+        DatabaseManager.Instance.ExecuteReader($"SELECT name FROM subclasses WHERE dndclass = {classWithSubclass}",
             reader =>
             {
                 while (reader.Read())
-                    subclassList.Add(reader["name"] as string);
+                    subclassList.Add(Convert.ToString(reader["name"]));
             }
         );
 
@@ -223,10 +248,12 @@ public class DNDClassManager : MonoBehaviour
         {
             subclass.value = 0;
         }
+        // Debug.LogWarning($"Subclass is {subclass.value} at end of UpdateSubclassList");
     }
 
     void UpdateClassFeatures()
     {
+        // Debug.LogWarning($"Subclass is {subclass.value} at beginning of UpdateClassFeatures");
         for (int row = 0; row < classIDs.Count; row++)
         {
             int rowClass = classIDs[row];
@@ -234,8 +261,8 @@ public class DNDClassManager : MonoBehaviour
 
             int numberOfFeatures;
             List<string> featureNames = new List<string>();
-            
-            if(classWithSubclass == -1)
+
+            if (classWithSubclass == -1)
             {
                 numberOfFeatures = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
                     $"SELECT COUNT(*) FROM class_features WHERE class = {rowClass} AND level = {classLevel} AND subclass IS NULL"
@@ -288,6 +315,7 @@ public class DNDClassManager : MonoBehaviour
                 }
             }
         }
+        // Debug.LogWarning($"Subclass is {subclass.value} at end of UpdateClassFeatures");
     }
     
     public void OpenFeatureWindow(int rowClass, int rowLevel, int columnNumber)

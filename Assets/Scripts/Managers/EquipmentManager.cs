@@ -89,6 +89,7 @@ public class EquipmentManager : MonoBehaviour
                         rowToEdit[1].text = "--";
                         rowToEdit[2].text = "--";
                         rowToEdit[3].text = "--";
+                        propertyButton.gameObject.SetActive(true);
                     }
                     else
                     {
@@ -133,7 +134,7 @@ public class EquipmentManager : MonoBehaviour
                             Convert.ToBoolean(reader["thrown"]) ||
                             Convert.ToBoolean(reader["two_handed"]) ||
                             Convert.ToString(reader["stat"]) == "Finesse" ||
-                            (reader["melee_range"] != DBNull.Value && Convert.ToInt32(reader["melee_range"]) > 5 ) ||
+                            (reader["melee_range"] != DBNull.Value && Convert.ToInt32(reader["melee_range"]) > 5) ||
                             Convert.ToBoolean(reader["versatile"]) ||
                             !(reader["mastery"] == DBNull.Value))
                         {
@@ -147,6 +148,7 @@ public class EquipmentManager : MonoBehaviour
                 }
             }
         );
+        UpdateArmor(armor.value); //To handle shields being equipped or unequipped
     }
     
     void HandleTwoHandedWeapons(int weaponID, bool updatingMainHand)
@@ -267,7 +269,7 @@ public class EquipmentManager : MonoBehaviour
 
                     baseACLabel.text = baseAC.ToString();
 
-                    int dexBonus = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT mDEX FROM unit_stats WHERE id = {currentPC.UnitID}"));
+                    int dexBonus = currentPC.GetModifier("mDEX");
 
                     if (armorType == 2)
                     {
@@ -288,7 +290,13 @@ public class EquipmentManager : MonoBehaviour
                         dexBonusLabel.text = "+" + dexBonus;
                     }
 
-                    totalACLabel.text = (baseAC + dexBonus).ToString();
+                    int shieldBonus = 0;
+                    if(mainHand.value == 39 || offHand.value == 39)
+                    {
+                        shieldBonus = 2;
+                    }
+
+                    totalACLabel.text = (baseAC + dexBonus + shieldBonus).ToString();
 
                     if (strRequirement == 0)
                     {

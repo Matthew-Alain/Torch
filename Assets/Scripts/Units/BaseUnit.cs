@@ -78,12 +78,12 @@ public class BaseUnit : MonoBehaviour
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT AC FROM unit_stats WHERE id = {UnitID}"));
     }
 
-    public int GetModifier(StatModifier modifier)
+    public int GetModifier(string modifier)
     {
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT {modifier} FROM unit_stats WHERE id = {UnitID}"));
     }
 
-    public int GetStat(Stat stat)
+    public int GetStat(string stat)
     {
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT {stat.ToString().ToLower()} FROM unit_stats WHERE id = {UnitID}"));
     }

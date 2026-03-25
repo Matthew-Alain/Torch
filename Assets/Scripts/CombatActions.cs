@@ -39,8 +39,8 @@ public class CombatActions
                 }
             );
 
-            int mSTR = attacker.GetModifier(StatModifier.mSTR);
-            int mDEX = attacker.GetModifier(StatModifier.mDEX);
+            int mSTR = attacker.GetModifier("mSTR");
+            int mDEX = attacker.GetModifier("mDEX");
 
             int attackModifier = 0;
             if (attackStat == "STR" || (attackStat == "Finesse" && mSTR > mDEX))
