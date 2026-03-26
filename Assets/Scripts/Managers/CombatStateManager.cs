@@ -185,14 +185,15 @@ public class CombatStateManager : MonoBehaviour
 
     public void CheckForGameOver()
     {
-        int numberOfActivePCs = 0;
+        bool activePC = false;
 
         for (int i = 0; i < CombatUnitManager.Instance.activePCIDs.Count; i++)
         {
             BaseUnit currentPC = CombatUnitManager.Instance.GetUnitByID(CombatUnitManager.Instance.activePCIDs[i]);
             if (!(currentPC.GetCondition("dying") || currentPC.GetCondition("unconscious") || currentPC.GetCondition("dead")))
             {
-                numberOfActivePCs += 1;
+                activePC = true;
+                break;
             }
         }
 
@@ -202,7 +203,7 @@ public class CombatStateManager : MonoBehaviour
             Debug.LogWarning("The last monster has been killed, you win!");
             //Create a canvas window that announces this, with a button to reset
         }
-        else if (numberOfActivePCs <= 0)
+        else if (!activePC)
         {
             Debug.LogWarning("You have no more active PCs, you lose...");
         }

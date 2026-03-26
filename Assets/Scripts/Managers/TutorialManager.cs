@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using Unity.VisualScripting;
@@ -13,6 +14,8 @@ public class TutorialManager : MonoBehaviour
     public TMP_Text title, text, displayText;
     public Button btnShowTutorials, btnNext, btnBack, btnMarkAllAsRead;
     public GameObject tutorialPanel, tutorialCanvas;
+    [SerializeField] private ScrollRect tutorialPanelScrollRect;
+    [SerializeField] private ScrollRect tutorialSettingsScrollRect;
 
     private int currentTutorialIndex = 0;
     private List<int> tutorialIDList = new List<int>();
@@ -173,6 +176,8 @@ public class TutorialManager : MonoBehaviour
         // Debug.Log($"Now updating buttons");
 
         UpdateButtons();
+        StartCoroutine(ResetScrollPosition(tutorialPanelScrollRect));
+
     }
 
     public bool TutorialIsRead(int id)
@@ -245,7 +250,7 @@ public class TutorialManager : MonoBehaviour
             Destroy(child.gameObject);
         }
     }
-    
+
     public void UpdateDisplayText(int id)
     {
         displayText.text = Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT description FROM tutorials WHERE id = {id}"));
@@ -254,6 +259,15 @@ public class TutorialManager : MonoBehaviour
         {
             child.GetComponent<TutorialItem>().btnShowText.GetComponent<Image>().color = new Color(0.3f, 0.3f, 0.3f, 0.0f);
         }
+        StartCoroutine(ResetScrollPosition(tutorialSettingsScrollRect));
+    }
+    
+    IEnumerator ResetScrollPosition(ScrollRect obj)
+    {
+        yield return null; // wait 1 frame for layout groups
+
+        Canvas.ForceUpdateCanvases();
+        obj.verticalNormalizedPosition = 1f;
     }
 
 }

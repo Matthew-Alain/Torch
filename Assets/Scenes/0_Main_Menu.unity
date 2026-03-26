@@ -11134,6 +11134,8 @@ MonoBehaviour:
   btnMarkAllAsRead: {fileID: 41736892}
   tutorialPanel: {fileID: 1935082131}
   tutorialCanvas: {fileID: 822723603}
+  tutorialPanelScrollRect: {fileID: 1982774556}
+  tutorialSettingsScrollRect: {fileID: 183610120}
   tutorialPrefab: {fileID: 7023831117670204385, guid: 290aa997a9979b64696866848ce648c0, type: 3}
   contentParent: {fileID: 810043148}
 --- !u!1660057539 &9223372036854775807

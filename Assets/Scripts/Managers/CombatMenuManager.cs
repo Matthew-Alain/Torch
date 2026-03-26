@@ -146,23 +146,25 @@ public class CombatMenuManager : MonoBehaviour
 
     public void OpenMajorMenu()
     {
+        BasePC pc = CombatUnitManager.Instance.SelectedPC;
         List<MenuOption> majorOptions = new List<MenuOption>()
         {
-            new MenuOption("Attack", OpenAttackMenu),
-            new MenuOption("Dash", () => CombatActions.Dash(CombatUnitManager.Instance.SelectedPC)),
-            new MenuOption("Disengage", () => Debug.Log("Disengage")),
-            new MenuOption("Dodge", () => Debug.Log("Dodge")),
-            new MenuOption("Help", () => Debug.Log("Help")),
-            new MenuOption("Hide", () => Debug.Log("Hide"))
+            new MenuOption("Attack", OpenAttackMenu)
         };
 
-        // Conditional option
-        if (CombatUnitManager.Instance.SelectedPC.GetClassName() == "Wizard")
+        if (pc.IsSpellcaster())
         {
             majorOptions.Add(new MenuOption("Magic", () => Debug.Log("Magic")));
         }
 
+        pc.PopulateMajorActions(majorOptions);
+
         // Back option
+        majorOptions.Add(new MenuOption("Dash", () => pc.Dash()));
+        majorOptions.Add(new MenuOption("Disengage", () => Debug.Log("Disengage")));
+        majorOptions.Add(new MenuOption("Dodge", () => Debug.Log("Dodge")));
+        majorOptions.Add(new MenuOption("Help", () => Debug.Log("Help")));
+        majorOptions.Add(new MenuOption("Hide", () => Debug.Log("Hide")));
         majorOptions.Add(new MenuOption("Back", () => CloseMenu()));
 
         OpenMenu(majorOptions);
@@ -170,33 +172,12 @@ public class CombatMenuManager : MonoBehaviour
 
     public void OpenAttackMenu()
     {
-        int mainHand = 0;
-        int offHand = 0;
-        DatabaseManager.Instance.ExecuteReader(
-            $"SELECT main_hand_item, off_hand_item FROM saved_pcs WHERE id = {CombatUnitManager.Instance.SelectedPC.UnitID}",
-            reader =>
-            {
-                while (reader.Read())
-                {
-                    mainHand = Convert.ToInt32(reader["main_hand_item"]);
-                    offHand = Convert.ToInt32(reader["off_hand_item"]);
-                }
-            }
-        );
-
+        BasePC pc = CombatUnitManager.Instance.SelectedPC;
         List<MenuOption> attackOptions = new List<MenuOption>();
 
-        string mainHandText = CombatUnitManager.Instance.SelectedPC.GetMainhandName();
-        if (mainHandText != "Shield")
-        {
-            attackOptions.Add(new MenuOption($"Mainhand ({mainHandText})", () => CombatStateManager.Instance.DeclareAttack(mainHand)));
-        }
-        
-        string offHandText = CombatUnitManager.Instance.SelectedPC.GetOffhandName();
-        if(offHandText != "Shield")
-        {
-            attackOptions.Add(new MenuOption($"Offhand ({offHandText})", () => CombatStateManager.Instance.DeclareAttack(offHand)));
-        }
+        pc.PopulateAttacks(attackOptions);
+
+        attackOptions.Add(new MenuOption("Unarmed Strike", OpenUnarmedStrikeMenu));
 
         // Back option
         attackOptions.Add(new MenuOption("Back", () => CloseMenu()));
@@ -204,18 +185,27 @@ public class CombatMenuManager : MonoBehaviour
         OpenMenu(attackOptions);
     }
 
+    public void OpenUnarmedStrikeMenu()
+    {
+        List<MenuOption> unarmedStrikeOptions = new List<MenuOption>()
+        {
+            new MenuOption("Strike", () => CombatStateManager.Instance.DeclareAttack(0)),
+            new MenuOption("Grapple", () => CombatStateManager.Instance.DeclareAttack(0)),
+            new MenuOption("Shove", () => CombatStateManager.Instance.DeclareAttack(0)),
+        };
+
+        OpenMenu(unarmedStrikeOptions);
+    }
+
     public void OpenMinorMenu()
     {
+        BasePC pc = CombatUnitManager.Instance.SelectedPC;
         List<MenuOption> minorOptions = new List<MenuOption>()
         {
             //Put default options here
         };
 
-        // Conditional option
-        if (CombatUnitManager.Instance.SelectedPC.GetClassName() == "Barbarian")
-        {
-            minorOptions.Add(new MenuOption("Rage", () => CombatUnitManager.Instance.SelectedPC.RestoreHealth(1)));
-        }
+        pc.PopulateMinorActions(minorOptions);
 
         // Back option
         minorOptions.Add(new MenuOption("Back", () => CloseMenu()));
