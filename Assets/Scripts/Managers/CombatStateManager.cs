@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -10,6 +11,8 @@ public class CombatStateManager : MonoBehaviour
     public static CombatStateManager Instance;
     public GameState GameState;
     public int declaredWeapon;
+    public BaseUnit selectedTarget = null;
+    public Tile selectedTile = null;
 
     void Awake()
     {
@@ -90,7 +93,14 @@ public class CombatStateManager : MonoBehaviour
                 break;
             case GameState.SelectWeapon:
                 break;
-            case GameState.SelectAttackTarget:
+            case GameState.SelectTarget:
+                Debug.Log("You are now selecting a target");
+                break;
+            case GameState.SelectTargetUnit:
+                Debug.Log("The target you are selecting is any unit");
+                break;
+            case GameState.SelectTargetMonster:
+                Debug.Log("The target you are selecting is a monster");
                 break;
             case GameState.StartMonsterTurn:
                 // Debug.Log("It is now the monster's turn");
@@ -100,7 +110,8 @@ public class CombatStateManager : MonoBehaviour
                 StartCoroutine(TakeMonsterTurn());
                 break;
             default:
-                throw new ArgumentOutOfRangeException(nameof(newState), newState, null);
+                Debug.LogWarning("No state for " + newState);
+                break;
         }
 
     }
@@ -146,7 +157,7 @@ public class CombatStateManager : MonoBehaviour
     public void DeclareAttack(int weaponID)
     {
         declaredWeapon = weaponID;
-        StartCoroutine(ChangeState(GameState.SelectAttackTarget));
+        StartCoroutine(ChangeState(GameState.SelectTarget));
         Debug.Log("Selecting attack target");
     }
 
@@ -175,12 +186,69 @@ public class CombatStateManager : MonoBehaviour
                     yield return StartCoroutine(currentMonster.AttackTarget(target, attackID));
                     yield return new WaitForSeconds(0.5f);
                 }
-                
+
                 currentMonster.EndTurn();
             }
         }
 
         yield return StartCoroutine(ChangeState(GameState.StartPlayerTurn));
+    }
+
+    public IEnumerator SelectTarget(TargetType targetType, Action<BaseUnit> onComplete)
+    {
+
+        switch (targetType)
+        {
+            case TargetType.Monster:
+                yield return StartCoroutine(ChangeState(GameState.SelectTargetMonster));
+                break;
+            case TargetType.PC:
+                yield return StartCoroutine(ChangeState(GameState.SelectTargetPC));
+                break;
+            case TargetType.Unit:
+                yield return StartCoroutine(ChangeState(GameState.SelectTargetUnit));
+                break;
+            default:
+                break;
+        }
+
+        yield return new WaitUntil(() => selectedTarget != null);
+
+        BaseUnit returnTarget = selectedTarget;
+        selectedTarget = null;
+
+        Debug.Log("Selected target is: " + returnTarget.UnitName);
+        
+        onComplete?.Invoke(returnTarget);
+    }
+
+    public Tile SelectTile()
+    {
+        StartCoroutine(ChangeState(GameState.SelectTargetTile));
+
+        Tile returnTile = null;
+        StartCoroutine(Instance.GetTile(target =>
+        {
+            returnTile = target;
+        }));
+
+        Debug.Log("Selected tile is: " + returnTile.tileX+", "+returnTile.tileY);
+        
+        return returnTile;
+    }
+    
+    private IEnumerator GetTile(Action<Tile> tile)
+    {
+        yield return StartCoroutine(ChangeState(GameState.SelectTarget));
+
+        StartCoroutine(ChangeState(GameState.SelectTargetMonster));
+
+        yield return new WaitUntil(() => selectedTile != null);
+
+        Tile returnTile = selectedTile;
+        selectedTarget = null;
+
+        tile?.Invoke(returnTile);
     }
 
     public void CheckForGameOver()
@@ -229,8 +297,20 @@ public enum GameState
     PlayerTurn,
     MovingPC,
     SelectWeapon,
-    SelectAttackTarget,
+    SelectTarget,
+    SelectTargetPC,
+    SelectTargetMonster,
+    SelectTargetUnit,
+    SelectTargetTile,
     StartMonsterTurn,
     MonsterTurn
 
+}
+
+public enum TargetType
+{
+    Unit,
+    PC,
+    Monster,
+    Tile
 }

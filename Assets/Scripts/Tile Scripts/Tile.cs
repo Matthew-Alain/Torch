@@ -129,51 +129,79 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 }
                 break;
             
-            case GameState.SelectAttackTarget:
+            case GameState.SelectTargetMonster:
                 if (OccupiedUnit != null && OccupiedUnit.Faction == Faction.Monster)
                 {
-                    int melee_range = 0;
-                    int normal_range = 0;
-                    int long_range = 0;
-
-                    DatabaseManager.Instance.ExecuteReader(
-                        $"SELECT melee_range, normal_range, long_range FROM weapons WHERE id = {CombatStateManager.Instance.declaredWeapon}",
-                        reader =>
-                        {
-                            while (reader.Read())
-                            {
-                                if (reader["melee_range"] != DBNull.Value) melee_range = Convert.ToInt32(reader["melee_range"]);
-                                if (reader["normal_range"] != DBNull.Value) normal_range = Convert.ToInt32(reader["normal_range"]);
-                                if (reader["long_range"] != DBNull.Value) long_range = Convert.ToInt32(reader["long_range"]);
-                            }
-                        }
-                    );
-
-                    int distance = CheckDistanceInTiles(CombatUnitManager.Instance.SelectedPC.occupiedTile) * 5;
-                    if (distance <= melee_range)
-                    {
-                        CombatActions.MeleeWeaponAttack(CombatUnitManager.Instance.SelectedPC, CombatStateManager.Instance.declaredWeapon, OccupiedUnit);
-                        
-                    }
-                    else if (distance <= normal_range)
-                    {
-                        CombatActions.RangedWeaponAttack(CombatUnitManager.Instance.SelectedPC, OccupiedUnit);
-                    }
-                    else if (distance <= long_range)
-                    {
-                        CombatActions.LongRangeWeaponAttack(CombatUnitManager.Instance.SelectedPC, OccupiedUnit);
-                    }
-                    else
-                    {
-                        menu.DisplayText("The target is out of range");
-                        // Log("The target is out of range");
-                    }
+                    CombatStateManager.Instance.selectedTarget = OccupiedUnit;
                 }
                 else
                 {
-                    menu.DisplayText("That's an invalid target");
+                    menu.DisplayText("You are only allowed to select monsters");
                 }
                 break;
+            
+            case GameState.SelectTargetPC:
+                if (OccupiedUnit != null && OccupiedUnit.Faction == Faction.PC)
+                {
+                    CombatStateManager.Instance.selectedTarget = OccupiedUnit;
+                }
+                else
+                {
+                    menu.DisplayText("You are only allowed to select PCs");
+                }
+                break;
+            
+                case GameState.SelectTargetUnit:
+                if (OccupiedUnit != null)
+                {
+                    CombatStateManager.Instance.selectedTarget = OccupiedUnit;
+                }
+                else
+                {
+                    menu.DisplayText("There's no unit there that tile");
+                }
+                break;
+            
+            
+                    // //Need to move this code to a function for measuring attack distance
+
+                    // int melee_range = 0;
+                    // int normal_range = 0;
+                    // int long_range = 0;
+
+                    // DatabaseManager.Instance.ExecuteReader(
+                    //     $"SELECT melee_range, normal_range, long_range FROM weapons WHERE id = {CombatStateManager.Instance.declaredWeapon}",
+                    //     reader =>
+                    //     {
+                    //         while (reader.Read())
+                    //         {
+                    //             if (reader["melee_range"] != DBNull.Value) melee_range = Convert.ToInt32(reader["melee_range"]);
+                    //             if (reader["normal_range"] != DBNull.Value) normal_range = Convert.ToInt32(reader["normal_range"]);
+                    //             if (reader["long_range"] != DBNull.Value) long_range = Convert.ToInt32(reader["long_range"]);
+                    //         }
+                    //     }
+                    // );
+
+                    // int distance = CheckDistanceInTiles(CombatUnitManager.Instance.SelectedPC.occupiedTile) * 5;
+                    // if (distance <= melee_range)
+                    // {
+                    //     CombatActions.MeleeWeaponAttack(CombatUnitManager.Instance.SelectedPC, CombatStateManager.Instance.declaredWeapon, OccupiedUnit);
+                        
+                    // }
+                    // else if (distance <= normal_range)
+                    // {
+                    //     CombatActions.RangedWeaponAttack(CombatUnitManager.Instance.SelectedPC, OccupiedUnit);
+                    // }
+                    // else if (distance <= long_range)
+                    // {
+                    //     CombatActions.LongRangeWeaponAttack(CombatUnitManager.Instance.SelectedPC, OccupiedUnit);
+                    // }
+                    // else
+                    // {
+                    //     menu.DisplayText("The target is out of range");
+                    //     // Log("The target is out of range");
+                    // }
+
             
             default:
                 Log("No click action for the current game state: " + currentState);

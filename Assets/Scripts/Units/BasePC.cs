@@ -73,27 +73,45 @@ public class BasePC : BaseUnit
 
     public void Dash()
     {
-        CombatActions.Dash(this);
+        if (UseMajorAction())
+        {
+            CombatActions.Dash(this);
+        }
     }
 
     public void Disengage()
     {
-
+        if (UseMajorAction())
+        {
+            CombatActions.Disengage(this);
+        }
     }
     
     public void Dodge()
     {
-        
+        if (UseMajorAction())
+        {
+            CombatActions.Dodge(this);
+        }
     }
 
     public void Help()
     {
-        
+        if (UseMajorAction())
+        {
+            StartCoroutine(CombatStateManager.Instance.SelectTarget(TargetType.Monster, target =>
+            {
+                CombatActions.Help(this, target);
+            }));
+        }  
     }
 
     public void Hide()
     {
-        
+        if (UseMajorAction())
+        {
+            CombatActions.Hide(this);
+        }
     }
 
     //CLASS FEATURES
@@ -109,6 +127,15 @@ public class BasePC : BaseUnit
         //Druid Wild Companion
         //Land Druid Land's Aid
         //Psi Warrior Telekinetic Movement - Uses based on number of dice + 1, needs to be decremented when other features use dice
+        //Paladin Find Steed
+        //Ancients Paladin Nature's Wrath
+        //Warlock Armor of Shadows
+        //Warlock Pact of the Chain
+        //Warlock Fiendish Vigor
+        //Warlock Master of Myriad Forms (Aquatic Adaptation)
+        //Warlock Master of Myriad Forms (Natural Weapons)
+        //Warlock One with Shadows
+        //Healer use healer's kit
     }
 
     public void PopulateAttacks(List<MenuOption> menu)
@@ -125,10 +152,15 @@ public class BasePC : BaseUnit
 
         //Dragonborn breath weapon
         //Druid Beast Form Attack
+        //Battlemaster Fighter (Commander's Strike)
+        //Beastmaster Ranger Command Companion
+        //Soulknife Rogue Psychic Blade
+        //Warlock Pact of the Chain Forgo Attack
     }
 
     public void PopulateMinorActions(List<MenuOption> menu)
     {
+        //Offhand Light Attack
         //Aasimar celestial revelation
         //Dragonborn draconic flight
         //Dwarf Stonecunning
@@ -162,6 +194,38 @@ public class BasePC : BaseUnit
         //Stars Druid Starry Form (Dragon)
         //Stars Druid Archer Attack
         //Fighter Second Wind
+        //Battlemaster Fighter (Evasive Footwork)
+        //Battlemaster Fighter (Feinting Attack)
+        //Battlemaster Fighter (Lunging Attack)
+        //Battlemaster Fighter (Rally)
+        //Monk Bonus Unarmed Strike
+        //Monk Flurry of Blows (Allows two uses of free action attack)
+        //Monk Patient Defense
+        //Monk Empowered Patient Defense
+        //Monk Step of the Wind
+        //Monk Empowered Step of the Wind
+        //Paladin Lay on Hands
+        //Glory Paladin Peerless Athlete
+        //Beastmaster Ranger Command Companion
+        //Rogue Cunning Action (Dash)
+        //Rogue Cunning Action (Disengage)
+        //Rogue Cunning Action (Hide)
+        //Rogue Steady Aim
+        //Thief Rogue Fast Hands
+        //Sorcerer Innate Sorcery
+        //Sorcerer Font of Magic (Convert to Spell Slot)
+        //Sorcerer Metamagic (Quickened Spell) (Before casting spell with action, and bonus action hasn't been used)
+        //Warlock Otherworldly Leap
+        //Warlock Investment of the Chain Master command attack
+        //Celestial Warlock Healing Light
+        //Abjurer Wizard Refresh Arcane Ward
+        //Chef feat Eat Treat
+        //Durable feat Speedy Recovery
+        //Poisoner feat Apply Poison
+        //Telekinetic feat Telekinetic Shove
+        //Offhand Light Attack (Dual Wielder)
+        //Great Weapon Master feat Hew (after critting with melee weapon)
+        //Polearm Master feat Pole Strike
     }
 
     public void PopulateFreeActions(List<MenuOption> menu)
@@ -173,10 +237,20 @@ public class BasePC : BaseUnit
         //Sea Druid dismiss Wrath of the Sea (While active)
         //Stars Druid Exit Starry Form
         //Fighter Action Surge
+        //Battlemaster Fighter (Bait and Switch)
+        //Monk Flurry of Blows (Only after using flurry of blows)
+        //Mercy Monk Hand of Healing (only afer using flurry of blows)
+        //Devotion Paladin Sacred Weapon
+        //Devotion Paladin dismiss Sacred Weapon (While active)
+        //Vengance Paladin Vow of Enmity
+        //Vengance Paladin move Vow of Enmity
+        //Hunter Ranger Horde Breaker
+        //Sorcerer Font of Magic (Convert to Sorcery Points)
     }
 
     public void PopulateReactions()
     {
+        //Opportunity Attack (character moves out of melee range)
         //Fire Goliath Fire's Burn (Hit with attack)
         //Frost Goliath Frost's Chill (Hit with attack)
         //Hill Goliath Hill's Tumble (Hit with attack)
@@ -196,11 +270,81 @@ public class BasePC : BaseUnit
         //Light Cleric Warding Flare (Enemy declares attack)
         //War Cleric Guided Strike (Ally misses attack)
         //Stars Druid Chalice Healing (After healing)
-        //Battlemaster Fighter Maneuvers (Need one row for each option)
+        //Battlemaster Fighter (Ambush) (After rolling stealth / initiative)
+        //Battlemaster Fighter (Disarming Strike) (Hit with attack)
+        //Battlemaster Fighter (Distracting Strike) (Hit with attack)
+        //Battlemaster Fighter (Goading Attack) (Hit with attack)
+        //Battlemaster Fighter (Maneuvering Attack) (Hit with attack)
+        //Use Commander's Strike (When fighter uses Commander's Strike)
+        //Use Maneuvering Attack (When fighter uses Maneuvering Attack)
+        //Battlemaster Fighter (Menacing Attack) (Hit with attack)
+        //Battlemaster Fighter (Parry) (Damaged by melee attack)
+        //Battlemaster Fighter (Precision Attack) (Miss with attack)
+        //Battlemaster Fighter (Pushing Attack) (Hit with attack)
+        //Battlemaster Fighter (Riposte) (Missed by melee attack)
+        //Battlemaster Fighter (Sweeping Attack) (Hit with melee attack)
+        //Battlemaster Fighter (Trip Attack) (Hit with attack)
         //Champion Fighter Remarkable Athlete (After critting)
         //Psi Warrior Protective Field (Ally takes damage)
         //Psi Warrior Psionic Strike (Hit attack)
+        //Monk Deflect Attacks (Take bldg/pierce/slash damage)
+        //Monk Deflect Attacks Reflection (deflect attack reduces damage to 0)
+        //Monk Slow Fall (take fall damage)
+        //Monk Stunning Strike (hit with monk weapon)
+        //Mercy Monk Hand of Harm (hit with monk weapon)
+        //Elements Monk change damage type (hit with unarmed strike)
+        //Shadow Monk move Darkness (start of turn)
+        //Open Hand Monk Addle (hit with flurry of blows)
+        //Open Hand Monk Push (hit with flurry of blows)
+        //Open Hand Monk Topple (hit with flurry of blows)
+        //Glory Paladin Inspiring Smite (after cast Divine Smite)
+        //Fey Wanderer Ranger Dreadful Strikes (hit with weapon)
+        //Gloom Stalker Ranger Dread Ambusher (hit with weapon)
+        //Hunter Ranger Colossus Slayer (hit with weapon)
+        //Rogue Sneak Attack (hit with finesse / ranged weapon)
+        //Rogue Cunning Strike (Poison) (hit with finesse / ranged weapon)
+        //Rogue Cunning Strike (Trip) (hit with finesse / ranged weapon)
+        //Rogue Cunning Strike (Withdraw) (hit with finesse / ranged weapon)
+        //Rogue Uncanny Dodge (hit by attack)
+        //Soulknife Rogue Psi-Bolstered Knack (fail ability check)
+        //Soulknife Rogue Psychic Blade OA (character moves away)
+        //Sorcerer Metamagic (Careful Spell) (Cast spell with multiple targets)
+        //Sorcerer Metamagic (Distant Spell) (Before casting spell with range)
+        //Sorcerer Metamagic (Empowered Spell) (After doing damage with spell) (Additive)
+        //Sorcerer Metamagic (Extended Spell) (Cast spell with duration)
+        //Sorcerer Metamagic (Heightened Spell) (Cast spell with save)
+        //Sorcerer Metamagic (Seeking Spell) (Miss with spell attack) (Additive)
+        //Sorcerer Metamagic (Transmuted Spell) (Cast spell that deals Acid, Cold, Fire, Lightning, Poison, or Thunder damage)
+        //Sorcerer Metamagic (Twinned Spell) (Cast spell that can be upcast to increase target)
+        //Clockwork Sorcerer Restore Balance (character about to roll a d20)
+        //Wild Magic Sorcerer Wild Magic Surge (cast leveled spell)
+        //Wild Magic Sorcrerer Tides of Chaos (about to roll a d20)
+        //Warlock Pact of the Blade change damage type (hit with weapon)
+        //Warlock Repelling Blast (hit with cantrip)
+        //Warlock Eldritch Smite (hit with weapon)
+        //Warlock Investment of the Chain Master change damage type
+        //Archfey Warlock Steps of the Fey (Refreshing Step) (after teleporting)
+        //Archfey Warlock Steps of the Fey (Taunting Step) (after teleporting)
+        //Great Old One Warlock Psychic Spells (do damage with spell)
+        //Diviner Wizard Portent 1 (after creature rolls d20)
+        //Diviner Wizard Portent 2 (after creature rolls d20)
+        //Lucky feat grant advantage (before you roll d20)
+        //Lucky feat grant disadvantage (before enemy rolls to hit)
+        //Savage Attacker feat reroll damage (after rolling damage)
+        //Tavern Brawler feat push (after hit with unarmed strike)
+        //Crusher feat push (after damage with bludgeoning weapon)
+        //Mage Slayer feat Guarded Mind (after fail mental save)
+        //Piercer feat Puncture (after hit with piercing damage)
+        //Slasher feat Hamstring (after damage with slashing weapon)
+        //Charger feat Charge Attack (Damage) (before hitting with melee weapon after moving 10 feet)
+        //Charger feat Charge Attack (Push) (before hitting with melee weapon after moving 10 feet)
+        //Defensive Duelist feat Parry (after hit by melee attack)
+        //Grappler feat Punch and Grab (after hitting with unarmed strike)
+        //Polearm Master feat Reactive Strike (enemy moves into melee range)
+        //Sentinel feat Guardian (enemy disengages or attacks ally)
+        //War Caster feat Reactive Spell (enemy leaves melee range)
+        //Shield Master feat Shield Bash (Push) (after hitting with melee attack)
+        //Shield Master feat Shield Bash (Prone) (after hitting with melee attack)
+        //Shield Master feat Interpose Shield (after succeeding DEX save)
     }
-    
-
 }

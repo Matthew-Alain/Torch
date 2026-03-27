@@ -161,10 +161,10 @@ public class CombatMenuManager : MonoBehaviour
 
         // Back option
         majorOptions.Add(new MenuOption("Dash", () => pc.Dash()));
-        majorOptions.Add(new MenuOption("Disengage", () => Debug.Log("Disengage")));
-        majorOptions.Add(new MenuOption("Dodge", () => Debug.Log("Dodge")));
-        majorOptions.Add(new MenuOption("Help", () => Debug.Log("Help")));
-        majorOptions.Add(new MenuOption("Hide", () => Debug.Log("Hide")));
+        majorOptions.Add(new MenuOption("Disengage", () => pc.Disengage()));
+        majorOptions.Add(new MenuOption("Dodge", () => pc.Dodge()));
+        majorOptions.Add(new MenuOption("Help", () => pc.Help()));
+        majorOptions.Add(new MenuOption("Hide", () => pc.Hide()));
         majorOptions.Add(new MenuOption("Back", () => CloseMenu()));
 
         OpenMenu(majorOptions);

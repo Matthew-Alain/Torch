@@ -9,15 +9,34 @@ public class CombatActions
 
     public static void Dash(BaseUnit unit)
     {
-        if (unit.UseMajorAction())
-        {
-            int current_speed = unit.GetCurrentSpeed();
-            int base_speed = unit.GetBaseSpeed();
+        int current_speed = unit.GetCurrentSpeed();
+        int base_speed = unit.GetBaseSpeed();
 
-            current_speed += base_speed;
+        current_speed += base_speed;
 
-            unit.SetCurrentSpeed(current_speed);
-        }
+        unit.SetCurrentSpeed(current_speed);
+    }
+
+    public static void Dodge(BaseUnit unit)
+    {
+        unit.SetCondition("dodging", true);
+    }
+
+    public static void Disengage(BaseUnit unit)
+    {
+        unit.SetCondition("disengaging", true);
+    }
+
+    public static void Help(BaseUnit unit, BaseUnit target)
+    {
+        target.SetCondition("distracted", true);
+    }
+
+    public static void Hide(BaseUnit unit)
+    {
+        //Make d20 test
+        //If successful
+        unit.SetCondition("hiding", true);
     }
 
     public static void MeleeWeaponAttack(BaseUnit attacker, int weaponID, BaseUnit target)
