@@ -11,7 +11,7 @@ using Unity.VisualScripting;
 public class CombatUnitManager : MonoBehaviour
 {
     private List<ScriptableUnit> units;
-    private List<BaseUnit> baseUnits = new List<BaseUnit>();
+    public List<BaseUnit> baseUnits = new List<BaseUnit>();
     public List<int> activePCIDs = new List<int>();
     public List<int> activeMonsterIDs = new List<int>();
     public BasePC SelectedPC; //We only ever want a PC to be actionable
@@ -111,64 +111,13 @@ public class CombatUnitManager : MonoBehaviour
             spawnTile.SetUnit(spawnedMonster); //Set that spawn tile's unit to the spawned PC
         }
 
-        StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.PlayerTurn));
+        StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.Precombat));
     }
 
     public void SetSelectedPC(BasePC pc)
     {
         SelectedPC = pc;
         CombatMenuManager.Instance.ShowSelectedPC(pc);
-    }
-
-    public void FallUnconscious(BaseUnit unit)
-    {
-
-        if (unit.Faction == Faction.Monster)
-        {
-            LogWarning("Tried to knock a monster unconscious, killing unit instead.");
-            KillUnit(unit);
-        }
-        else
-        {
-            unit.SetCondition("unconscious", true);
-            unit.SetCondition("prone", true);
-            unit.SetCondition("dying", true);
-            CombatMenuManager.Instance.DisplayText($"{unit.UnitName} is dying!");
-            // Log($"{unit.UnitName} is dying!");
-        }
-        
-        CombatStateManager.Instance.CheckForGameOver();
-
-    }
-
-    public void KillUnit(BaseUnit unit)
-    {
-
-        if (unit.Faction == Faction.Monster)
-        {
-            Destroy(unit.gameObject);
-            CombatMenuManager.Instance.DisplayText($"{unit.UnitName} has been slain!");
-
-            // Log("Unit " + unitID + " has been slain!");
-        }
-        else
-        {
-            CombatMenuManager.Instance.DisplayText($"{unit.UnitName} has been killed!");
-
-            // LogWarning(characterName + " has been killed!");
-        }
-
-        unit.SetCondition("unconscious", true);
-        unit.SetCondition("prone", true);
-        unit.SetCondition("dying", false);
-        unit.SetCondition("dead", true);
-
-        unit.occupiedTile.EmptyTile();
-
-        UpdateActivePCList();
-        UpdateActiveMonsterList();
-
-        CombatStateManager.Instance.CheckForGameOver();
     }
 
     public BaseUnit GetUnitByID(int id)
@@ -179,8 +128,6 @@ public class CombatUnitManager : MonoBehaviour
     public void UpdateActivePCList()
     {
         activePCIDs.Clear();
-
-        
 
         DatabaseManager.Instance.ExecuteReader(
             $"SELECT unit_id FROM grid_contents WHERE unit_id IN {PCList} AND encounter_id = {DatabaseManager.Instance.currentEncounter}",
@@ -207,6 +154,37 @@ public class CombatUnitManager : MonoBehaviour
                 }
             }
         );
+    }
+
+    public void ResetOncePerTurnResources()
+    {
+        List<(string, int)> oncePerTurnResources = new List<(string, int)>()
+        {
+            ("stunning_strike_available", 1),
+            ("dreadful_strikes_target", 1),
+            ("dreadful_strike_available", 1),
+            ("colossus_slayer_available", 1),
+            ("sneak_attack_available", 1),
+            ("eldritch_smite_available", 1),
+            ("savage_attacker_available", 1),
+            ("crusher_push_available", 1),
+            ("piercer_reroll_available", 1),
+            ("slasher_slow_available", 1)
+        };
+
+        for(int i = 0; i < units.Count; i++)
+        {
+            BaseUnit currentUnit = units[i].UnitPrefab;
+
+
+            for(int j = 0; j < oncePerTurnResources.Count; j++)
+            {
+                if (currentUnit.GetResource(oncePerTurnResources[j].Item1) != -1)
+                {
+                    currentUnit.SetResource(oncePerTurnResources[j].Item1, oncePerTurnResources[j].Item2);
+                }
+            }
+        }
     }
 
 }

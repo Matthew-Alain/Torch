@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -51,14 +52,6 @@ public class CombatStateManager : MonoBehaviour
         DatabaseManager.Instance.SwitchDatabase(-1);
     }
 
-    public void EndPlayerTurn()
-    {
-        CombatMenuManager.Instance.CloseMenu();
-        CombatUnitManager.Instance.SetSelectedPC(null);
-
-        StartCoroutine(ChangeState(GameState.StartMonsterTurn));
-    }
-
     public IEnumerator ChangeState(GameState newState)
     {
         if (GameState == newState) yield return null;
@@ -71,18 +64,20 @@ public class CombatStateManager : MonoBehaviour
             case GameState.GenerateGrid:
                 CombatGridManager.Instance.GenerateGrid(DatabaseManager.Instance.currentEncounter);
                 break;
-            case GameState.SpawnHeroes:
+            case GameState.SpawnPCs:
                 CombatUnitManager.Instance.SpawnPCs(DatabaseManager.Instance.currentEncounter);
                 break;
             case GameState.SpawnMonsters:
                 CombatUnitManager.Instance.SpawnMonsters(DatabaseManager.Instance.currentEncounter);
                 break;
             case GameState.Precombat:
+                StartCoroutine(ChangeState(GameState.RollInitiative));
                 break;
             case GameState.RollInitiative:
+                StartCoroutine(InitiativeTracker.Instance.RollInitiative());
                 break;
             case GameState.StartPlayerTurn:
-                StartCoroutine(StartPlayerTurn());
+                StartCoroutine(InitiativeTracker.Instance.StartTurn());
                 break;
             case GameState.PlayerTurn:
                 CheckForGameOver();
@@ -104,7 +99,7 @@ public class CombatStateManager : MonoBehaviour
                 break;
             case GameState.StartMonsterTurn:
                 // Debug.Log("It is now the monster's turn");
-                StartCoroutine(StartMonsterTurn());
+                StartCoroutine(InitiativeTracker.Instance.StartTurn());
                 break;
             case GameState.MonsterTurn:
                 StartCoroutine(TakeMonsterTurn());
@@ -116,44 +111,6 @@ public class CombatStateManager : MonoBehaviour
 
     }
 
-    private IEnumerator StartPlayerTurn()
-    {
-        for (int i = 0; i < CombatUnitManager.Instance.activePCIDs.Count; i++)
-        {
-            int currentUnitID = CombatUnitManager.Instance.activePCIDs[i];
-            BaseUnit currentUnit = CombatUnitManager.Instance.GetUnitByID(currentUnitID);
-
-            currentUnit.RefreshSpeed();
-            currentUnit.RefreshActions();
-
-            if (currentUnit.GetCondition("dying"))
-            {
-                yield return StartCoroutine(currentUnit.MakeDeathSave());
-            }
-        }
-
-        StartCoroutine(ChangeState(GameState.PlayerTurn));
-    }
-
-    private IEnumerator StartMonsterTurn()
-    {
-        CombatMenuManager.Instance.DisplayText($"It is now the monster's turn");
-
-        List<int> monsterIDList = CombatUnitManager.Instance.activeMonsterIDs;
-
-        for (int i = 0; i < monsterIDList.Count; i++)
-        {
-            int currentMonsterID = monsterIDList[i];
-            BaseUnit currentMonsterBase = CombatUnitManager.Instance.GetUnitByID(currentMonsterID);
-
-            currentMonsterBase.RefreshSpeed();
-            currentMonsterBase.RefreshActions();
-            yield return null;
-        }
-
-        StartCoroutine(ChangeState(GameState.MonsterTurn));
-    }
-
     public void DeclareAttack(int weaponID)
     {
         declaredWeapon = weaponID;
@@ -163,11 +120,14 @@ public class CombatStateManager : MonoBehaviour
 
     IEnumerator TakeMonsterTurn()
     {
-        List<int> monsterIDList = CombatUnitManager.Instance.activeMonsterIDs;
+        // List<int> monsterIDList = CombatUnitManager.Instance.activeMonsterIDs;
 
-        for (int i = 0; i < CombatUnitManager.Instance.activeMonsterIDs.Count; i++)
-        {
-            BaseMonster currentMonster = (BaseMonster)CombatUnitManager.Instance.GetUnitByID(monsterIDList[i]);
+        // for (int i = 0; i < CombatUnitManager.Instance.activeMonsterIDs.Count; i++)
+        // {
+        // BaseMonster currentMonster = (BaseMonster)CombatUnitManager.Instance.GetUnitByID(monsterIDList[i]);
+
+        BaseMonster currentMonster = (BaseMonster)InitiativeTracker.Instance.currentTurnUnit;
+
             yield return StartCoroutine(currentMonster.CheckValidActions());
             // Debug.Log("Finished finding valid actions for " + currentMonster.UnitName);
 
@@ -186,12 +146,11 @@ public class CombatStateManager : MonoBehaviour
                     yield return StartCoroutine(currentMonster.AttackTarget(target, attackID));
                     yield return new WaitForSeconds(0.5f);
                 }
-
-                currentMonster.EndTurn();
             }
-        }
+        // }
 
-        yield return StartCoroutine(ChangeState(GameState.StartPlayerTurn));
+        yield return null;
+        InitiativeTracker.Instance.EndTurn();
     }
 
     public IEnumerator SelectTarget(TargetType targetType, Action<BaseUnit> onComplete)
@@ -289,7 +248,7 @@ public class CombatStateManager : MonoBehaviour
 public enum GameState
 {
     GenerateGrid,
-    SpawnHeroes,
+    SpawnPCs,
     SpawnMonsters,
     Precombat,
     RollInitiative,

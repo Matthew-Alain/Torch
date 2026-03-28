@@ -66,7 +66,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         GameState currentState = CombatStateManager.Instance.GameState;
 
         if (currentState == GameState.GenerateGrid ||
-            currentState == GameState.SpawnHeroes ||
+            currentState == GameState.SpawnPCs ||
             currentState == GameState.SpawnMonsters ||
             currentState == GameState.Precombat ||
             currentState == GameState.RollInitiative ||
@@ -212,14 +212,14 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     private void ClearUnitSelection()
     {
         CombatMenuManager.Instance.CloseAllMenus();
-        CombatUnitManager.Instance.SetSelectedPC(null);
+        // CombatUnitManager.Instance.SetSelectedPC(null);
         StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.PlayerTurn));
     }
 
     private void SelectPC()
     {
         CombatMenuManager.Instance.CloseAllMenus(); //Close any existing menu
-        CombatUnitManager.Instance.SetSelectedPC((BasePC)OccupiedUnit); //Select the newly clicked PC
+        // CombatUnitManager.Instance.SetSelectedPC((BasePC)OccupiedUnit); //Select the newly clicked PC
         CombatMenuManager.Instance.OpenRootMenu(); //Open the action menu
     }
 

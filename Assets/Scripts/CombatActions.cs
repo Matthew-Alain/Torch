@@ -9,12 +9,12 @@ public class CombatActions
 
     public static void Dash(BaseUnit unit)
     {
-        int current_speed = unit.GetCurrentSpeed();
-        int base_speed = unit.GetBaseSpeed();
+        int current_speed = unit.GetResource("current_speed");
+        int base_speed = unit.GetResource("base_speed");
 
         current_speed += base_speed;
 
-        unit.SetCurrentSpeed(current_speed);
+        unit.SetResource("current_speed", current_speed);
     }
 
     public static void Dodge(BaseUnit unit)
@@ -41,7 +41,7 @@ public class CombatActions
 
     public static void MeleeWeaponAttack(BaseUnit attacker, int weaponID, BaseUnit target)
     {
-        if (attacker.UseMajorAction())
+        if (attacker.UseResource("major_action"))
         {
             int dieRoll = DiceRoller.Rolld20();
 
@@ -111,7 +111,7 @@ public class CombatActions
 
     public static void RangedWeaponAttack(BaseUnit attacker, BaseUnit target)
     {
-        if (attacker.UseMajorAction())
+        if (attacker.UseResource("major_action"))
         {
 
         }
@@ -119,7 +119,7 @@ public class CombatActions
 
     public static void LongRangeWeaponAttack(BaseUnit attacker, BaseUnit target)
     {
-        if (attacker.UseMajorAction())
+        if (attacker.UseResource("major_action"))
         {
             //If user has sharpshooter, just make a ranged weapon attack
         }
@@ -127,7 +127,7 @@ public class CombatActions
 
     public static IEnumerator MonsterAttack(BaseMonster attacker, BaseUnit target, int attackID)
     {
-        if (attacker.UseMajorAction())
+        if (attacker.UseResource("major_action"))
         {
             int dieRoll = DiceRoller.Rolld20();
 

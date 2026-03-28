@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.VisualScripting;
+using UnityEditor.ShaderGraph.Drawing;
 using UnityEngine;
 
 public class BasePC : BaseUnit
@@ -19,6 +20,11 @@ public class BasePC : BaseUnit
     public int GetSpecies()
     {
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT species FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public string GetSpeciesName()
+    {
+        return Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT name FROM species WHERE id = {GetSpecies()}"));
     }
 
     public int GetOriginFeat()
@@ -73,7 +79,7 @@ public class BasePC : BaseUnit
 
     public void Dash()
     {
-        if (UseMajorAction())
+        if (UseResource("major_action"))
         {
             CombatActions.Dash(this);
         }
@@ -81,7 +87,7 @@ public class BasePC : BaseUnit
 
     public void Disengage()
     {
-        if (UseMajorAction())
+        if (UseResource("major_action"))
         {
             CombatActions.Disengage(this);
         }
@@ -89,7 +95,7 @@ public class BasePC : BaseUnit
     
     public void Dodge()
     {
-        if (UseMajorAction())
+        if (UseResource("major_action"))
         {
             CombatActions.Dodge(this);
         }
@@ -97,18 +103,18 @@ public class BasePC : BaseUnit
 
     public void Help()
     {
-        if (UseMajorAction())
+        if (UseResource("major_action"))
         {
             StartCoroutine(CombatStateManager.Instance.SelectTarget(TargetType.Monster, target =>
             {
                 CombatActions.Help(this, target);
             }));
-        }  
+        }
     }
 
     public void Hide()
     {
-        if (UseMajorAction())
+        if (UseResource("major_action"))
         {
             CombatActions.Hide(this);
         }
@@ -118,7 +124,11 @@ public class BasePC : BaseUnit
 
     public void PopulateMajorActions(List<MenuOption> menu)
     {
-        //Aasimar healing touch
+        SpeciesFeatures species = new SpeciesFeatures();
+        if (GetSpeciesName() == "Aasimar")
+        {
+            menu.Add(new MenuOption($"Healing Touch", () => species.HealingHands(this)));
+        }
         //Cleric Divine Spark
         //Cleric Turn Undead
         //Life Cleric Preserve Life

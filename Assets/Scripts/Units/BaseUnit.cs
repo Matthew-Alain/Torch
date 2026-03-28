@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Profiling;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -21,26 +22,6 @@ public class BaseUnit : MonoBehaviour
     {
         // DatabaseManager.Instance.ExecuteScalar($"UPDATE saved_pcs SET name = '{newName}' WHERE id = {UnitID}");
         UnitName = newName;
-    }
-
-    public int GetCurrentSpeed()
-    {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT current_speed FROM unit_resources WHERE id = {UnitID}"));
-    }
-
-    public void SetCurrentSpeed(int newValue)
-    {
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET current_speed = {newValue} WHERE id = {UnitID}");
-    }
-
-    public int GetBaseSpeed()
-    {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT base_speed FROM unit_resources WHERE id = {UnitID}"));
-    }
-
-    public void SetBaseSpeed(int newValue)
-    {
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET base_speed = {newValue} WHERE id = {UnitID}");
     }
 
     public int GetCurrentHP()
@@ -68,11 +49,6 @@ public class BaseUnit : MonoBehaviour
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT max_hp FROM unit_resources WHERE id = {UnitID}"));
     }
 
-    public void SetMaxHP(int newHP)
-    {
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET max_hp = {newHP} WHERE id = {UnitID}");
-    }
-
     public int GetAC()
     {
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT AC FROM unit_stats WHERE id = {UnitID}"));
@@ -95,12 +71,17 @@ public class BaseUnit : MonoBehaviour
 
         if (isProficient)
         {
-            return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT proficiency FROM unit_stats WHERE id = {UnitID}"));
+            return GetPB();
         }
         else
         {
             return 0;
         }
+    }
+
+    public int GetPB()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT proficiency FROM unit_stats WHERE id = {UnitID}"));
     }
 
     public int GetWeaponProficiency(int weaponID)
@@ -152,43 +133,13 @@ public class BaseUnit : MonoBehaviour
         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_conditions SET {condition} = {value} WHERE id = {UnitID}");
     }
 
-    public bool UseMajorAction()
-    {
-        bool hasMajor = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT major_action FROM unit_resources WHERE id = {UnitID}"));
 
-        if (hasMajor)
-        {
-            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET major_action = 0 WHERE id = {UnitID}");
-        }
-        else
-        {
-            Debug.Log("No major action available");
-        }
-
-        return hasMajor;
-    }
-
-    public bool UseMinorAction()
-    {
-        bool hasMinor = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT minor_action FROM unit_resources WHERE id = {UnitID}"));
-
-        if (hasMinor)
-        {
-            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET minor_action = 0 WHERE id = {UnitID}");
-        }
-        else
-        {
-            Debug.Log("No major action available");
-        }
-
-        return hasMinor;
-    }
 
     public bool HasReaction()
     {
         return Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT reaction FROM unit_resources WHERE id = {UnitID}"));
     }
-    
+
     public bool UseReaction()
     {
         bool hasReaction = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT reaction FROM unit_resources WHERE id = {UnitID}"));
@@ -205,14 +156,69 @@ public class BaseUnit : MonoBehaviour
         return hasReaction;
     }
     
-    public void RefreshSpeed()
+    public int GetResource(string resourceName)
     {
-        SetCurrentSpeed(GetBaseSpeed());
+        var resourceValue = DatabaseManager.Instance.ExecuteScalar($"SELECT {resourceName} FROM unit_resources WHERE id = {UnitID}");
+        
+        if(resourceValue == DBNull.Value)
+        {
+            return -1;
+        }
+
+        return Convert.ToInt32(resourceValue);
     }
 
-    public void RefreshActions()
+    public bool UseResource(string resourceName)
     {
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET major_action = 1, minor_action = 1, reaction = 1 WHERE id = {UnitID}");
+        int currentResource = GetResource(resourceName);
+
+        if (currentResource > 0)
+        {
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET {resourceName} = {currentResource - 1} WHERE id = {UnitID}");
+            return true;
+        }
+
+        CombatMenuManager.Instance.DisplayText($"Insufficent resource to use {resourceName}");
+        return false;
+    }
+
+    public void SetResource(string resourceName, int newValue)
+    {
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET {resourceName} = {newValue} WHERE id = {UnitID}");
+    }
+
+    public void RefreshStartOfTurnResources()
+    {
+        List<(string, int)> startOfTurnResources = new List<(string, int)>()
+        {
+            ("major_action", 1),
+            ("minor_action", 1),
+            ("reaction", 1),
+            ("current_speed", GetResource("base_speed")),
+            ("current_number_of_attacks", GetResource("max_number_of_attacks")),
+            ("frenzy_available", 1),
+            ("warrior_of_the_gods_available", 1),
+            ("wild_resurgence_available", 1),
+            ("hand_of_healing_available", 1),
+            ("horde_breaker_available", 1),
+            ("flurry_of_blows_uses", 2),
+            ("hand_of_healing_available", 1),
+            ("horde_breaker_available", 1),
+            ("tavern_brawler_push_available", 1),
+            ("shield_bash_available", 1),
+            ("charge_attack_available", 1),
+            ("punch_and_grab_available", 1),
+            ("cleave_attack_available", 1),
+            ("nick_attack_available", 1)
+        };
+
+        for (int i = 0; i < startOfTurnResources.Count; i++)
+        {
+            if (GetResource(startOfTurnResources[i].Item1) != -1)
+            {
+                SetResource(startOfTurnResources[i].Item1, startOfTurnResources[i].Item2);
+            }
+        }
     }
 
     public void TakeDamage(int damage, bool wasCrit)
@@ -260,7 +266,7 @@ public class BaseUnit : MonoBehaviour
             if (Faction == Faction.Monster)
             {
                 menu.DisplayText($"The attacker dealt {damageRemaining} damage to {UnitName}.");
-                CombatUnitManager.Instance.KillUnit(this);
+                Die();
             }
             else
             {
@@ -272,14 +278,14 @@ public class BaseUnit : MonoBehaviour
                     menu.DisplayText($"The attacker dealt {damageDealt} damage to {UnitName}, which was enough to instantly kill them!");
 
                     // Debug.Log($"The attacker dealt {damageDealt} damage to {UnitName}, which was enough to instantly kill them!");
-                    CombatUnitManager.Instance.KillUnit(this);
+                    Die();
                 }
                 else
                 {
                     currentHP = 0;
                     menu.DisplayText($"The attacker dealt {damageDealt} damage to {UnitName}, which knocks them unconscious!");
                     // Debug.Log($"The attacker dealt {damageDealt} damage to {UnitName}, which knocks them unconscious!");
-                    CombatUnitManager.Instance.FallUnconscious(this);
+                    FallUnconscious();
                 }
             }
         }
@@ -288,7 +294,7 @@ public class BaseUnit : MonoBehaviour
             if (damageRemaining >= maxHP)
             {
                 // Debug.Log($"The attacker dealt {damageRemaining} damage to {UnitName}, which was enough to instantly kill them!");
-                CombatUnitManager.Instance.KillUnit(this);                
+                Die();
             }
             else if (wasCrit)
             {
@@ -386,7 +392,7 @@ public class BaseUnit : MonoBehaviour
     {
         if (currentFails >= 3)
         {
-            CombatUnitManager.Instance.KillUnit(this);
+            Die();
         }
     }
 
@@ -403,6 +409,74 @@ public class BaseUnit : MonoBehaviour
         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET death_save_successes = 0, death_save_fails = 0 WHERE id = {UnitID}");
         SetCondition("dying", false);
         SetCondition("unconscious", false);
+    }
+
+    public void FallUnconscious()
+    {
+
+        if (Faction == Faction.Monster)
+        {
+            Debug.LogWarning("Tried to knock a monster unconscious, killing unit instead.");
+            Die();
+        }
+        else
+        {
+            SetCondition("unconscious", true);
+            SetCondition("prone", true);
+            SetCondition("dying", true);
+            CombatMenuManager.Instance.DisplayText($"{UnitName} is dying!");
+            // Log($"{unit.UnitName} is dying!");
+        }
+        
+        CombatStateManager.Instance.CheckForGameOver();
+
+    }
+
+    public void Die()
+    {
+
+        if (Faction == Faction.Monster)
+        {
+            Destroy(gameObject);
+            CombatMenuManager.Instance.DisplayText($"{UnitName} has been slain!");
+
+            // Log("Unit " + unitID + " has been slain!");
+        }
+        else
+        {
+            CombatMenuManager.Instance.DisplayText($"{UnitName} has been killed!");
+
+            // LogWarning(characterName + " has been killed!");
+        }
+
+        SetCondition("unconscious", true);
+        SetCondition("prone", true);
+        SetCondition("dying", false);
+        SetCondition("dead", true);
+
+        CombatUnitManager.Instance.baseUnits.Remove(this);
+
+        if(InitiativeTracker.Instance.currentTurnUnit == this)
+        {
+            InitiativeTracker.Instance.EndTurn();
+        }
+
+        InitiativeTracker.Instance.RemoveFromInitiative(UnitID);
+
+        occupiedTile.EmptyTile();
+
+        CombatUnitManager.Instance.UpdateActivePCList();
+        CombatUnitManager.Instance.UpdateActiveMonsterList();
+        CombatStateManager.Instance.CheckForGameOver();
+    }
+
+    public int RollInitiative()
+    {
+        int result = DiceRoller.Rolld20();
+
+        result += GetModifier("mDEX");
+
+        return result;
     }
     
 }

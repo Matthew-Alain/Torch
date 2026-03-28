@@ -266,7 +266,7 @@ public class BaseMonster : BaseUnit
 
                 int tentativeG = gScore[current] + moveCost;
 
-                if (tentativeG > GetCurrentSpeed()) continue;
+                if (tentativeG > GetResource("current_speed")) continue;
 
                 if (!gScore.ContainsKey(neighbor) || tentativeG < gScore[neighbor])
                 {
