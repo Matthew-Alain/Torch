@@ -38,11 +38,13 @@ public class BaseMonster : BaseUnit
     private bool CheckValidity(int attackID)
     {
         bool hasValidAttack = false;
+
+        List<Tile> activePCTiles = GetilesWithActivePCs();
         
-        for (int i = 0; i < GetilesWithActivePCs().Count; i++) //For each tile that has a PC in it
+        for (int i = 0; i < activePCTiles.Count; i++) //For each tile that has a PC in it
         {
-            Tile tile = GetilesWithActivePCs()[i]; //Get the tile
-            BaseUnit target = GetilesWithActivePCs()[i].OccupiedUnit; //Get the PC in that tile
+            Tile tile = activePCTiles[i]; //Get the tile
+            BaseUnit target = tile.OccupiedUnit; //Get the PC in that tile
 
             List<Tile> pathToTarget = GetPathToBestAttackTile(target.occupiedTile, attackID);
 
@@ -180,6 +182,21 @@ public class BaseMonster : BaseUnit
         {
             for (int i = 0; i < path.Count; i++)
             {
+                var context = new MoveContext
+                {
+                    TriggeringUnit = this,
+                    originTile = occupiedTile,
+                    destinationTile = path[i]
+                };
+
+                yield return StartCoroutine(
+                    ReactionManager.Instance.CheckForReactionsCoroutine(
+                        ReactionTrigger.UnitMoves,
+                        context
+                    )
+                );
+
+                // Now actually move
                 path[i].MoveUnit(this);
                 // Debug.Log("Monster moved to tile: (" + occupiedTile.tileX + ", " + occupiedTile.tileY + ")");
                 yield return new WaitForSeconds(0.5f);

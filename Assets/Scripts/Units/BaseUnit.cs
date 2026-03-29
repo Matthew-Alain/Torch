@@ -13,6 +13,11 @@ public class BaseUnit : MonoBehaviour
     public string UnitName;
     public int UnitID;
 
+    public List<IReaction> Reactions = new List<IReaction>()
+    {
+        new OpportunityAttack()
+    };
+
     public string GetName()
     {
         return Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT name FROM saved_pcs WHERE id = {UnitID}"));
@@ -252,40 +257,39 @@ public class BaseUnit : MonoBehaviour
         }
         SetTempHP(tempHP);
 
+        // Debug.Log($"Current HP: {currentHP}");
+        // Debug.Log($"Max HP: {maxHP}");
+        // Debug.Log($"Damage remaining: {damageRemaining}");
 
-        if (currentHP > damageRemaining && currentHP > 0)
+
+        if(currentHP > 0)
         {
-            currentHP -= damageRemaining;
-            menu.DisplayText($"The attacker dealt {damageRemaining} damage to {UnitName}, they now have {currentHP} HP left.");
-            // Debug.Log($"The attacker dealt {damageRemaining} damage to {UnitName}, they now have {currentHP} HP left.");
-            // yield return new WaitForSeconds(0.5f);
-        }
-        else if (currentHP > 0) //If the damage remaining is greater than the unit's current HP, but they aren't unconscious yet
-        {
-            currentHP = 0;
-            if (Faction == Faction.Monster)
+            if (damageRemaining < currentHP)
             {
-                menu.DisplayText($"The attacker dealt {damageRemaining} damage to {UnitName}.");
-                Die();
+                currentHP -= damageRemaining;
+                menu.DisplayText($"The attacker dealt {damageRemaining} damage to {UnitName}, they now have {currentHP} HP left.");
             }
             else
             {
-                int damageDealt = damageRemaining;
-                damageRemaining -= currentHP;
-                if (damageRemaining >= maxHP)
-                {
-                    
-                    menu.DisplayText($"The attacker dealt {damageDealt} damage to {UnitName}, which was enough to instantly kill them!");
+                int overflowDamage = damageRemaining - currentHP;
+                currentHP = 0;
 
-                    // Debug.Log($"The attacker dealt {damageDealt} damage to {UnitName}, which was enough to instantly kill them!");
+                if(Faction == Faction.Monster)
+                {
                     Die();
                 }
                 else
                 {
-                    currentHP = 0;
-                    menu.DisplayText($"The attacker dealt {damageDealt} damage to {UnitName}, which knocks them unconscious!");
-                    // Debug.Log($"The attacker dealt {damageDealt} damage to {UnitName}, which knocks them unconscious!");
-                    FallUnconscious();
+                    if(overflowDamage >= maxHP)
+                    {
+                        menu.DisplayText($"The attacker dealt {damageRemaining} damage to {UnitName}, which was enough to instantly kill them!");
+                        Die();
+                    }
+                    else
+                    {
+                        menu.DisplayText($"The attacker dealt {damageRemaining} damage to {UnitName}, which knocks them unconscious!");
+                        FallUnconscious();
+                    }
                 }
             }
         }
@@ -293,7 +297,7 @@ public class BaseUnit : MonoBehaviour
         {
             if (damageRemaining >= maxHP)
             {
-                // Debug.Log($"The attacker dealt {damageRemaining} damage to {UnitName}, which was enough to instantly kill them!");
+                menu.DisplayText($"The attacker dealt {damageRemaining} damage to {UnitName}, which was enough to instantly kill them!");
                 Die();
             }
             else if (wasCrit)
@@ -394,6 +398,10 @@ public class BaseUnit : MonoBehaviour
         {
             Die();
         }
+        else
+        {
+            InitiativeTracker.Instance.EndTurn();
+        }
     }
 
     public void CheckForStable(int currentPasses)
@@ -402,6 +410,7 @@ public class BaseUnit : MonoBehaviour
         {
             SetCondition("dying", false);
         }
+        InitiativeTracker.Instance.EndTurn();
     }
 
     public void ClearDeathSaves()
@@ -421,14 +430,20 @@ public class BaseUnit : MonoBehaviour
         }
         else
         {
+            Debug.Log("Fallen unconscious");
             SetCondition("unconscious", true);
             SetCondition("prone", true);
             SetCondition("dying", true);
             CombatMenuManager.Instance.DisplayText($"{UnitName} is dying!");
             // Log($"{unit.UnitName} is dying!");
         }
-        
+
         CombatStateManager.Instance.CheckForGameOver();
+        
+        if (InitiativeTracker.Instance.currentTurnUnit == this)
+        {
+            InitiativeTracker.Instance.EndTurn();
+        }
 
     }
 
@@ -456,10 +471,6 @@ public class BaseUnit : MonoBehaviour
 
         CombatUnitManager.Instance.baseUnits.Remove(this);
 
-        if(InitiativeTracker.Instance.currentTurnUnit == this)
-        {
-            InitiativeTracker.Instance.EndTurn();
-        }
 
         InitiativeTracker.Instance.RemoveFromInitiative(UnitID);
 
@@ -468,6 +479,11 @@ public class BaseUnit : MonoBehaviour
         CombatUnitManager.Instance.UpdateActivePCList();
         CombatUnitManager.Instance.UpdateActiveMonsterList();
         CombatStateManager.Instance.CheckForGameOver();
+
+        if (InitiativeTracker.Instance.currentTurnUnit == this)
+        {
+            InitiativeTracker.Instance.EndTurn();
+        }
     }
 
     public int RollInitiative()

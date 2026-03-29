@@ -12,8 +12,11 @@ public class CombatStateManager : MonoBehaviour
     public static CombatStateManager Instance;
     public GameState GameState;
     public int declaredWeapon;
-    public BaseUnit selectedTarget = null;
-    public Tile selectedTile = null;
+    private Action<BaseUnit> onTargetSelected;
+    private Action<Tile> onTileSelected;
+    private Func<BaseUnit, (bool, string)> targetValidator;
+    private Func<Tile, (bool, string)> tileValidator;
+    private Action onReactionComplete;
 
     void Awake()
     {
@@ -153,62 +156,142 @@ public class CombatStateManager : MonoBehaviour
         InitiativeTracker.Instance.EndTurn();
     }
 
-    public IEnumerator SelectTarget(TargetType targetType, Action<BaseUnit> onComplete)
+
+
+    public void StartTargetSelection(
+        TargetType targetType,
+        Action<BaseUnit> callback,
+        Func<BaseUnit, (bool success, string message)> validator = null
+    )
     {
+        onTargetSelected = callback;
+        targetValidator = validator;
 
         switch (targetType)
         {
             case TargetType.Monster:
-                yield return StartCoroutine(ChangeState(GameState.SelectTargetMonster));
+                CombatMenuManager.Instance.DisplayText("Select a monster to target");
+                StartCoroutine(ChangeState(GameState.SelectTargetMonster));
                 break;
             case TargetType.PC:
-                yield return StartCoroutine(ChangeState(GameState.SelectTargetPC));
+                CombatMenuManager.Instance.DisplayText("Select a PC to target");
+                StartCoroutine(ChangeState(GameState.SelectTargetPC));
                 break;
             case TargetType.Unit:
-                yield return StartCoroutine(ChangeState(GameState.SelectTargetUnit));
-                break;
-            default:
+                CombatMenuManager.Instance.DisplayText("Select a unit to target");
+                StartCoroutine(ChangeState(GameState.SelectTargetUnit));
                 break;
         }
-
-        yield return new WaitUntil(() => selectedTarget != null);
-
-        BaseUnit returnTarget = selectedTarget;
-        selectedTarget = null;
-
-        Debug.Log("Selected target is: " + returnTarget.UnitName);
-        
-        onComplete?.Invoke(returnTarget);
     }
 
-    public Tile SelectTile()
+    public void StartTargetSelection(
+        TargetType targetType,
+        Action<Tile> callback,
+        Func<Tile, (bool success, string message)> validator = null
+    )
     {
-        StartCoroutine(ChangeState(GameState.SelectTargetTile));
+        onTileSelected = callback;
+        tileValidator = validator;
 
-        Tile returnTile = null;
-        StartCoroutine(Instance.GetTile(target =>
+        if (targetType == TargetType.Tile)
         {
-            returnTile = target;
-        }));
-
-        Debug.Log("Selected tile is: " + returnTile.tileX+", "+returnTile.tileY);
-        
-        return returnTile;
+            CombatMenuManager.Instance.DisplayText("Select a tile to target");
+            StartCoroutine(ChangeState(GameState.SelectTargetTile));
+        }
+        else
+        {
+            Debug.LogWarning("Tried to select Tile object");
+        }
     }
-    
-    private IEnumerator GetTile(Action<Tile> tile)
+
+    public void StartTileSelection(
+        Action<Tile> callback,
+        Func<Tile, (bool success, string message)> validator = null
+    )
     {
-        yield return StartCoroutine(ChangeState(GameState.SelectTarget));
-
-        StartCoroutine(ChangeState(GameState.SelectTargetMonster));
-
-        yield return new WaitUntil(() => selectedTile != null);
-
-        Tile returnTile = selectedTile;
-        selectedTarget = null;
-
-        tile?.Invoke(returnTile);
+        onTileSelected = callback;
+        tileValidator = validator;
+        CombatMenuManager.Instance.DisplayText("Select a tile to target");
+        StartCoroutine(ChangeState(GameState.SelectTargetTile));
     }
+
+    public void ConfirmTarget(BaseUnit target)
+    {
+        if (onTargetSelected == null) return;
+
+        if (targetValidator != null)
+        {
+            var result = targetValidator(target);
+
+            if (!result.Item1)
+            {
+                CombatMenuManager.Instance.DisplayText(result.Item2);
+                return;
+            }
+        }
+
+        onTargetSelected.Invoke(target);
+
+        onTargetSelected = null;
+        targetValidator = null;
+
+        StartCoroutine(ChangeState(GameState.PlayerTurn));
+    }
+
+    public void ConfirmTile(Tile tile)
+    {
+        if (onTileSelected == null) return;
+
+        if (tileValidator != null)
+        {
+            var result = tileValidator(tile);
+
+            if (!result.Item1)
+            {
+                CombatMenuManager.Instance.DisplayText(result.Item2);
+                return;
+            }
+        }
+
+        onTileSelected.Invoke(tile);
+
+        onTileSelected = null;
+        tileValidator = null;
+
+        StartCoroutine(ChangeState(GameState.PlayerTurn));
+    }
+
+    public void RequestReaction(List<MenuOption> options, Action onComplete)
+    {
+        onReactionComplete = onComplete;
+
+        CombatMenuManager.Instance.OpenMenu(options);
+
+        StartCoroutine(ChangeState(GameState.SelectReaction)); // or new state like Reacting
+    }
+
+    public void CompleteReaction()
+    {
+        CombatMenuManager.Instance.CloseAllMenus();
+
+        onReactionComplete?.Invoke();
+        onReactionComplete = null;
+
+        StartCoroutine(ChangeState(GameState.PlayerTurn));
+    }
+
+    public void TryReaction(BaseUnit unit, List<MenuOption> options, Action onComplete)
+    {
+        if (unit.GetResource("reaction") > 0)
+        {
+            RequestReaction(options, onComplete);
+        }
+        else
+        {
+            onComplete?.Invoke();
+        }
+    }
+
 
     public void CheckForGameOver()
     {
@@ -256,6 +339,7 @@ public enum GameState
     PlayerTurn,
     MovingPC,
     SelectWeapon,
+    SelectReaction,
     SelectTarget,
     SelectTargetPC,
     SelectTargetMonster,

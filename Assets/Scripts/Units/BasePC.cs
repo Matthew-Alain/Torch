@@ -101,15 +101,62 @@ public class BasePC : BaseUnit
         }
     }
 
+    public void ActionTemplate()
+    {
+        CombatStateManager.Instance.StartTargetSelection(
+            TargetType.Monster, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
+            (target) =>
+            {
+                CombatActions.MeleeWeaponAttack(
+                    this,
+                    CombatStateManager.Instance.declaredWeapon,
+                    target
+                );
+
+                UseResource("major_action");
+            },
+            (target) =>
+            {
+                if (GetResource("major_action") <= 0)
+                {
+                    return (false, "You don't have a major action available");
+                }
+
+                if (!RangeHelper.IsTargetInRange(this, target, 1)) //Range in tiles
+                {
+                    return (false, "Target is out of range");
+                }
+
+                return (true, "");
+            }
+        );
+    }
+
     public void Help()
     {
-        if (UseResource("major_action"))
-        {
-            StartCoroutine(CombatStateManager.Instance.SelectTarget(TargetType.Monster, target =>
+        CombatStateManager.Instance.StartTargetSelection(
+            TargetType.Monster, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
+            (target) =>
             {
                 CombatActions.Help(this, target);
-            }));
-        }
+                
+                UseResource("major_action");
+            },
+            (target) =>
+            {
+                if (GetResource("major_action") <= 0)
+                {
+                    return (false, "You don't have a major action available");
+                }
+
+                if (!RangeHelper.IsTargetInRange(this, target, 1))
+                {
+                    return (false, "Target is out of range");
+                }
+
+                return (true, "");
+            }
+        );
     }
 
     public void Hide()

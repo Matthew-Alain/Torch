@@ -33,7 +33,7 @@ public class CombatGridManager : MonoBehaviour
         }
 
         //Now safe to create a new instance
-        Instance = this;    
+        Instance = this;
         // DontDestroyOnLoad(gameObject);
     }
 
@@ -56,7 +56,7 @@ public class CombatGridManager : MonoBehaviour
             {
                 int tileID = 0;
                 int tileType = 0;
-                
+
                 DatabaseManager.Instance.ExecuteReader(
                     $"SELECT tile_type, tile_id FROM grid_contents WHERE encounter_id = {encounterID} AND x = {x} AND y = {y}",
                     reader =>
@@ -76,10 +76,10 @@ public class CombatGridManager : MonoBehaviour
                         tileToSpawn = mountainTile;
                         break;
                     default:
-                        Log("No tile information found for "+x+", "+y+" - defaulting to grass tile");
+                        Log("No tile information found for " + x + ", " + y + " - defaulting to grass tile");
                         break;
                 }
-                
+
                 var spawnedTile = Instantiate(tileToSpawn, new Vector3(x, y), Quaternion.identity); //Create that tile
                 spawnedTile.name = $"Tile {x}, {y}"; //Name the tile for tracking purposes
 
@@ -172,5 +172,55 @@ public class CombatGridManager : MonoBehaviour
     public void OnPointerClick(PointerEventData eventData)
     {
         throw new NotImplementedException();
+    }
+}
+
+
+public static class RangeHelper
+{
+    public static bool IsTargetInRange(BaseUnit attacker, BaseUnit target, int range)
+    {
+        // int melee = 0;
+        // int normal = 0;
+        // int longRange = 0;
+
+        // DatabaseManager.Instance.ExecuteReader(
+        //     $"SELECT melee_range, normal_range, long_range FROM weapons WHERE id = {weaponID}",
+        //     reader =>
+        //     {
+        //         if (reader["melee_range"] != DBNull.Value)
+        //             melee = Convert.ToInt32(reader["melee_range"]) / 5;
+
+        //         if (reader["normal_range"] != DBNull.Value)
+        //             normal = Convert.ToInt32(reader["normal_range"]) / 5;
+
+        //         if (reader["long_range"] != DBNull.Value)
+        //             longRange = Convert.ToInt32(reader["long_range"]) / 5;
+        //     }
+        // );
+
+        int distance = attacker.occupiedTile.CheckDistanceInTiles(target.occupiedTile);
+
+        return distance <= range;
+    }
+}
+
+public static class AOEHelper
+{
+    public static List<BaseUnit> GetUnitsInRadius(Tile center, int radius)
+    {
+        List<BaseUnit> units = new List<BaseUnit>();
+
+        foreach (var tile in CombatGridManager.Instance.tilesList) // however you store tiles
+        {
+            int distance = center.CheckDistanceInTiles(tile);
+
+            if (distance <= radius && tile.OccupiedUnit != null)
+            {
+                units.Add(tile.OccupiedUnit);
+            }
+        }
+
+        return units;
     }
 }

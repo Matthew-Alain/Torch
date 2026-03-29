@@ -76,6 +76,8 @@ public class CombatUnitManager : MonoBehaviour
             var spawnTile = CombatGridManager.Instance.GetPCSpawnTile(activePCIDs[i], encounterID); //Gets which tile that PC is supposed to spawn on
 
             spawnTile.SetUnit(spawnedPC); //Set that spawn tile's unit to the spawned PC
+
+            ReactionManager.Instance.RegisterUnit(spawnedPC);
         }
 
         StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.SpawnMonsters));
@@ -109,6 +111,8 @@ public class CombatUnitManager : MonoBehaviour
             var spawnTile = CombatGridManager.Instance.GetMonsterSpawnTile(activeMonsterIDs[i], encounterID); //Gets which tile that PC is supposed to spawn on
 
             spawnTile.SetUnit(spawnedMonster); //Set that spawn tile's unit to the spawned PC
+            ReactionManager.Instance.RegisterUnit(spawnedMonster);
+
         }
 
         StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.Precombat));

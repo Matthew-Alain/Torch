@@ -40,17 +40,17 @@ public class InitiativeTracker: MonoBehaviour
             {
                 int initiative = unit.RollInitiative();
                 initiativeRolls.Add((unit, initiative));
-                Debug.Log($"{unit} rolled {initiative} for initiative");
+                // Debug.Log($"{unit} rolled {initiative} for initiative");
             }
 
             initiativeRolls = initiativeRolls.OrderByDescending(x => x.Item2).ToList();
 
-            Debug.Log("The turn order is: ");
+            // Debug.Log("The turn order is: ");
             for (int i = 0; i < initiativeRolls.Count; i++)
             {
-                Debug.Log(initiativeRolls[i].Item1.UnitName);
+                // Debug.Log(initiativeRolls[i].Item1.UnitName);
 
-                DatabaseManager.Instance.ExecuteNonQuery($"INSERT INTO initiative_order VALUES ({initiativeRolls[i].Item1.UnitID}, {i})");
+                DatabaseManager.Instance.ExecuteNonQuery($"INSERT INTO initiative_order (unit_id, turn_order) VALUES ({initiativeRolls[i].Item1.UnitID}, {i})");
             }
 
             DatabaseManager.Instance.ExecuteNonQuery($"UPDATE encounters SET in_progress = 1 WHERE id = {DatabaseManager.Instance.currentEncounter}");
@@ -94,26 +94,41 @@ public class InitiativeTracker: MonoBehaviour
     
     public void RemoveFromInitiative(int PCID)
     {
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE initiative_count SET unit_id = NULL WHERE unit_id = {PCID}");
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE initiative_order SET active = 0 WHERE unit_id = {PCID}");
     }
 
     public BaseUnit GetCurrentUnit()
     {
-        var turn_order = DatabaseManager.Instance.ExecuteScalar($"SELECT unit_id FROM initiative_order WHERE turn_order = {GetInitiativeOrder()}");
-        while (turn_order == null)
+        int nextActivePC = -1;
+
+        while (nextActivePC == -1)
         {
-            Debug.Log("No unit found at initiative order " + GetInitiativeOrder());
-            IncrementInitiativeOrder();
-            if (GetInitiativeOrder() >= GetNumberOfCombatants())
-            {
-                ResetInitiativeCount();
-                IncrementTurnCount();
-            }
-            turn_order = DatabaseManager.Instance.ExecuteScalar($"SELECT unit_id FROM initiative_order WHERE turn_order = {GetInitiativeOrder()}");
+            DatabaseManager.Instance.ExecuteReader(
+                $"SELECT unit_id, active FROM initiative_order WHERE turn_order = {GetInitiativeOrder()}",
+                reader =>
+                {
+                    while (reader.Read())
+                    {
+                        if (!Convert.ToBoolean(reader["active"]))
+                        {
+                            IncrementInitiativeOrder();
+                            if (GetInitiativeOrder() >= GetNumberOfCombatants())
+                            {
+                                ResetInitiativeCount();
+                                IncrementTurnCount();
+                            }
+                        }
+                        else
+                        {
+                            nextActivePC = Convert.ToInt32(reader["unit_id"]);
+                        }
+                    }
+                }
+            );
+            // Debug.Log("No unit found at initiative order " + GetInitiativeOrder());
         }
 
-        int unitID = Convert.ToInt32(turn_order);
-        return CombatUnitManager.Instance.GetUnitByID(unitID);
+        return CombatUnitManager.Instance.GetUnitByID(nextActivePC);
     }
     
     public IEnumerator StartTurn()
@@ -147,14 +162,17 @@ public class InitiativeTracker: MonoBehaviour
 
     public void EndTurn()
     {
-        if (currentTurnUnit.Faction == Faction.PC)
+        if(currentTurnUnit != null)
         {
-            CombatMenuManager.Instance.CloseMenu();
-            CombatUnitManager.Instance.SetSelectedPC(null);
-        }
-        else
-        {
-            ((BaseMonster)currentTurnUnit).EndTurn();
+            if (currentTurnUnit.Faction == Faction.PC)
+            {
+                CombatMenuManager.Instance.CloseMenu();
+                CombatUnitManager.Instance.SetSelectedPC(null);
+            }
+            else
+            {
+                ((BaseMonster)currentTurnUnit).EndTurn();
+            }
         }
 
         IncrementInitiativeOrder();
@@ -165,6 +183,10 @@ public class InitiativeTracker: MonoBehaviour
         }
 
         currentTurnUnit = GetCurrentUnit();
+        if(currentTurnUnit == null)
+        {
+            EndTurn();
+        }
 
         CombatUnitManager.Instance.ResetOncePerTurnResources();
         

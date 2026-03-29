@@ -75,6 +75,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
         if (!leftClick)
         {
+            //Only close this if the stack has more than one layer
             menu.CloseMenu();
             return;
         }
@@ -84,7 +85,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             case GameState.PlayerTurn:
                 if (OccupiedUnit != null)
                 {
-                    if(OccupiedUnit.Faction == Faction.PC)
+                    if(OccupiedUnit == InitiativeTracker.Instance.currentTurnUnit)
                     {
                         if(OccupiedUnit.GetCondition("dying") || OccupiedUnit.GetCondition("unconscious") || OccupiedUnit.GetCondition("dead"))
                         {
@@ -128,11 +129,14 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                     menu.DisplayText("That tile is not walkable");
                 }
                 break;
-            
+
+
+
+            //These handle clicking tiles
             case GameState.SelectTargetMonster:
                 if (OccupiedUnit != null && OccupiedUnit.Faction == Faction.Monster)
                 {
-                    CombatStateManager.Instance.selectedTarget = OccupiedUnit;
+                    CombatStateManager.Instance.ConfirmTarget(OccupiedUnit);
                 }
                 else
                 {
@@ -143,7 +147,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             case GameState.SelectTargetPC:
                 if (OccupiedUnit != null && OccupiedUnit.Faction == Faction.PC)
                 {
-                    CombatStateManager.Instance.selectedTarget = OccupiedUnit;
+                    CombatStateManager.Instance.ConfirmTarget(OccupiedUnit);
                 }
                 else
                 {
@@ -151,10 +155,10 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 }
                 break;
             
-                case GameState.SelectTargetUnit:
+            case GameState.SelectTargetUnit:
                 if (OccupiedUnit != null)
                 {
-                    CombatStateManager.Instance.selectedTarget = OccupiedUnit;
+                    CombatStateManager.Instance.ConfirmTarget(OccupiedUnit);
                 }
                 else
                 {
@@ -162,7 +166,9 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 }
                 break;
             
-            
+            case GameState.SelectTargetTile:
+                CombatStateManager.Instance.ConfirmTile(this);
+                break;
                     // //Need to move this code to a function for measuring attack distance
 
                     // int melee_range = 0;
@@ -245,6 +251,28 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     public void MoveUnit(BaseUnit movingUnit)
     {
+        var context = new MoveContext
+        {
+            TriggeringUnit = movingUnit,
+            originTile = movingUnit.occupiedTile,
+            destinationTile = this
+        };
+
+        if(movingUnit.Faction == Faction.PC)
+        {
+            Debug.Log("The moving unit is a PC");
+            ReactionManager.Instance.CheckForReactions(
+                ReactionTrigger.UnitMoves,
+                context,
+                () =>
+                {
+                    // Debug.Log("Checked reactions");
+                    // context.TriggeringUnit.TakeDamage(10,false);
+                }
+            );
+        }
+
+
         int unitSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
             $"SELECT current_speed FROM unit_resources WHERE id = {movingUnit.UnitID}"
         ));
