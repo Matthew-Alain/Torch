@@ -58,7 +58,7 @@ public class InitiativeTracker: MonoBehaviour
 
         currentTurnUnit = GetCurrentUnit();
 
-        yield return StartCoroutine(StartTurn());
+        yield return null;
 
     }
 
@@ -99,104 +99,75 @@ public class InitiativeTracker: MonoBehaviour
 
     public BaseUnit GetCurrentUnit()
     {
-        int nextActivePC = -1;
+        BaseUnit nextUnit = null;
 
-        while (nextActivePC == -1)
-        {
-            DatabaseManager.Instance.ExecuteReader(
-                $"SELECT unit_id, active FROM initiative_order WHERE turn_order = {GetInitiativeOrder()}",
-                reader =>
+        DatabaseManager.Instance.ExecuteReader(
+            $"SELECT unit_id, active FROM initiative_order WHERE turn_order = {GetInitiativeOrder()}",
+            reader =>
+            {
+                while (reader.Read())
                 {
-                    while (reader.Read())
+                    if (Convert.ToBoolean(reader["active"]))
                     {
-                        if (!Convert.ToBoolean(reader["active"]))
-                        {
-                            IncrementInitiativeOrder();
-                            if (GetInitiativeOrder() >= GetNumberOfCombatants())
-                            {
-                                ResetInitiativeCount();
-                                IncrementTurnCount();
-                            }
-                        }
-                        else
-                        {
-                            nextActivePC = Convert.ToInt32(reader["unit_id"]);
-                        }
+                        nextUnit = CombatUnitManager.Instance.GetUnitByID(Convert.ToInt32(reader["unit_id"]));
                     }
                 }
-            );
-            // Debug.Log("No unit found at initiative order " + GetInitiativeOrder());
-        }
-
-        return CombatUnitManager.Instance.GetUnitByID(nextActivePC);
-    }
-    
-    public IEnumerator StartTurn()
-    {
-        if(currentTurnUnit == null)
-        {
-            EndTurn();
-        }
-        else
-        {
-            currentTurnUnit.RefreshStartOfTurnResources();
-
-            if (currentTurnUnit.Faction == Faction.PC)
-            {
-                CombatUnitManager.Instance.SetSelectedPC((BasePC)currentTurnUnit);
-
-                if (currentTurnUnit.GetCondition("dying"))
-                {
-                    yield return StartCoroutine(currentTurnUnit.MakeDeathSave());
-                }
-
-                yield return StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.PlayerTurn));
             }
-            else
-            {
+        );
 
-                yield return StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.MonsterTurn));
-            }
-        }
+        // Debug.Log("No unit found at initiative order " + GetInitiativeOrder());
+
+        return nextUnit;
     }
 
-    public void EndTurn()
+    public void AdvanceTurn()
     {
-        if(currentTurnUnit != null)
+        do
         {
-            if (currentTurnUnit.Faction == Faction.PC)
+            IncrementInitiativeOrder();
+            if (GetInitiativeOrder() >= GetNumberOfCombatants())
             {
-                CombatMenuManager.Instance.CloseMenu();
-                CombatUnitManager.Instance.SetSelectedPC(null);
+                ResetInitiativeCount();
+                IncrementTurnCount();
             }
-            else
-            {
-                ((BaseMonster)currentTurnUnit).EndTurn();
-            }
-        }
 
-        IncrementInitiativeOrder();
-        if (GetInitiativeOrder() >= GetNumberOfCombatants())
-        {
-            ResetInitiativeCount();
-            IncrementTurnCount();
-        }
+            currentTurnUnit = GetCurrentUnit();
+        } while (currentTurnUnit == null);
 
-        currentTurnUnit = GetCurrentUnit();
-        if(currentTurnUnit == null)
-        {
-            EndTurn();
-        }
+    }
 
-        CombatUnitManager.Instance.ResetOncePerTurnResources();
+    // public IEnumerator EndTurn()
+    // {
+    //     if(currentTurnUnit != null)
+    //     {
+    //         if (currentTurnUnit.Faction == Faction.PC)
+    //         {
+    //             CombatMenuManager.Instance.CloseMenu();
+    //             CombatUnitManager.Instance.SetSelectedPC(null);
+    //         }
+    //         else
+    //         {
+    //             ((BaseMonster)currentTurnUnit).EndTurn();
+    //         }
+    //     }
+
         
-        if(currentTurnUnit.Faction == Faction.PC)
-        {
-            StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.StartPlayerTurn));
-        }
-        else
-        {
-            StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.StartMonsterTurn));
-        }
-    }
+    //     if(currentTurnUnit == null)
+    //     {
+    //         EndTurn();
+    //     }
+
+    //     CombatUnitManager.Instance.ResetOncePerTurnResources();
+        
+    //     if(currentTurnUnit.Faction == Faction.PC)
+    //     {
+    //         yield return StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.StartPlayerTurn));
+    //     }
+    //     else
+    //     {
+    //         yield return StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.StartMonsterTurn));
+    //     }
+    // }
+
+
 }

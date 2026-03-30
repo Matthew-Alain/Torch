@@ -21,14 +21,7 @@ public class Spells
 
                 ReactionManager.Instance.CheckForReactions(
                     ReactionTrigger.BeforeDamageDealt,
-                    context,
-                    () =>
-                    {
-                        foreach (var target in context.Targets)
-                        {
-                            target.TakeDamage(context.Damage, false);
-                        }
-                    }
+                    context
                 );
 
                 user.UseResource("major_action");

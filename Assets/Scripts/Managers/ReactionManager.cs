@@ -36,103 +36,87 @@ public class ReactionManager : MonoBehaviour
         allUnits.Add(unit);
     }
 
-    public void CheckForReactions(ReactionTrigger trigger, BaseContext context, Action onComplete)
-    {
-        StartCoroutine(HandleReactions(trigger, context, onComplete));
-    }
-
-    private IEnumerator HandleReactions(ReactionTrigger trigger, BaseContext context, Action onComplete)
+    public IEnumerator CheckForReactions(ReactionTrigger trigger, BaseContext context)
     {
         foreach (var unit in allUnits)
         {
-            // Debug.Log("Checking reaction for "+unit.UnitName);
+            if(unit.GetCondition("unconscious") || unit.GetCondition("dying") || unit.GetCondition("dead"))
+                continue;
 
+            // Debug.Log("Checking reaction for "+unit.UnitName);
 
             var validReactions = unit.Reactions
                 .Where(r => r.Trigger == trigger && r.CanTrigger(context, unit))
                 .ToList();
 
-            if (validReactions.Count > 0)
+            if (validReactions.Count == 0)
+                continue;
+            
+            // Debug.Log($"{unit.UnitName} has a reaction");
+
+            if (unit.Faction == Faction.Monster)
             {
-                // Debug.Log($"{unit.UnitName} has a reaction");
+                int option = UnityEngine.Random.Range(0, validReactions.Count);
+                var reaction = validReactions[option];
+                // Debug.Log($"{unit.UnitName} is using reaction {option}");
 
-                if (unit.Faction == Faction.Monster)
-                {
-                    int option = UnityEngine.Random.Range(0, validReactions.Count);
-                    // Debug.Log($"{unit.UnitName} is using reaction {option}");
+                if (reaction.CostsReaction && unit.GetResource("reaction") <= 0)
+                    continue;
+                
+                if(reaction.CostsReaction)
+                        unit.UseResource("reaction");
 
-                    if (validReactions[option].CostsReaction)
-                    {
-                        // Debug.Log($"Reaction costs a reaction");
-                        if (unit.GetResource("reaction") <= 0)
-                        {
-                            // Debug.Log($"But {unit.UnitName} has no reaction");
-                            continue;
-                        }
-                        else
-                        {
-                            // Debug.Log($"And {unit.UnitName} has a reaction");
-                            unit.UseResource("reaction");
-                        }
-                    }
+                // Debug.Log($"{unit.UnitName} is using reaction {option}");
 
-                    Debug.Log($"{unit.UnitName} is using reaction {option}");
-                    validReactions[option].Execute(context, unit, () => { Debug.Log("Exectuted Reaction"); });
-                }
-                else
-                {
-                    bool finished = false;
-
-                    List<MenuOption> options = new List<MenuOption>();
-
-                    foreach (var reaction in validReactions)
-                    {
-                        if (reaction.CostsReaction && unit.GetResource("reaction") <= 0)
-                        {
-                            continue;
-                        }
-
-                        options.Add(new MenuOption(reaction.Name, () =>
-                        {
-                            if (reaction.CostsReaction)
-                            {
-                                unit.UseResource("reaction");
-                            }
-
-                            reaction.Execute(context, unit, () =>
-                            {
-                                finished = true;
-                            });
-                        }));
-                    }
-
-                    options.Add(new MenuOption("Skip", () => finished = true));
-
-                    CombatMenuManager.Instance.OpenMenu(options);
-
-                    yield return new WaitUntil(() => finished);
-
-                    CombatMenuManager.Instance.CloseAllMenus();
-                }
+                bool finished = false;
+                reaction.Execute(context, unit, () => finished = true);                
+                yield return new WaitUntil(() => finished);
             }
             else
             {
-                // Debug.Log($"{unit.UnitName} has no reactions");
+                bool finished = false;
+
+                List<MenuOption> options = new List<MenuOption>();
+
+                foreach (var reaction in validReactions)
+                {
+                    if (reaction.CostsReaction && unit.GetResource("reaction") <= 0)
+                    {
+                        continue;
+                    }
+
+                    options.Add(new MenuOption(reaction.Name, () =>
+                    {
+                        if (reaction.CostsReaction)
+                        {
+                            unit.UseResource("reaction");
+                        }
+
+                        reaction.Execute(context, unit, () => finished = true );
+                    }));
+                }
+
+                options.Add(new MenuOption("Skip", () => finished = true));
+
+                CombatMenuManager.Instance.OpenMenu(options);
+
+                yield return new WaitUntil(() => finished);
+
+                CombatMenuManager.Instance.CloseAllMenus();
             }
         }
-
-        onComplete?.Invoke();
+        // onComplete?.Invoke();
     }
     
-    public IEnumerator CheckForReactionsCoroutine(ReactionTrigger trigger, BaseContext context)
-    {
-        bool done = false;
+    // public IEnumerator CheckForReactionsCoroutine(ReactionTrigger trigger, BaseContext context)
+    // {
+    //     bool done = false;
 
-        CheckForReactions(trigger, context, () =>
-        {
-            done = true;
-        });
+    //     CheckForReactions(trigger, context, () =>
+    //     {
+    //         done = true;
+    //     });
 
-        yield return new WaitUntil(() => done);
-    }
+    //     yield return new WaitUntil(() => done);
+    // }
 }

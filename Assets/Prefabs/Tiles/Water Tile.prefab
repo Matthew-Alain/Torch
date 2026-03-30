@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1001 &3971647843914368408
+--- !u!1001 &210191389186198011
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -10,19 +10,19 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 116236206754797113, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
       propertyPath: m_Color.b
-      value: 0.21960784
+      value: 0.7924528
       objectReference: {fileID: 0}
     - target: {fileID: 116236206754797113, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
       propertyPath: m_Color.g
-      value: 0.6509804
+      value: 0.14055908
       objectReference: {fileID: 0}
     - target: {fileID: 116236206754797113, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
       propertyPath: m_Color.r
-      value: 0.24313726
+      value: 0.0710217
       objectReference: {fileID: 0}
     - target: {fileID: 2981122351337398830, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
       propertyPath: m_Name
-      value: Grass Tile
+      value: Water Tile
       objectReference: {fileID: 0}
     - target: {fileID: 3067160813145291799, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
       propertyPath: m_LocalPosition.x
@@ -70,43 +70,44 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 2981122351337398830, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
       insertIndex: -1
-      addedObject: {fileID: -6948442550713875531}
+      addedObject: {fileID: -8931400562240932728}
   m_SourcePrefab: {fileID: 100100000, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
---- !u!1 &404980462921528550 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3639162752458518910, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
-  m_PrefabInstance: {fileID: 3971647843914368408}
+--- !u!212 &249470129096794050 stripped
+SpriteRenderer:
+  m_CorrespondingSourceObject: {fileID: 116236206754797113, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+  m_PrefabInstance: {fileID: 210191389186198011}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &2180079013836826550 stripped
+--- !u!1 &3149613797308328917 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2981122351337398830, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
-  m_PrefabInstance: {fileID: 3971647843914368408}
+  m_PrefabInstance: {fileID: 210191389186198011}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &-6948442550713875531
+--- !u!114 &-8931400562240932728
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2180079013836826550}
+  m_GameObject: {fileID: 3149613797308328917}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a44116e255bad454d8a3366db8752d08, type: 3}
+  m_Script: {fileID: 11500000, guid: 7094fd0ffb4a46f48b4e294c0e309c98, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  rend: {fileID: 3927935595944268705}
-  highlight: {fileID: 404980462921528550}
+  m_EditorClassIdentifier: Assembly-CSharp::WaterTile
+  rend: {fileID: 249470129096794050}
+  highlight: {fileID: 3488698487759272069}
   isWalkable: 1
-  TileName: Grass
+  isDifficult: 1
+  isSwimmable: 1
+  isClimbable: 0
+  TileName: Water
   tileEncounter: 0
   tileID: 0
   tileX: 0
   tileY: 0
   OccupiedUnit: {fileID: 0}
-  baseColour: {r: 0.24476346, g: 0.6509434, b: 0.21800464, a: 1}
-  offsetColour: {r: 0.2868701, g: 0.754717, b: 0.25987896, a: 1}
---- !u!212 &3927935595944268705 stripped
-SpriteRenderer:
-  m_CorrespondingSourceObject: {fileID: 116236206754797113, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
-  m_PrefabInstance: {fileID: 3971647843914368408}
+--- !u!1 &3488698487759272069 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3639162752458518910, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+  m_PrefabInstance: {fileID: 210191389186198011}
   m_PrefabAsset: {fileID: 0}

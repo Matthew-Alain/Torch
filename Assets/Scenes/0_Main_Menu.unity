@@ -9455,9 +9455,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 429985e6c5210644a9516d55d5c0c712, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DatabaseManager
-  encounterDBNames:
-  - encounter_1.db
-  - encounter_2.db
   lastPCEdited: {fileID: 0}
   lastScene: 0
   currentEncounter: 0

@@ -9,7 +9,7 @@ public class CombatGridManager : MonoBehaviour
 {
     public static CombatGridManager Instance { get; private set; }
     private int width, height;
-    [SerializeField] private Tile grassTile, mountainTile;
+    [SerializeField] private Tile grassTile, mountainTile, waterTile, wallTile;
     [SerializeField] private Transform cam;
 
 
@@ -75,6 +75,12 @@ public class CombatGridManager : MonoBehaviour
                     case 1:
                         tileToSpawn = mountainTile;
                         break;
+                    case 2:
+                        tileToSpawn = waterTile;
+                        break;
+                    case 3:
+                        tileToSpawn = wallTile;
+                        break;
                     default:
                         Log("No tile information found for " + x + ", " + y + " - defaulting to grass tile");
                         break;
@@ -94,7 +100,7 @@ public class CombatGridManager : MonoBehaviour
 
         // cam.transform.position = new Vector3((float)width / 2 - 0.5f, (float)height / 2 - 0.5f, -10); //Offset the camera for better viewing
 
-        StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.SpawnPCs)); //Once the grid is generated, now spawn the heroes
+        // StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.SpawnPCs)); //Once the grid is generated, now spawn the heroes
     }
 
     public Tile GetPCSpawnTile(int PCID, int encounterID)
@@ -166,7 +172,8 @@ public class CombatGridManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        GenerateGrid(DatabaseManager.Instance.currentEncounter);
+        StartCoroutine(CombatStateManager.Instance.CombatLoop());
+        // GenerateGrid(DatabaseManager.Instance.currentEncounter);
     }
 
     public void OnPointerClick(PointerEventData eventData)
@@ -180,29 +187,58 @@ public static class RangeHelper
 {
     public static bool IsTargetInRange(BaseUnit attacker, BaseUnit target, int range)
     {
-        // int melee = 0;
-        // int normal = 0;
-        // int longRange = 0;
-
-        // DatabaseManager.Instance.ExecuteReader(
-        //     $"SELECT melee_range, normal_range, long_range FROM weapons WHERE id = {weaponID}",
-        //     reader =>
-        //     {
-        //         if (reader["melee_range"] != DBNull.Value)
-        //             melee = Convert.ToInt32(reader["melee_range"]) / 5;
-
-        //         if (reader["normal_range"] != DBNull.Value)
-        //             normal = Convert.ToInt32(reader["normal_range"]) / 5;
-
-        //         if (reader["long_range"] != DBNull.Value)
-        //             longRange = Convert.ToInt32(reader["long_range"]) / 5;
-        //     }
-        // );
-
         int distance = attacker.occupiedTile.CheckDistanceInTiles(target.occupiedTile);
 
         return distance <= range;
     }
+
+    public static int GetMeleeRangeInTiles(int weaponID)
+    {
+        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT melee_range FROM weapons WHERE id = {weaponID}");
+        
+        if(range == DBNull.Value)
+        {
+            return 0;
+        }
+        else
+        {
+            return Convert.ToInt32(range) / 5;
+        }
+    }
+
+    public static int GetNormalRangeInTiles(int weaponID)
+    {
+        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT normal_range FROM weapons WHERE id = {weaponID}");
+        
+        if(range == DBNull.Value)
+        {
+            return 0;
+        }
+        else
+        {
+            return Convert.ToInt32(range) / 5;
+        }
+    }
+
+    public static int GetLongRangeInTiles(int weaponID)
+    {
+        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT long_range FROM weapons WHERE id = {weaponID}");
+
+        if (range == DBNull.Value)
+        {
+            return 0;
+        }
+        else
+        {
+            return Convert.ToInt32(range) / 5;
+        }
+    }
+    
+    public static int GetMaximumRange(int weaponID)
+    {
+        return Math.Max(GetMeleeRangeInTiles(weaponID), Math.Max(GetMeleeRangeInTiles(weaponID), GetMeleeRangeInTiles(weaponID)));
+    }
+    
 }
 
 public static class AOEHelper
@@ -223,4 +259,14 @@ public static class AOEHelper
 
         return units;
     }
+}
+
+
+public static class ForceMovementHelper
+{
+    //Starts top middle
+    public static readonly Vector2Int[] Directions8 = {
+        new(0,1), new(1,1), new(1,0), new(1,-1),
+        new(0,-1), new(-1,-1), new(-1,0), new(-1,1)
+    };
 }

@@ -1232,6 +1232,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EncounterSelectManager
   encounterList: {fileID: 913890053}
   btnStartEncounter: {fileID: 1260598557}
+  txtDifficulty: {fileID: 1140762569}
+  txtDescription: {fileID: 1900971313}
 --- !u!4 &1010823293
 Transform:
   m_ObjectHideFlags: 0

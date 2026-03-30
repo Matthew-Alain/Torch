@@ -107,6 +107,10 @@ MonoBehaviour:
   occupiedTile: {fileID: 0}
   Faction: 1
   UnitName: Goblin Mage
-  UnitID: 7
-  actionList: 
+  UnitID: 11
   validActions: 
+  attackMod: 0
+  saveDC: 0
+  proficiency: 0
+  BaseName: 
+  DisplayName: 

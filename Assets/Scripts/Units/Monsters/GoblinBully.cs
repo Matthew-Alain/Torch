@@ -1,12 +1,12 @@
 using UnityEngine;
 
-public class Goblin : BaseMonster
+public class GoblinBully : BaseMonster
 {
     void Start()
     {
-        (int, int)[] actions = { (5, 2) };
+        (int, int)[] actions = { (4, 2) };
         actionList.AddRange(actions);
         attackMod = 2;
-        proficiency = 2;
+        saveDC = 13;
     }
 }

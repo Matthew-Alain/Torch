@@ -62,7 +62,7 @@ public class CombatUnitManager : MonoBehaviour
             }
 
             var spawnedPC = Instantiate(pcToSpawn.UnitPrefab); //Creates the PC unit
-            spawnedPC.SetName(spawnedPC.GetName());
+            spawnedPC.Initialize();
             baseUnits.Add(spawnedPC);
             
             var sr = spawnedPC.GetComponent<SpriteRenderer>();
@@ -75,12 +75,12 @@ public class CombatUnitManager : MonoBehaviour
 
             var spawnTile = CombatGridManager.Instance.GetPCSpawnTile(activePCIDs[i], encounterID); //Gets which tile that PC is supposed to spawn on
 
-            spawnTile.SetUnit(spawnedPC); //Set that spawn tile's unit to the spawned PC
+            StartCoroutine(spawnTile.SetUnit(spawnedPC)); //Set that spawn tile's unit to the spawned PC
 
             ReactionManager.Instance.RegisterUnit(spawnedPC);
         }
 
-        StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.SpawnMonsters));
+        // StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.SpawnMonsters));
     }
 
     public void SpawnMonsters(int encounterID)
@@ -102,6 +102,9 @@ public class CombatUnitManager : MonoBehaviour
             }
 
             var spawnedMonster = Instantiate(monsterToSpawn.UnitPrefab); //Creates the monster unit
+            spawnedMonster.SetName(monsterToSpawn.name);
+            spawnedMonster.Initialize();
+
             baseUnits.Add(spawnedMonster);
 
             var sr = spawnedMonster.GetComponent<SpriteRenderer>();
@@ -110,12 +113,12 @@ public class CombatUnitManager : MonoBehaviour
 
             var spawnTile = CombatGridManager.Instance.GetMonsterSpawnTile(activeMonsterIDs[i], encounterID); //Gets which tile that PC is supposed to spawn on
 
-            spawnTile.SetUnit(spawnedMonster); //Set that spawn tile's unit to the spawned PC
+            StartCoroutine(spawnTile.SetUnit(spawnedMonster)); //Set that spawn tile's unit to the spawned PC
             ReactionManager.Instance.RegisterUnit(spawnedMonster);
 
         }
 
-        StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.Precombat));
+        // StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.Precombat));
     }
 
     public void SetSelectedPC(BasePC pc)

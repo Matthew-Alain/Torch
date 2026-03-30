@@ -17,6 +17,7 @@ public class CombatStateManager : MonoBehaviour
     private Func<BaseUnit, (bool, string)> targetValidator;
     private Func<Tile, (bool, string)> tileValidator;
     private Action onReactionComplete;
+    private bool gameOver = false;
 
     void Awake()
     {
@@ -73,15 +74,15 @@ public class CombatStateManager : MonoBehaviour
             case GameState.SpawnMonsters:
                 CombatUnitManager.Instance.SpawnMonsters(DatabaseManager.Instance.currentEncounter);
                 break;
-            case GameState.Precombat:
-                StartCoroutine(ChangeState(GameState.RollInitiative));
-                break;
-            case GameState.RollInitiative:
-                StartCoroutine(InitiativeTracker.Instance.RollInitiative());
-                break;
-            case GameState.StartPlayerTurn:
-                StartCoroutine(InitiativeTracker.Instance.StartTurn());
-                break;
+            // case GameState.Precombat:
+            //     StartCoroutine(ChangeState(GameState.RollInitiative));
+            //     break;
+            // case GameState.RollInitiative:
+            //     StartCoroutine(InitiativeTracker.Instance.RollInitiative());
+            //     break;
+            // case GameState.StartPlayerTurn:
+            //     // StartCoroutine(InitiativeTracker.Instance.StartTurn());
+            //     break;
             case GameState.PlayerTurn:
                 CheckForGameOver();
                 break;
@@ -89,8 +90,8 @@ public class CombatStateManager : MonoBehaviour
                 CombatMenuManager.Instance.DisplayText($"{CombatUnitManager.Instance.SelectedPC.UnitName} is now moving");
                 // Debug.Log("Select the space to move to.");
                 break;
-            case GameState.SelectWeapon:
-                break;
+            // case GameState.SelectWeapon:
+            //     break;
             case GameState.SelectTarget:
                 Debug.Log("You are now selecting a target");
                 break;
@@ -100,13 +101,13 @@ public class CombatStateManager : MonoBehaviour
             case GameState.SelectTargetMonster:
                 Debug.Log("The target you are selecting is a monster");
                 break;
-            case GameState.StartMonsterTurn:
-                // Debug.Log("It is now the monster's turn");
-                StartCoroutine(InitiativeTracker.Instance.StartTurn());
-                break;
-            case GameState.MonsterTurn:
-                StartCoroutine(TakeMonsterTurn());
-                break;
+            // case GameState.StartMonsterTurn:
+            //     // Debug.Log("It is now the monster's turn");
+            //     // StartCoroutine(InitiativeTracker.Instance.StartTurn());
+            //     break;
+            // case GameState.MonsterTurn:
+            //     yield return StartCoroutine(TakeMonsterTurn());
+            //     break;
             default:
                 Debug.LogWarning("No state for " + newState);
                 break;
@@ -114,47 +115,50 @@ public class CombatStateManager : MonoBehaviour
 
     }
 
-    public void DeclareAttack(int weaponID)
-    {
-        declaredWeapon = weaponID;
-        StartCoroutine(ChangeState(GameState.SelectTarget));
-        Debug.Log("Selecting attack target");
-    }
+    // public void DeclareAttack(int weaponID)
+    // {
+    //     declaredWeapon = weaponID;
+    //     StartCoroutine(ChangeState(GameState.SelectTarget));
+    //     Debug.Log("Selecting attack target");
+    // }
 
-    IEnumerator TakeMonsterTurn()
-    {
-        // List<int> monsterIDList = CombatUnitManager.Instance.activeMonsterIDs;
+    // IEnumerator TakeMonsterTurn()
+    // {
+    //     BaseMonster currentMonster = (BaseMonster)InitiativeTracker.Instance.currentTurnUnit;
 
-        // for (int i = 0; i < CombatUnitManager.Instance.activeMonsterIDs.Count; i++)
-        // {
-        // BaseMonster currentMonster = (BaseMonster)CombatUnitManager.Instance.GetUnitByID(monsterIDList[i]);
+    //     yield return StartCoroutine(currentMonster.CheckValidActions());
+    //     // Debug.Log("Finished finding valid actions for " + currentMonster.UnitName);
 
-        BaseMonster currentMonster = (BaseMonster)InitiativeTracker.Instance.currentTurnUnit;
+    //     if (currentMonster.validActions != null && currentMonster.validActions.Count > 0)
+    //     {
+    //         (BaseUnit, int) targetAndAttack = currentMonster.ChooseTargetAndAttack();
 
-            yield return StartCoroutine(currentMonster.CheckValidActions());
-            // Debug.Log("Finished finding valid actions for " + currentMonster.UnitName);
+    //         if (targetAndAttack != (null, -1))
+    //         {
+    //             BaseUnit target = targetAndAttack.Item1;
+    //             int attackID = targetAndAttack.Item2;
+    //             // CombatMenuManager.Instance.DisplayText($"{currentMonster.UnitName} is attacking {target.UnitName}");
 
-            if (currentMonster.validActions != null && currentMonster.validActions.Count > 0)
-            {
-                (BaseUnit, int) targetAndAttack = currentMonster.ChooseTargetAndAttack();
+    //             yield return StartCoroutine(currentMonster.MoveToTile(currentMonster.GetPathToBestAttackTile(target.occupiedTile, attackID)));
+    //             yield return new WaitForSeconds(0.5f);
+    //             yield return StartCoroutine(currentMonster.AttackTarget(target, attackID));
+    //             yield return new WaitForSeconds(0.5f);
+    //         }
+    //         else
+    //         {
+    //             Debug.Log($"{currentMonster.UnitName} cannot reach any targets, moving as close as possible");
+    //             List<Tile> activePCTiles = currentMonster.GetilesWithActivePCs();
 
-                if (targetAndAttack != (null, -1))
-                {
-                    BaseUnit target = targetAndAttack.Item1;
-                    int attackID = targetAndAttack.Item2;
-                    // CombatMenuManager.Instance.DisplayText($"{currentMonster.UnitName} is attacking {target.UnitName}");
+    //             Tile targetTile = activePCTiles[UnityEngine.Random.Range(0, activePCTiles.Count)];
 
-                    yield return StartCoroutine(currentMonster.MoveToTile(currentMonster.GetPathToBestAttackTile(target.occupiedTile, attackID)));
-                    yield return new WaitForSeconds(0.5f);
-                    yield return StartCoroutine(currentMonster.AttackTarget(target, attackID));
-                    yield return new WaitForSeconds(0.5f);
-                }
-            }
-        // }
+    //             List<Tile> pathToTarget = currentMonster.GetPathToBestAttackTile(targetTile, 0);
 
-        yield return null;
-        InitiativeTracker.Instance.EndTurn();
-    }
+    //             yield return StartCoroutine(currentMonster.MoveToTile(pathToTarget));
+    //         }
+    //     }
+
+    //     yield return StartCoroutine(InitiativeTracker.Instance.EndTurn());
+    // }
 
 
 
@@ -181,26 +185,6 @@ public class CombatStateManager : MonoBehaviour
                 CombatMenuManager.Instance.DisplayText("Select a unit to target");
                 StartCoroutine(ChangeState(GameState.SelectTargetUnit));
                 break;
-        }
-    }
-
-    public void StartTargetSelection(
-        TargetType targetType,
-        Action<Tile> callback,
-        Func<Tile, (bool success, string message)> validator = null
-    )
-    {
-        onTileSelected = callback;
-        tileValidator = validator;
-
-        if (targetType == TargetType.Tile)
-        {
-            CombatMenuManager.Instance.DisplayText("Select a tile to target");
-            StartCoroutine(ChangeState(GameState.SelectTargetTile));
-        }
-        else
-        {
-            Debug.LogWarning("Tried to select Tile object");
         }
     }
 
@@ -307,22 +291,136 @@ public class CombatStateManager : MonoBehaviour
             }
         }
 
-        if (Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT COUNT(*) FROM grid_contents WHERE encounter_id = {DatabaseManager.Instance.currentEncounter} "+
-        $"AND unit_id NOT IN {CombatUnitManager.Instance.PCList}")) <= 0)
+        if (!activePC)
+        {
+            Debug.LogWarning("You have no more active PCs, you lose...");
+        }
+        else if (Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT COUNT(*) FROM grid_contents " +
+            $"WHERE encounter_id = {DatabaseManager.Instance.currentEncounter} " +
+            $"AND unit_id NOT IN {CombatUnitManager.Instance.PCList}")) <= 0)
         {
             Debug.LogWarning("The last monster has been killed, you win!");
             //Create a canvas window that announces this, with a button to reset
-        }
-        else if (!activePC)
-        {
-            Debug.LogWarning("You have no more active PCs, you lose...");
         }
         else
         {
             return;
         }
+        gameOver = true;
         SceneManager.LoadScene(0);
         DatabaseManager.Instance.DeleteEncounterDatabase(DatabaseManager.Instance.currentEncounter);
+    }
+
+
+
+    public IEnumerator CombatLoop()
+    {
+        // Setup phase
+        yield return StartCoroutine(ChangeState(GameState.GenerateGrid));
+        yield return StartCoroutine(ChangeState(GameState.SpawnPCs));
+        yield return StartCoroutine(ChangeState(GameState.SpawnMonsters));
+        yield return StartCoroutine(InitiativeTracker.Instance.RollInitiative());
+
+        while (true)
+        {
+            BaseUnit unit = InitiativeTracker.Instance.currentTurnUnit;
+
+            if (unit == null)
+                yield break;
+
+            yield return StartCoroutine(RunTurn(unit));
+
+            if (gameOver)
+                yield break;
+
+            yield return StartCoroutine(EndTurnFlow());
+        }
+    }
+
+    private IEnumerator RunTurn(BaseUnit unit)
+    {
+        CheckForGameOver();
+
+        if (!unit.IsActive())
+            yield break;
+
+        unit.RefreshStartOfTurnResources();
+
+        if (unit.Faction == Faction.PC)
+        {
+            yield return StartCoroutine(RunPlayerTurn((BasePC)unit));
+        }
+        else
+        {
+            yield return StartCoroutine(RunMonsterTurn((BaseMonster)unit));
+        }
+    }
+
+    private IEnumerator RunPlayerTurn(BasePC pc)
+    {
+        CombatUnitManager.Instance.SetSelectedPC(pc);
+
+        if (pc.GetCondition("dying"))
+        {
+            yield return StartCoroutine(pc.MakeDeathSave());
+    
+            if(pc.GetCurrentHP() == 0)
+                yield break;
+        }
+
+        bool turnComplete = false;
+
+        CombatMenuManager.Instance.OpenRootMenu();
+
+        // Wait until player ends turn
+        pc.OnTurnEnded = () => turnComplete = true;
+
+        yield return new WaitUntil(() => turnComplete);
+
+        CombatUnitManager.Instance.SetSelectedPC(null);
+    }
+
+    private IEnumerator RunMonsterTurn(BaseMonster monster)
+    {        
+        yield return StartCoroutine(monster.CheckValidActions());
+
+        if (monster.validActions.Count > 0)
+        {
+            var (target, attackID) = monster.ChooseTargetAndAttack();
+
+            if (target != null)
+            {
+                var path = monster.GetPathToBestAttackTile(target.occupiedTile, attackID);
+
+                yield return StartCoroutine(monster.MoveToTile(path));
+
+                yield return new WaitForSeconds(0.5f);
+
+                yield return StartCoroutine(monster.AttackTarget(target, attackID));
+
+                yield return new WaitForSeconds(0.5f);
+            }
+            else
+            {
+                // fallback movement
+                var tiles = monster.GetilesWithActivePCs();
+                var randomTile = tiles[UnityEngine.Random.Range(0, tiles.Count)];
+                var path = monster.GetPathToBestAttackTile(randomTile, 0);
+
+                yield return StartCoroutine(monster.MoveToTile(path));
+            }
+        }
+
+        monster.ClearActionList();
+    }
+
+    public IEnumerator EndTurnFlow()
+    {
+        CombatUnitManager.Instance.ResetOncePerTurnResources();
+        
+        InitiativeTracker.Instance.AdvanceTurn();
+
+        yield return null;
     }
 
 }

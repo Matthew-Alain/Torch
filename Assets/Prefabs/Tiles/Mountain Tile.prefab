@@ -97,8 +97,14 @@ MonoBehaviour:
   rend: {fileID: 249470129096794050}
   highlight: {fileID: 3488698487759272069}
   isWalkable: 0
+  isDifficult: 0
+  isSwimmable: 0
+  isClimbable: 0
   TileName: Mountain
-  TileID: 1
+  tileEncounter: 0
+  tileID: 0
+  tileX: 0
+  tileY: 0
   OccupiedUnit: {fileID: 0}
 --- !u!1 &3488698487759272069 stripped
 GameObject:

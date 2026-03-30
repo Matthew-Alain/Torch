@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -9,6 +10,9 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     [SerializeField] protected SpriteRenderer rend;     //Derived tiles can now access
     [SerializeField] private GameObject highlight;
     public bool isWalkable;
+    public bool isDifficult;
+    public bool isSwimmable;
+    public bool isClimbable;
     public string TileName;
     public int tileEncounter, tileID, tileX, tileY;
 
@@ -35,27 +39,102 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         CombatMenuManager.Instance.ShowTileInfo(null);
     }
 
-    public void SetUnit(BaseUnit unit)
+    public IEnumerator MoveUnit(BaseUnit movingUnit, bool forced)
     {
-        
-        if (unit.occupiedTile != null)
+        if (!forced)
         {
-            // Go to unit's occupied tile, and set it's occupied unit to null (for when this unit is moving from a previous tile to this one)
-            int oldX = unit.occupiedTile.tileX;
-            int oldY = unit.occupiedTile.tileY;
+            var context = new MoveContext
+            {
+                TriggeringUnit = movingUnit,
+                originTile = movingUnit.occupiedTile,
+                destinationTile = this
+            };
+
+            yield return StartCoroutine(ReactionManager.Instance.CheckForReactions(
+                ReactionTrigger.UnitMoves,
+                context
+            ));
+
+            int unitSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
+                $"SELECT current_speed FROM unit_resources WHERE id = {movingUnit.UnitID}"
+            ));
+
+            //If tile is difficult terrain, multiply by 10 instead
+            int movementCost = 0;
+            if (isDifficult)
+            {
+                if ((isClimbable && movingUnit.CanClimb()) || (isSwimmable && movingUnit.CanSwim()))
+                {
+                    movementCost = CheckDistanceInTiles(movingUnit.occupiedTile) * 5;
+                }
+                else
+                {
+                    movementCost = CheckDistanceInTiles(movingUnit.occupiedTile) * 10;
+                }
+            }
+            else
+            {
+                movementCost = CheckDistanceInTiles(movingUnit.occupiedTile) * 5;
+            }
+
+            if (movementCost > unitSpeed)
+            {
+                CombatMenuManager.Instance.DisplayText($"{movingUnit.UnitName} does not have enough movement to move to this tile");
+                yield return StartCoroutine(CombatStateManager.Instance.EndTurnFlow());
+            }
+
+            int newSpeed = unitSpeed - movementCost;
 
             DatabaseManager.Instance.ExecuteNonQuery(
-                $"UPDATE grid_contents SET unit_id = NULL WHERE encounter_id = {tileEncounter} AND x = {oldX} AND y = {oldY}"
+                $"UPDATE unit_resources SET current_speed = {newSpeed} WHERE id = {movingUnit.UnitID}"
             );
-            unit.occupiedTile.OccupiedUnit = null;
-        }
-        unit.transform.position = transform.position;
-        OccupiedUnit = unit;
-        unit.occupiedTile = this;
 
-        DatabaseManager.Instance.ExecuteNonQuery(
-            $"UPDATE grid_contents SET unit_id = {unit.UnitID} WHERE encounter_id = {tileEncounter} AND x = {tileX} AND y = {tileY}"
-        );
+            CombatMenuManager.Instance.DisplayText($"{movingUnit.UnitName} has {newSpeed} feet of movement left");
+
+        }
+
+        if (!movingUnit.IsActive())
+        {
+            yield return StartCoroutine(CombatStateManager.Instance.EndTurnFlow());
+        }
+        yield return StartCoroutine(SetUnit(movingUnit)); //Set this tile's unit as the selected unit
+
+        yield return new WaitForSeconds(0.5f);
+
+        // Log("Unit has " + newSpeed + " feet of movement left.");
+    }
+
+    public IEnumerator MoveUnit(BaseUnit movingUnit)
+    {
+        yield return StartCoroutine(MoveUnit(movingUnit, false));
+    }
+
+    public IEnumerator SetUnit(BaseUnit unit)
+    {
+        if(unit != null)
+        {
+            if (unit.occupiedTile != null)
+            {
+                // Go to unit's occupied tile, and set it's occupied unit to null (for when this unit is moving from a previous tile to this one)
+                int oldX = unit.occupiedTile.tileX;
+                int oldY = unit.occupiedTile.tileY;
+
+                DatabaseManager.Instance.ExecuteNonQuery(
+                    $"UPDATE grid_contents SET unit_id = NULL WHERE encounter_id = {tileEncounter} AND x = {oldX} AND y = {oldY}"
+                );
+                unit.occupiedTile.OccupiedUnit = null;
+            }
+            unit.transform.position = transform.position;
+            OccupiedUnit = unit;
+            unit.occupiedTile = this;
+
+            DatabaseManager.Instance.ExecuteNonQuery(
+                $"UPDATE grid_contents SET unit_id = {unit.UnitID} WHERE encounter_id = {tileEncounter} AND x = {tileX} AND y = {tileY}"
+            );
+            
+            yield return null;
+        }
+
     }
 
     public void OnPointerClick(PointerEventData eventData)
@@ -68,7 +147,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         if (currentState == GameState.GenerateGrid ||
             currentState == GameState.SpawnPCs ||
             currentState == GameState.SpawnMonsters ||
-            currentState == GameState.Precombat ||
+            // currentState == GameState.Precombat ||
             currentState == GameState.RollInitiative ||
             currentState == GameState.MonsterTurn
         ) return; //If it's not your turn, you can't click
@@ -107,21 +186,13 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 if (isWalkable && OccupiedUnit == null)
                 {
                     int distance = CheckDistanceInTiles(CombatUnitManager.Instance.SelectedPC.occupiedTile);
-                    bool hasEnoughSpeed = CheckWithinUnitSpeed(distance, CombatUnitManager.Instance.SelectedPC);
-                    if (hasEnoughSpeed)
+                    if(distance == 1)
                     {
-                        if(distance == 1)
-                        {
-                            MoveUnit(CombatUnitManager.Instance.SelectedPC);
-                        }
-                        else
-                        {
-                            // Log("Please move one tile at a time");
-                        }
+                        StartCoroutine(MoveUnit(CombatUnitManager.Instance.SelectedPC));
                     }
                     else
                     {
-                        // Log("Tile out of range");
+                        // Log("Please move one tile at a time");
                     }
                 }
                 else
@@ -129,8 +200,6 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                     menu.DisplayText("That tile is not walkable");
                 }
                 break;
-
-
 
             //These handle clicking tiles
             case GameState.SelectTargetMonster:
@@ -169,45 +238,6 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             case GameState.SelectTargetTile:
                 CombatStateManager.Instance.ConfirmTile(this);
                 break;
-                    // //Need to move this code to a function for measuring attack distance
-
-                    // int melee_range = 0;
-                    // int normal_range = 0;
-                    // int long_range = 0;
-
-                    // DatabaseManager.Instance.ExecuteReader(
-                    //     $"SELECT melee_range, normal_range, long_range FROM weapons WHERE id = {CombatStateManager.Instance.declaredWeapon}",
-                    //     reader =>
-                    //     {
-                    //         while (reader.Read())
-                    //         {
-                    //             if (reader["melee_range"] != DBNull.Value) melee_range = Convert.ToInt32(reader["melee_range"]);
-                    //             if (reader["normal_range"] != DBNull.Value) normal_range = Convert.ToInt32(reader["normal_range"]);
-                    //             if (reader["long_range"] != DBNull.Value) long_range = Convert.ToInt32(reader["long_range"]);
-                    //         }
-                    //     }
-                    // );
-
-                    // int distance = CheckDistanceInTiles(CombatUnitManager.Instance.SelectedPC.occupiedTile) * 5;
-                    // if (distance <= melee_range)
-                    // {
-                    //     CombatActions.MeleeWeaponAttack(CombatUnitManager.Instance.SelectedPC, CombatStateManager.Instance.declaredWeapon, OccupiedUnit);
-                        
-                    // }
-                    // else if (distance <= normal_range)
-                    // {
-                    //     CombatActions.RangedWeaponAttack(CombatUnitManager.Instance.SelectedPC, OccupiedUnit);
-                    // }
-                    // else if (distance <= long_range)
-                    // {
-                    //     CombatActions.LongRangeWeaponAttack(CombatUnitManager.Instance.SelectedPC, OccupiedUnit);
-                    // }
-                    // else
-                    // {
-                    //     menu.DisplayText("The target is out of range");
-                    //     // Log("The target is out of range");
-                    // }
-
             
             default:
                 Log("No click action for the current game state: " + currentState);
@@ -238,65 +268,16 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         return Mathf.Max(xDifference, yDifference);
     }
 
-    private bool CheckWithinUnitSpeed(int numberOfTiles, BaseUnit movingUnit)
-    {
-        decimal unitSpeed = Convert.ToDecimal(DatabaseManager.Instance.ExecuteScalar(
-            $"SELECT current_speed FROM unit_resources WHERE id = {movingUnit.UnitID}"
-        )) / 5;
+    // private bool CheckWithinUnitSpeed(int numberOfTiles, BaseUnit movingUnit)
+    // {
+    //     decimal unitSpeed = Convert.ToDecimal(DatabaseManager.Instance.ExecuteScalar(
+    //         $"SELECT current_speed FROM unit_resources WHERE id = {movingUnit.UnitID}"
+    //     )) / 5;
 
-        int speedInTiles = (int)Math.Floor(unitSpeed);
+    //     int speedInTiles = (int)Math.Floor(unitSpeed);
 
-        return numberOfTiles <= speedInTiles;
-    }
-
-    public void MoveUnit(BaseUnit movingUnit)
-    {
-        var context = new MoveContext
-        {
-            TriggeringUnit = movingUnit,
-            originTile = movingUnit.occupiedTile,
-            destinationTile = this
-        };
-
-        if(movingUnit.Faction == Faction.PC)
-        {
-            Debug.Log("The moving unit is a PC");
-            ReactionManager.Instance.CheckForReactions(
-                ReactionTrigger.UnitMoves,
-                context,
-                () =>
-                {
-                    // Debug.Log("Checked reactions");
-                    // context.TriggeringUnit.TakeDamage(10,false);
-                }
-            );
-        }
-
-
-        int unitSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-            $"SELECT current_speed FROM unit_resources WHERE id = {movingUnit.UnitID}"
-        ));
-
-        //If tile is difficult terrain, multiply by 10 instead
-        int amountMoved = CheckDistanceInTiles(movingUnit.occupiedTile) * 5;
-
-        int newSpeed = unitSpeed - amountMoved;
-
-        SetUnit(movingUnit); //Set this tile's unit as the selected unit
-
-        DatabaseManager.Instance.ExecuteNonQuery(
-            $"UPDATE unit_resources SET current_speed = {newSpeed} WHERE id = {movingUnit.UnitID}"
-        );
-
-        CombatMenuManager.Instance.DisplayText($"{OccupiedUnit.UnitName} has {newSpeed} feet of movement left");
-        // Log("Unit has " + newSpeed + " feet of movement left.");
-
-        // if (newSpeed == 0)
-        // {
-        //     // CombatUnitManager.Instance.SetSelectedPC(null); //And deselect the PC
-        //     CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
-        // }
-    }
+    //     return numberOfTiles <= speedInTiles;
+    // }
     
     public void EmptyTile()
     {

@@ -1,11 +1,20 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEditor.ShaderGraph.Drawing;
 using UnityEngine;
+using UnityEngine.SocialPlatforms;
 
 public class BasePC : BaseUnit
 {
+    public Func<bool> OnTurnEnded { get; internal set; }
+
+    public override void Initialize()
+    {
+        SetName(GetName());
+    }
+    
     public string GetClassName()
     {
         int class_id = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dnd_class_1 FROM saved_pcs WHERE id = {UnitID}"));
@@ -79,57 +88,72 @@ public class BasePC : BaseUnit
 
     public void Dash()
     {
-        if (UseResource("major_action"))
+        if (GetResource("major_action") > 0)
         {
             CombatActions.Dash(this);
+            UseResource("major_action");
+        }
+        else
+        {
+            CombatMenuManager.Instance.DisplayText("No action available");
         }
     }
 
     public void Disengage()
     {
-        if (UseResource("major_action"))
+        if (GetResource("major_action") > 0)
         {
             CombatActions.Disengage(this);
+            UseResource("major_action");
+        }
+        else
+        {
+            CombatMenuManager.Instance.DisplayText("No action available");
         }
     }
     
     public void Dodge()
     {
-        if (UseResource("major_action"))
+        if (GetResource("major_action") > 0)
         {
             CombatActions.Dodge(this);
+            UseResource("major_action");
+        }
+        else
+        {
+            CombatMenuManager.Instance.DisplayText("No action available");
         }
     }
 
     public void ActionTemplate()
     {
-        CombatStateManager.Instance.StartTargetSelection(
-            TargetType.Monster, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
-            (target) =>
-            {
-                CombatActions.MeleeWeaponAttack(
-                    this,
-                    CombatStateManager.Instance.declaredWeapon,
-                    target
-                );
+        // CombatStateManager.Instance.StartTargetSelection(
+        //     TargetType.Monster, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
+        //     (target) =>
+        //     {
+        //         CombatActions.MeleeWeaponAttack(
+        //             this,
+        //             CombatStateManager.Instance.declaredWeapon,
+        //             target
+        //         );
 
-                UseResource("major_action");
-            },
-            (target) =>
-            {
-                if (GetResource("major_action") <= 0)
-                {
-                    return (false, "You don't have a major action available");
-                }
+        //         UseResource("major_action");
+        //     },
+        //     (target) =>
+        //     {
+        //         if (GetResource("major_action") <= 0)
+        //         {
+        //             return (false, "You don't have a major action available");
+        //         }
 
-                if (!RangeHelper.IsTargetInRange(this, target, 1)) //Range in tiles
-                {
-                    return (false, "Target is out of range");
-                }
+        //         if (!RangeHelper.IsTargetInRange(this, target, 1)) //Range in tiles
+        //         {
+        //             return (false, "Target is out of range");
+        //         }
 
-                return (true, "");
-            }
-        );
+        //         return (true, "");
+        //     }
+        // );
     }
 
     public void Help()
@@ -138,7 +162,7 @@ public class BasePC : BaseUnit
             TargetType.Monster, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
             (target) =>
             {
-                CombatActions.Help(this, target);
+                CombatActions.Help(target);
                 
                 UseResource("major_action");
             },
@@ -165,6 +189,187 @@ public class BasePC : BaseUnit
         {
             CombatActions.Hide(this);
         }
+    }
+
+    public void Attack(int weaponID)
+    {
+        CombatStateManager.Instance.StartTargetSelection(
+            TargetType.Monster, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
+            (target) =>
+            {
+                CombatActions.AttackWithWeapon(
+                        this,
+                        target,
+                        weaponID
+                    );
+
+                if (GetResource("current_number_of_attacks") < GetResource("max_number_of_attacks"))
+                {
+                    UseResource("current_number_of_attacks");
+                }
+                else
+                {
+                    UseResource("major_action");
+                    UseResource("current_number_of_attacks");
+                }
+
+            },
+            (target) =>
+            {
+                if (GetResource("current_number_of_attacks") == 0)
+                {
+                    return (false, "You have used all of your attacks this turn");
+                }
+
+                if (GetResource("major_action") <= 0 && (GetResource("current_number_of_attacks") == GetResource("max_number_of_attacks")))
+                {
+                    return (false, "You don't have a major action available");
+                }
+
+                if (!RangeHelper.IsTargetInRange(this, target, RangeHelper.GetMaximumRange(weaponID))) //Range in tiles
+                {
+                    return (false, "Target is out of range");
+                }
+
+                return (true, "");
+            }
+        );
+    }
+
+    public void Shove()
+    {
+        CombatStateManager.Instance.StartTargetSelection(
+            TargetType.Monster, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
+            (target) =>
+            {
+                CombatActions.PushTarget(
+                        this,
+                        target,
+                        1
+                    );
+
+                if (GetResource("current_number_of_attacks") < GetResource("max_number_of_attacks"))
+                {
+                    UseResource("current_number_of_attacks");
+                }
+                else
+                {
+                    UseResource("major_action");
+                    UseResource("current_number_of_attacks");
+                }
+
+            },
+            (target) =>
+            {
+                if (GetResource("current_number_of_attacks") == 0)
+                {
+                    return (false, "You have used all of your attacks this turn");
+                }
+
+                if (GetResource("major_action") <= 0 && (GetResource("current_number_of_attacks") == GetResource("max_number_of_attacks")))
+                {
+                    return (false, "You don't have a major action available");
+                }
+
+                if (!RangeHelper.IsTargetInRange(this, target, 1)) //Range in tiles
+                {
+                    return (false, "Target is out of range");
+                }
+
+                return (true, "");
+            }
+        );
+    }
+
+    
+
+    public IEnumerator MakeDeathSave()
+    {
+        if (GetCondition("dying"))
+        {
+            CombatMenuManager.Instance.DisplayText($"{UnitName} is dying");
+            yield return new WaitForSeconds(1f);
+            int result = DiceRoller.Rolld20(false, false);
+            yield return new WaitForSeconds(1f);
+
+            if (result == 1)
+            {
+                FailDeathSave(2);
+            }
+            else if (result < 10)
+            {
+                FailDeathSave(1);
+            }
+            else if (result == 20)
+            {
+                RestoreHealth(1);
+            }
+            else
+            {
+                PassDeathSave(1);
+            }
+        }
+    }
+    
+    public void FailDeathSave(int number)
+    {
+        int currentFails = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT death_save_fails FROM unit_resources WHERE id = {UnitID}"));
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET death_save_fails = {currentFails + number} WHERE id = {UnitID}");
+        CheckForDeath(currentFails);
+    }
+
+    public void PassDeathSave(int number)
+    {
+        int currentPasses = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT death_save_successes FROM unit_resources WHERE id = {UnitID}"));
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET death_save_successes = {currentPasses + number} WHERE id = {UnitID}");
+        CheckForStable(currentPasses);
+    }
+
+    public void CheckForDeath(int currentFails)
+    {
+        if (currentFails >= 3)
+        {
+            Die();
+        }
+        else
+        {
+            EndTurn();
+        }
+    }
+
+    public void CheckForStable(int currentPasses)
+    {
+        if (currentPasses >= 3)
+        {
+            SetCondition("dying", false);
+        }
+        EndTurn();
+    }
+
+    public void ClearDeathSaves()
+    {
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET death_save_successes = 0, death_save_fails = 0 WHERE id = {UnitID}");
+        SetCondition("dying", false);
+        SetCondition("unconscious", false);
+    }
+
+    public void FallUnconscious()
+    {
+
+        Debug.Log("Fallen unconscious");
+        SetCondition("unconscious", true);
+        SetCondition("prone", true);
+        SetCondition("dying", true);
+        CombatMenuManager.Instance.DisplayText($"{UnitName} is dying!");
+        // Log($"{unit.UnitName} is dying!");
+
+        CombatStateManager.Instance.CheckForGameOver();
+
+        if (InitiativeTracker.Instance.currentTurnUnit == this)
+        {
+            EndTurn();
+        }
+
     }
 
     //CLASS FEATURES
@@ -199,12 +404,12 @@ public class BasePC : BaseUnit
     {
         if (GetMainhandName() != "Shield" && GetMainhandName() != "Unarmed")
         {
-            menu.Add(new MenuOption($"Mainhand ({GetMainhandName()})", () => CombatStateManager.Instance.DeclareAttack(GetMainhandID())));
+            menu.Add(new MenuOption($"Mainhand ({GetMainhandName()})", () => Attack(GetMainhandID())));
         }
 
         if (GetOffhandName() != "Shield" && GetOffhandName() != "Unarmed")
         {
-            menu.Add(new MenuOption($"Offhand ({GetOffhandName()})", () => CombatStateManager.Instance.DeclareAttack(GetOffhandID())));
+            menu.Add(new MenuOption($"Offhand ({GetOffhandName()})", () => Attack(GetOffhandID())));
         }
 
         //Dragonborn breath weapon

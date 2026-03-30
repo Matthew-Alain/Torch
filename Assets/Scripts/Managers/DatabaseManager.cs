@@ -12,7 +12,7 @@ public class DatabaseManager : MonoBehaviour
     //Database configurations
     private const string baseDBName = "torch.db";
     private string dbName = "torch.db";
-    public List<string> encounterDBNames = new List<string> {"encounter_1.db", "encounter_2.db" };
+    private List<string> encounterDBNames = new List<string> { "encounter_1.db", "encounter_2.db", "encounter_3.db" };
     public static DatabaseManager Instance;
     private string dbPath;
     private SqliteConnection connection;
@@ -40,7 +40,7 @@ public class DatabaseManager : MonoBehaviour
         }
 
         //Now safe to create a new instance
-        Instance = this;    
+        Instance = this;
         DontDestroyOnLoad(gameObject);
 
         dbPath = Path.Combine(Application.persistentDataPath, dbName);
@@ -78,7 +78,7 @@ public class DatabaseManager : MonoBehaviour
         File.Copy(baseDB, encounterDBPath);
         Debug.Log("New database copy created.");
     }
-    
+
     public void DeleteEncounterDatabase(int encounterID)
     {
         string encounterDBPath = Path.Combine(Application.persistentDataPath, encounterDBNames[encounterID]);
@@ -208,7 +208,7 @@ public class DatabaseManager : MonoBehaviour
         InitializeDatabase();
         // Debug.Log("Now editing " + dbName);
     }
-    
+
     public int GetCurrentDatabase()
     {
         if (dbName == baseDBName)
@@ -221,4 +221,15 @@ public class DatabaseManager : MonoBehaviour
         }
     }
 
+}
+
+public static class UnitIDGenerator
+{
+    private static int currentID = 0;
+
+    public static int GetNextID()
+    {
+        currentID++;
+        return currentID;
+    }
 }

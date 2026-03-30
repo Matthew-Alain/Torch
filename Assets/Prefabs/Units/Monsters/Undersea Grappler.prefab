@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 3897828687781263829}
   - component: {fileID: 5167313632957188762}
-  - component: {fileID: 1664401603266981527}
+  - component: {fileID: -1172744005516006956}
   m_Layer: 0
-  m_Name: Goblin Minion
+  m_Name: Undersea Grappler
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -82,7 +82,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 9176738014528920164, guid: 1ab516a91fc9fb94b88249ca3e7eaddd, type: 3}
+  m_Sprite: {fileID: -5321755188894177992, guid: a75f4c6d328a9b644a50e3e35d32bf8b, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -92,7 +92,7 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!114 &1664401603266981527
+--- !u!114 &-1172744005516006956
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -101,13 +101,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 7089780268459073922}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f184addf10c63d4fa9e41fa531bfe03, type: 3}
+  m_Script: {fileID: 11500000, guid: 467c163ddf9beaf41b10dcd0f4b3c0d2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Assembly-CSharp::UnderseaGrappler
   occupiedTile: {fileID: 0}
   Faction: 1
-  UnitName: Goblin Minion
-  UnitID: 6
+  UnitName: Undersea Grappler
+  UnitID: 21
   validActions: 
   attackMod: 0
   saveDC: 0

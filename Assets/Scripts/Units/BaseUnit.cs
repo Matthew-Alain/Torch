@@ -7,11 +7,15 @@ using UnityEngine;
 
 public class BaseUnit : MonoBehaviour
 {
-
     public Tile occupiedTile;
     public Faction Faction;
     public string UnitName;
     public int UnitID;
+
+    public virtual void Initialize()
+    {
+        
+    }
 
     public List<IReaction> Reactions = new List<IReaction>()
     {
@@ -25,7 +29,6 @@ public class BaseUnit : MonoBehaviour
 
     public void SetName(string newName)
     {
-        // DatabaseManager.Instance.ExecuteScalar($"UPDATE saved_pcs SET name = '{newName}' WHERE id = {UnitID}");
         UnitName = newName;
     }
 
@@ -127,7 +130,7 @@ public class BaseUnit : MonoBehaviour
     {
         return Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT {condition} FROM unit_conditions WHERE id = {UnitID}"));
     }
-    
+
     public void SetCondition(string condition, bool status)
     {
         int value = 0;
@@ -138,7 +141,15 @@ public class BaseUnit : MonoBehaviour
         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_conditions SET {condition} = {value} WHERE id = {UnitID}");
     }
 
-
+    public bool CanSwim()
+    {
+        return Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT can_swim FROM unit_flags WHERE id = {UnitID}"));
+    }
+    
+    public bool CanClimb()
+    {
+        return Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT can_climb FROM unit_flags WHERE id = {UnitID}"));
+    }
 
     public bool HasReaction()
     {
@@ -190,6 +201,11 @@ public class BaseUnit : MonoBehaviour
     public void SetResource(string resourceName, int newValue)
     {
         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET {resourceName} = {newValue} WHERE id = {UnitID}");
+    }
+
+    public bool IsActive()
+    {
+        return !(GetCondition("dead") || GetCondition("dying") || GetCondition("unconscious"));
     }
 
     public void RefreshStartOfTurnResources()
@@ -271,15 +287,14 @@ public class BaseUnit : MonoBehaviour
             }
             else
             {
-                int overflowDamage = damageRemaining - currentHP;
-                currentHP = 0;
-
                 if(Faction == Faction.Monster)
                 {
                     Die();
                 }
                 else
                 {
+                    int overflowDamage = damageRemaining - currentHP;
+                    currentHP = 0;
                     if(overflowDamage >= maxHP)
                     {
                         menu.DisplayText($"The attacker dealt {damageRemaining} damage to {UnitName}, which was enough to instantly kill them!");
@@ -288,7 +303,7 @@ public class BaseUnit : MonoBehaviour
                     else
                     {
                         menu.DisplayText($"The attacker dealt {damageRemaining} damage to {UnitName}, which knocks them unconscious!");
-                        FallUnconscious();
+                        ((BasePC)this).FallUnconscious();
                     }
                 }
             }
@@ -302,11 +317,11 @@ public class BaseUnit : MonoBehaviour
             }
             else if (wasCrit)
             {
-                FailDeathSave(2);
+                ((BasePC)this).FailDeathSave(2);
             }
             else
             {
-                FailDeathSave(1);
+                ((BasePC)this).FailDeathSave(1);
             }
         }
 
@@ -345,106 +360,11 @@ public class BaseUnit : MonoBehaviour
 
             SetCurrentHP(currentHP);
 
-            ClearDeathSaves();
-        }
-    }
-
-    public IEnumerator MakeDeathSave()
-    {
-        if (GetCondition("dying"))
-        {
-            CombatMenuManager.Instance.DisplayText($"{UnitName} is dying");
-            yield return new WaitForSeconds(1f);
-            int result = DiceRoller.Rolld20(false, false);
-            yield return new WaitForSeconds(1f);
-
-            if (result == 1)
+            if(Faction == Faction.PC)
             {
-                FailDeathSave(2);
-            }
-            else if (result < 10)
-            {
-                FailDeathSave(1);
-            }
-            else if (result == 20)
-            {
-                RestoreHealth(1);
-            }
-            else
-            {
-                PassDeathSave(1);
+                ((BasePC)this).ClearDeathSaves();
             }
         }
-    }
-
-
-    public void FailDeathSave(int number)
-    {
-        int currentFails = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT death_save_fails FROM unit_resources WHERE id = {UnitID}"));
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET death_save_fails = {currentFails + number} WHERE id = {UnitID}");
-        CheckForDeath(currentFails);
-    }
-
-    public void PassDeathSave(int number)
-    {
-        int currentPasses = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT death_save_successes FROM unit_resources WHERE id = {UnitID}"));
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET death_save_successes = {currentPasses + number} WHERE id = {UnitID}");
-        CheckForStable(currentPasses);
-    }
-
-    public void CheckForDeath(int currentFails)
-    {
-        if (currentFails >= 3)
-        {
-            Die();
-        }
-        else
-        {
-            InitiativeTracker.Instance.EndTurn();
-        }
-    }
-
-    public void CheckForStable(int currentPasses)
-    {
-        if (currentPasses >= 3)
-        {
-            SetCondition("dying", false);
-        }
-        InitiativeTracker.Instance.EndTurn();
-    }
-
-    public void ClearDeathSaves()
-    {
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET death_save_successes = 0, death_save_fails = 0 WHERE id = {UnitID}");
-        SetCondition("dying", false);
-        SetCondition("unconscious", false);
-    }
-
-    public void FallUnconscious()
-    {
-
-        if (Faction == Faction.Monster)
-        {
-            Debug.LogWarning("Tried to knock a monster unconscious, killing unit instead.");
-            Die();
-        }
-        else
-        {
-            Debug.Log("Fallen unconscious");
-            SetCondition("unconscious", true);
-            SetCondition("prone", true);
-            SetCondition("dying", true);
-            CombatMenuManager.Instance.DisplayText($"{UnitName} is dying!");
-            // Log($"{unit.UnitName} is dying!");
-        }
-
-        CombatStateManager.Instance.CheckForGameOver();
-        
-        if (InitiativeTracker.Instance.currentTurnUnit == this)
-        {
-            InitiativeTracker.Instance.EndTurn();
-        }
-
     }
 
     public void Die()
@@ -482,7 +402,7 @@ public class BaseUnit : MonoBehaviour
 
         if (InitiativeTracker.Instance.currentTurnUnit == this)
         {
-            InitiativeTracker.Instance.EndTurn();
+            // EndTurn();
         }
     }
 
@@ -493,6 +413,39 @@ public class BaseUnit : MonoBehaviour
         result += GetModifier("mDEX");
 
         return result;
+    }
+
+    public void EndTurn()
+    {
+        CombatUnitManager.Instance.SelectedPC?.OnTurnEnded?.Invoke();
+
+        if (InitiativeTracker.Instance.currentTurnUnit.Faction == Faction.PC)
+            CombatMenuManager.Instance.CloseAllMenus();
+    }
+
+    public IEnumerator PullTarget(BaseUnit user, BaseUnit target, int pullDistance)
+    {
+
+        for (int i = 0; i < pullDistance; i++)
+        {
+            Vector2Int userPos = new Vector2Int(user.occupiedTile.tileX, user.occupiedTile.tileY);
+            Vector2Int targetPos = new Vector2Int(target.occupiedTile.tileX, target.occupiedTile.tileY);
+
+            Vector2Int delta = targetPos - userPos;
+            
+            Vector2Int direction = new Vector2Int(
+                Mathf.Clamp(delta.x, -1, 1),
+                Mathf.Clamp(delta.y, -1, 1)
+            );
+            
+            Vector2Int next = targetPos - direction;
+
+            Tile nextTile = CombatGridManager.Instance.GetTileAtPosition(next);
+
+            if (!nextTile.isWalkable || target.occupiedTile.CheckDistanceInTiles(user.occupiedTile) == 1) break;
+
+            yield return StartCoroutine(nextTile.MoveUnit(target, true));
+        }
     }
     
 }

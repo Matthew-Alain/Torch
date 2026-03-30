@@ -132,12 +132,13 @@ public class CombatMenuManager : MonoBehaviour
 
     public void OpenRootMenu()
     {
+        BasePC pc = CombatUnitManager.Instance.SelectedPC;
         List<MenuOption> rootOptions = new List<MenuOption>()
         {
             new MenuOption("Major", OpenMajorMenu),
             new MenuOption("Minor", OpenMinorMenu),
             new MenuOption("Move", () => StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.MovingPC))),
-            new MenuOption("End Turn", () => InitiativeTracker.Instance.EndTurn()),
+            new MenuOption("End Turn", () => pc.EndTurn()),
             new MenuOption("Cancel", () => CloseMenu())
         };
 
@@ -187,11 +188,14 @@ public class CombatMenuManager : MonoBehaviour
 
     public void OpenUnarmedStrikeMenu()
     {
+        BasePC pc = CombatUnitManager.Instance.SelectedPC;
+
         List<MenuOption> unarmedStrikeOptions = new List<MenuOption>()
         {
-            new MenuOption("Strike", () => CombatStateManager.Instance.DeclareAttack(0)),
-            new MenuOption("Grapple", () => CombatStateManager.Instance.DeclareAttack(0)),
-            new MenuOption("Shove", () => CombatStateManager.Instance.DeclareAttack(0)),
+            new MenuOption("Strike", () => pc.Attack(0)),
+            new MenuOption("Grapple", () => pc.Attack(0)),
+            new MenuOption("Shove", () => pc.Shove()),
+            new MenuOption("Back", () => CloseMenu())
         };
 
         OpenMenu(unarmedStrikeOptions);

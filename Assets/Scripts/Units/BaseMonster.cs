@@ -2,18 +2,31 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Collections;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.AI;
 
 public class BaseMonster : BaseUnit
 {
-    public List<int> actionList = new List<int>();
+    public List<(int, int)> actionList = new List<(int, int)>()
+    {
+        (0, 0),
+        (1, 1),
+        (2, 0),
+        (3, 0),
+    };
     public List<int> validActions;
     public List<(BaseUnit, int, int)> validTargetsWithAttackAndPriority = new List<(BaseUnit, int, int)>();
+    public int attackMod;
+    public int saveDC;
+    public int proficiency;
+    public string BaseName;
+    public string DisplayName;
+
+    public override void Initialize()
+    {
+        
+    }
     
-    public void EndTurn()
+    public void ClearActionList()
     {
         validActions.Clear();
         validTargetsWithAttackAndPriority.Clear();
@@ -23,20 +36,36 @@ public class BaseMonster : BaseUnit
     {
         for (int i = 0; i < actionList.Count; i++)
         {
-            bool valid = CheckValidity(actionList[i]);
+            bool valid = false;
+
+            int actionType = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT action_type FROM monster_actions WHERE id = {actionList[i].Item1}"));
+
+            if (actionType == 0)
+            {
+                valid = true;
+            }
+            else if (actionType == 1) //Checks for attacks
+            {
+                valid = CheckValidAttack(actionList[i].Item1);
+            }
+            else if (actionType == 2) //Check for saving throws
+            {
+                
+            }
 
             // Debug.Log($"Action {i} valid? - {valid}");
 
             if (valid)
             {
-                validActions.Add(actionList[i]);
+                validActions.Add(actionList[i].Item1);
             }
         }
         yield return null;
     }
 
-    private bool CheckValidity(int attackID)
+    private bool CheckValidAttack(int attackID)
     {
+        // Debug.Log("Checking action " + attackID);
         bool hasValidAttack = false;
 
         List<Tile> activePCTiles = GetilesWithActivePCs();
@@ -59,7 +88,7 @@ public class BaseMonster : BaseUnit
             if (pathToTargetExists || alreadyInRange)
             {
                 Tile destinationTile = occupiedTile;
-                
+
                 if (pathToTargetExists)
                 {
                     destinationTile = pathToTarget[^1]; //Get the tile the monster will end up at when it tries to attack                
@@ -71,16 +100,17 @@ public class BaseMonster : BaseUnit
                 if (destinationTile.CheckDistanceInTiles(tile) <= GetMeleeRange(attackID) ||
                     destinationTile.CheckDistanceInTiles(tile) <= GetNormalRange(attackID))
                 {
+                    // Debug.Log($"Action {attackID} should have priority {GetPriority(attackID)}");
                     validTargetsWithAttackAndPriority.Add((target, attackID, GetPriority(attackID))); //Add it at normal priority
                 }
                 else if (destinationTile.CheckDistanceInTiles(tile) <= GetLongRange(attackID)) //If it's only within long range
                 {
-                    Debug.Log("Cannot get in normal or melee range, attacking at long range");
-                    validTargetsWithAttackAndPriority.Add((target, attackID, GetPriority(attackID) - 1)); //Add it with lower priority
+                    // Debug.Log("Cannot get in normal or melee range, attacking at long range");
+                    validTargetsWithAttackAndPriority.Add((target, attackID, GetPriority(attackID)-1)); //Add it with lower priority
                 }
                 else
                 {
-                    Debug.Log($"Attack {attackID} cannot get within range of {target.UnitName}");
+                    // Debug.Log($"Attack {attackID} cannot get within range of {target.UnitName}");
                     continue;
                 }
 
@@ -110,24 +140,29 @@ public class BaseMonster : BaseUnit
     {
         if(validTargetsWithAttackAndPriority.Count > 0)
         {
+            // Debug.Log($"There are {validTargetsWithAttackAndPriority.Count} options to check");
             for(int i = validTargetsWithAttackAndPriority.Max(t => t.Item3); i >= 0 ; i--) //Starting with the highest priority in the list
             {
-                int numberOfOptions = 0;
+                // Debug.Log($"Starting at priority {i}");
+                List<(BaseUnit, int)> options = new List<(BaseUnit, int)>();  
+
                 for(int j = 0; j < validTargetsWithAttackAndPriority.Count; j++) //For every item in the list
                 {
+                    Debug.Log("Checking option " + validTargetsWithAttackAndPriority[j]);
                     if (validTargetsWithAttackAndPriority[j].Item3 == i) //If the item has the same priority as the priority being searched
                     {
-                        numberOfOptions++;
+                        Debug.Log($"Option {j} has priority {i}");
+                        options.Add((validTargetsWithAttackAndPriority[j].Item1, validTargetsWithAttackAndPriority[j].Item2));
                     }
                 }
 
-                if(numberOfOptions > 0) //After all items have been searched, if there is at least one attack of that priority, pick one of them
+                if(options.Count > 0) //After all items have been searched, if there is at least one attack of that priority, pick one of them
                 {
-                    int chosenOption = UnityEngine.Random.Range(0, numberOfOptions);
+                    int chosenOption = UnityEngine.Random.Range(0, options.Count);
 
                     // Debug.Log($"{UnitName} is attacking {validTargetsWithAttackAndPriority[chosenOption].Item1.UnitName} with {validTargetsWithAttackAndPriority[chosenOption].Item2}, which has priority {GetPriority(validTargetsWithAttackAndPriority[chosenOption].Item2)}");
                     
-                    return (validTargetsWithAttackAndPriority[chosenOption].Item1, validTargetsWithAttackAndPriority[chosenOption].Item2); //Return that item's target and attack
+                    return (options[chosenOption].Item1, options[chosenOption].Item2); //Return that item's target and attack
                 }
             }
         }
@@ -182,24 +217,25 @@ public class BaseMonster : BaseUnit
         {
             for (int i = 0; i < path.Count; i++)
             {
-                var context = new MoveContext
-                {
-                    TriggeringUnit = this,
-                    originTile = occupiedTile,
-                    destinationTile = path[i]
-                };
+                yield return StartCoroutine(path[i].MoveUnit(this));
+                
+                if (!IsActive())
+                    yield break;
+                // var context = new MoveContext
+                // {
+                //     TriggeringUnit = this,
+                //     originTile = occupiedTile,
+                //     destinationTile = path[i]
+                // };
 
-                yield return StartCoroutine(
-                    ReactionManager.Instance.CheckForReactionsCoroutine(
-                        ReactionTrigger.UnitMoves,
-                        context
-                    )
-                );
+                // yield return StartCoroutine(ReactionManager.Instance.CheckForReactions(
+                //         ReactionTrigger.UnitMoves,
+                //         context
+                //     )
+                // );
 
                 // Now actually move
-                path[i].MoveUnit(this);
                 // Debug.Log("Monster moved to tile: (" + occupiedTile.tileX + ", " + occupiedTile.tileY + ")");
-                yield return new WaitForSeconds(0.5f);
             }
         }
     }
@@ -393,32 +429,32 @@ public class BaseMonster : BaseUnit
 
     public int GetHitMod(int attackID)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT hit_modifier FROM monster_attacks WHERE id = {attackID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT hit_modifier FROM monster_actions WHERE id = {attackID}"));
     }
 
     public int GetDiceNumber(int attackID)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dice_number FROM monster_attacks WHERE id = {attackID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dice_number FROM monster_actions WHERE id = {attackID}"));
     }
 
     public int GetDiceSize(int attackID)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dice_size FROM monster_attacks WHERE id = {attackID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dice_size FROM monster_actions WHERE id = {attackID}"));
     }
 
     public int GetDamageBonus(int attackID)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT damage_bonus FROM monster_attacks WHERE id = {attackID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT damage_bonus FROM monster_actions WHERE id = {attackID}"));
     }
 
     public int GetDamageType(int attackID)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT damage_type FROM monster_attacks WHERE id = {attackID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT damage_type FROM monster_actions WHERE id = {attackID}"));
     }
 
     public int GetMeleeRange(int attackID)
     {
-        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT melee_range FROM monster_attacks WHERE id = {attackID}");
+        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT melee_range FROM monster_actions WHERE id = {attackID}");
         
         if(range == DBNull.Value)
         {
@@ -432,7 +468,7 @@ public class BaseMonster : BaseUnit
 
     public int GetNormalRange(int attackID)
     {
-        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT normal_range FROM monster_attacks WHERE id = {attackID}");
+        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT normal_range FROM monster_actions WHERE id = {attackID}");
         
         if(range == DBNull.Value)
         {
@@ -446,7 +482,7 @@ public class BaseMonster : BaseUnit
 
     public int GetLongRange(int attackID)
     {
-        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT long_range FROM monster_attacks WHERE id = {attackID}");
+        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT long_range FROM monster_actions WHERE id = {attackID}");
 
         if (range == DBNull.Value)
         {
@@ -457,10 +493,10 @@ public class BaseMonster : BaseUnit
             return Convert.ToInt32(range) / 5;
         }
     }
-    
+
     public int GetPriority(int attackID)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT priority FROM monster_attacks WHERE id = {attackID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT priority FROM monster_actions WHERE id = {attackID}"));
     }
 
 }
