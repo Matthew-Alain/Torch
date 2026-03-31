@@ -361,8 +361,8 @@ public class CombatStateManager : MonoBehaviour
         if (pc.GetCondition("dying"))
         {
             yield return StartCoroutine(pc.MakeDeathSave());
-    
-            if(pc.GetCurrentHP() == 0)
+
+            if (pc.GetCurrentHP() == 0)
                 yield break;
         }
 
@@ -379,7 +379,7 @@ public class CombatStateManager : MonoBehaviour
     }
 
     private IEnumerator RunMonsterTurn(BaseMonster monster)
-    {        
+    {
         yield return StartCoroutine(monster.CheckValidActions());
 
         if (monster.validActions.Count > 0)
@@ -392,9 +392,13 @@ public class CombatStateManager : MonoBehaviour
 
                 yield return StartCoroutine(monster.MoveToTile(path));
 
+                if (TurnUtility.ShouldStop(monster)) goto EndTurn;
+
                 yield return new WaitForSeconds(0.5f);
 
                 yield return StartCoroutine(monster.AttackTarget(target, attackID));
+
+                if (TurnUtility.ShouldStop(monster)) goto EndTurn;
 
                 yield return new WaitForSeconds(0.5f);
             }
@@ -409,18 +413,36 @@ public class CombatStateManager : MonoBehaviour
             }
         }
 
-        monster.ClearActionList();
+        EndTurn:
+            monster.ClearActionList();
     }
 
     public IEnumerator EndTurnFlow()
     {
         CombatUnitManager.Instance.ResetOncePerTurnResources();
-        
+
         InitiativeTracker.Instance.AdvanceTurn();
 
         yield return null;
     }
 
+}
+
+public static class TurnUtility
+{
+    public static bool ShouldStop(BaseUnit unit)
+    {
+        if(unit == null)
+        {
+            Debug.Log("Unit is null");
+        }
+        if(!unit.IsActive())
+        {
+            Debug.Log("Unit is inactive");
+        }
+
+        return unit == null || !unit.IsActive();
+    }
 }
 
 

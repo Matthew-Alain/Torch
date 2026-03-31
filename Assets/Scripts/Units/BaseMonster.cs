@@ -8,8 +8,6 @@ public class BaseMonster : BaseUnit
 {
     public List<(int, int)> actionList = new List<(int, int)>()
     {
-        (0, 0),
-        (1, 1),
         (2, 0),
         (3, 0),
     };
@@ -148,10 +146,10 @@ public class BaseMonster : BaseUnit
 
                 for(int j = 0; j < validTargetsWithAttackAndPriority.Count; j++) //For every item in the list
                 {
-                    Debug.Log("Checking option " + validTargetsWithAttackAndPriority[j]);
+                    // Debug.Log("Checking option " + validTargetsWithAttackAndPriority[j]);
                     if (validTargetsWithAttackAndPriority[j].Item3 == i) //If the item has the same priority as the priority being searched
                     {
-                        Debug.Log($"Option {j} has priority {i}");
+                        // Debug.Log($"Option {j} has priority {i}");
                         options.Add((validTargetsWithAttackAndPriority[j].Item1, validTargetsWithAttackAndPriority[j].Item2));
                     }
                 }
@@ -167,7 +165,7 @@ public class BaseMonster : BaseUnit
             }
         }
 
-        Debug.Log("No valid targets found");
+        // Debug.Log("No valid targets found");
         return (null, -1);        
 
     }
@@ -213,32 +211,35 @@ public class BaseMonster : BaseUnit
 
     public IEnumerator MoveToTile(List<Tile> path)
     {
-        if (path != null)
+        if (path == null) yield break;
+
+        for (int i = 0; i < path.Count; i++)
         {
-            for (int i = 0; i < path.Count; i++)
+            yield return StartCoroutine(path[i].MoveUnit(this, false));
+            
+            if (TurnUtility.ShouldStop(this))
             {
-                yield return StartCoroutine(path[i].MoveUnit(this));
+                Debug.Log("Turn should stop");
+                yield break;
                 
-                if (!IsActive())
-                    yield break;
-                // var context = new MoveContext
-                // {
-                //     TriggeringUnit = this,
-                //     originTile = occupiedTile,
-                //     destinationTile = path[i]
-                // };
-
-                // yield return StartCoroutine(ReactionManager.Instance.CheckForReactions(
-                //         ReactionTrigger.UnitMoves,
-                //         context
-                //     )
-                // );
-
-                // Now actually move
-                // Debug.Log("Monster moved to tile: (" + occupiedTile.tileX + ", " + occupiedTile.tileY + ")");
             }
         }
     }
+            // var context = new MoveContext
+            // {
+            //     TriggeringUnit = this,
+            //     originTile = occupiedTile,
+            //     destinationTile = path[i]
+            // };
+
+            // yield return StartCoroutine(ReactionManager.Instance.CheckForReactions(
+            //         ReactionTrigger.UnitMoves,
+            //         context
+            //     )
+            // );
+
+            // Now actually move
+            // Debug.Log("Monster moved to tile: (" + occupiedTile.tileX + ", " + occupiedTile.tileY + ")");
 
     public List<Tile> GetPathToBestAttackTile(Tile targetTile, int attackID)
     {
@@ -313,9 +314,7 @@ public class BaseMonster : BaseUnit
                 int dx = Mathf.Abs(neighbor.tileX - current.tileX);
                 int dy = Mathf.Abs(neighbor.tileY - current.tileY);
 
-                bool isDiagonal = (dx == 1 && dy == 1);
-
-                int moveCost = isDiagonal ? 5 : 5;
+                int moveCost = neighbor.CostsExtra(this) ? 10 : 5;
 
                 int tentativeG = gScore[current] + moveCost;
 

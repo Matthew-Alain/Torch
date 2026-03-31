@@ -400,7 +400,7 @@ public class BaseUnit : MonoBehaviour
 
         if (InitiativeTracker.Instance.currentTurnUnit == this)
         {
-            // EndTurn();
+            EndTurn();
         }
     }
 
@@ -415,10 +415,16 @@ public class BaseUnit : MonoBehaviour
 
     public void EndTurn()
     {
-        CombatUnitManager.Instance.SelectedPC?.OnTurnEnded?.Invoke();
 
         if (InitiativeTracker.Instance.currentTurnUnit.Faction == Faction.PC)
+        {
             CombatMenuManager.Instance.CloseAllMenus();
+            CombatUnitManager.Instance.SelectedPC?.OnTurnEnded?.Invoke();
+        }
+        if (InitiativeTracker.Instance.currentTurnUnit.Faction == Faction.Monster)
+        {
+            
+        }
     }
 
     public IEnumerator PullTarget(BaseUnit user, BaseUnit target, int pullDistance)

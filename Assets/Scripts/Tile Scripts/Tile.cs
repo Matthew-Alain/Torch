@@ -40,6 +40,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     public IEnumerator MoveUnit(BaseUnit movingUnit, bool forced)
     {
+        bool moving = true;
         if (!forced)
         {
             var context = new MoveContext
@@ -54,53 +55,46 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 context
             ));
 
+            if (TurnUtility.ShouldStop(movingUnit)) yield break;
+
             int unitSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
                 $"SELECT current_speed FROM unit_resources WHERE id = {movingUnit.UnitID}"
             ));
 
             //If tile is difficult terrain, multiply by 10 instead
             int movementCost = 0;
-            if (isDifficult)
+            if (CostsExtra(movingUnit))
             {
-                if ((isClimbable && movingUnit.CanClimb()) || (isSwimmable && movingUnit.CanSwim()))
-                {
-                    movementCost = CheckDistanceInTiles(movingUnit.occupiedTile) * 5;
-                }
-                else
-                {
-                    movementCost = CheckDistanceInTiles(movingUnit.occupiedTile) * 10;
-                }
+                movementCost = CheckDistanceInTiles(movingUnit.occupiedTile) * 10;
             }
             else
             {
                 movementCost = CheckDistanceInTiles(movingUnit.occupiedTile) * 5;
             }
 
-            if (movementCost > unitSpeed)
+            if (movementCost > unitSpeed || unitSpeed <= 0)
             {
                 CombatMenuManager.Instance.DisplayText($"{movingUnit.UnitName} does not have enough movement to move to this tile");
-                yield return StartCoroutine(CombatStateManager.Instance.EndTurnFlow());
+                moving = false;
             }
+            else
+            {
+                int newSpeed = unitSpeed - movementCost;
 
-            int newSpeed = unitSpeed - movementCost;
+                DatabaseManager.Instance.ExecuteNonQuery(
+                    $"UPDATE unit_resources SET current_speed = {newSpeed} WHERE id = {movingUnit.UnitID}"
+                );
 
-            DatabaseManager.Instance.ExecuteNonQuery(
-                $"UPDATE unit_resources SET current_speed = {newSpeed} WHERE id = {movingUnit.UnitID}"
-            );
-
-            CombatMenuManager.Instance.DisplayText($"{movingUnit.UnitName} has {newSpeed} feet of movement left");
-
+                CombatMenuManager.Instance.DisplayText($"{movingUnit.UnitName} has {newSpeed} feet of movement left");
+                // Log("Unit has " + newSpeed + " feet of movement left.");
+            }
         }
 
-        if (!movingUnit.IsActive())
+        if (moving)
         {
-            yield return StartCoroutine(CombatStateManager.Instance.EndTurnFlow());
+            yield return StartCoroutine(SetUnit(movingUnit)); //Set this tile's unit as the selected unit
+            yield return new WaitForSeconds(0.5f);
         }
-        yield return StartCoroutine(SetUnit(movingUnit)); //Set this tile's unit as the selected unit
-
-        yield return new WaitForSeconds(0.5f);
-
-        // Log("Unit has " + newSpeed + " feet of movement left.");
     }
 
     public IEnumerator MoveUnit(BaseUnit movingUnit)
@@ -277,10 +271,10 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     //     return numberOfTiles <= speedInTiles;
     // }
-    
+
     public void EmptyTile()
     {
-        if(OccupiedUnit != null)
+        if (OccupiedUnit != null)
         {
             Destroy(OccupiedUnit.gameObject);
             OccupiedUnit = null;
@@ -290,5 +284,19 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             LogWarning("This tile was already empty");
         }
         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE grid_contents SET unit_id = NULL WHERE x = {tileX} AND y = {tileY}");
+    }
+    
+    public bool CostsExtra(BaseUnit movingUnit)
+    {
+        if (isDifficult)
+        {
+            if ((isSwimmable && movingUnit.CanSwim()) || (isClimbable && movingUnit.CanClimb()))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        return false;
     }
 }
