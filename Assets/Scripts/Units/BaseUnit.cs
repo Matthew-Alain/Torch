@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Profiling;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class BaseUnit : MonoBehaviour

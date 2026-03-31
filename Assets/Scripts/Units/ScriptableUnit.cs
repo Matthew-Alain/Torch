@@ -1,4 +1,3 @@
-using System.IO.Enumeration;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "New Unit", menuName = "Scriptable Unit")]

@@ -1,9 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
 using TMPro;
 using System;
-using Debug = UnityEngine.Debug;
 using UnityEngine.SceneManagement;
 
 public class EncounterSelectManager : MonoBehaviour

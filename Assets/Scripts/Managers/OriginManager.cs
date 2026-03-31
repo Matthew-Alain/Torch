@@ -1,9 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
 using TMPro;
-using System;
-using Debug = UnityEngine.Debug;
 
 public class OriginManager : MonoBehaviour
 {
