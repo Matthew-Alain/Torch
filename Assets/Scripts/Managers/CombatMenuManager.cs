@@ -90,7 +90,7 @@ public class CombatMenuManager : MonoBehaviour
             turnMenuPanel.SetActive(false);
             menuStack.Clear();
             // CombatUnitManager.Instance.SetSelectedPC(null);
-            StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.PlayerTurn));
+            CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
         }
     }
 
@@ -136,7 +136,7 @@ public class CombatMenuManager : MonoBehaviour
         {
             new MenuOption("Major", OpenMajorMenu),
             new MenuOption("Minor", OpenMinorMenu),
-            new MenuOption("Move", () => StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.MovingPC))),
+            new MenuOption("Move", () => CombatStateManager.Instance.ChangeState(GameState.MovingPC)),
             new MenuOption("End Turn", () => pc.EndTurn()),
             new MenuOption("Cancel", () => CloseMenu())
         };

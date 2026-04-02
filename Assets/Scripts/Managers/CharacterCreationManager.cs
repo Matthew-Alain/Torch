@@ -42,7 +42,10 @@ public class CharacterCreationManager : MonoBehaviour
 
     public void SaveCharacter()
     {
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET name = \"{characterName.text}\" WHERE id = {currentPC.UnitID}");
+        if(!string.IsNullOrWhiteSpace(characterName.text))
+        {
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET name = \"{characterName.text}\" WHERE id = {currentPC.UnitID}");
+        }
     }
 
 }

@@ -54,9 +54,9 @@ public class CombatStateManager : MonoBehaviour
         DatabaseManager.Instance.SwitchDatabase(-1);
     }
 
-    public IEnumerator ChangeState(GameState newState)
+    public void ChangeState(GameState newState)
     {
-        if (GameState == newState) yield return null;
+        if (GameState == newState) return;
         GameState = newState;
 
         // Debug.Log("New state: "+GameState);
@@ -173,15 +173,15 @@ public class CombatStateManager : MonoBehaviour
         {
             case TargetType.Monster:
                 CombatMenuManager.Instance.DisplayText("Select a monster to target");
-                StartCoroutine(ChangeState(GameState.SelectTargetMonster));
+                ChangeState(GameState.SelectTargetMonster);
                 break;
             case TargetType.PC:
                 CombatMenuManager.Instance.DisplayText("Select a PC to target");
-                StartCoroutine(ChangeState(GameState.SelectTargetPC));
+                ChangeState(GameState.SelectTargetPC);
                 break;
             case TargetType.Unit:
                 CombatMenuManager.Instance.DisplayText("Select a unit to target");
-                StartCoroutine(ChangeState(GameState.SelectTargetUnit));
+                ChangeState(GameState.SelectTargetUnit);
                 break;
         }
     }
@@ -194,7 +194,7 @@ public class CombatStateManager : MonoBehaviour
         onTileSelected = callback;
         tileValidator = validator;
         CombatMenuManager.Instance.DisplayText("Select a tile to target");
-        StartCoroutine(ChangeState(GameState.SelectTargetTile));
+        ChangeState(GameState.SelectTargetTile);
     }
 
     public void ConfirmTarget(BaseUnit target)
@@ -217,7 +217,7 @@ public class CombatStateManager : MonoBehaviour
         onTargetSelected = null;
         targetValidator = null;
 
-        StartCoroutine(ChangeState(GameState.PlayerTurn));
+        ChangeState(GameState.PlayerTurn);
     }
 
     public void ConfirmTile(Tile tile)
@@ -240,7 +240,7 @@ public class CombatStateManager : MonoBehaviour
         onTileSelected = null;
         tileValidator = null;
 
-        StartCoroutine(ChangeState(GameState.PlayerTurn));
+        ChangeState(GameState.PlayerTurn);
     }
 
     public void RequestReaction(List<MenuOption> options, Action onComplete)
@@ -249,7 +249,7 @@ public class CombatStateManager : MonoBehaviour
 
         CombatMenuManager.Instance.OpenMenu(options);
 
-        StartCoroutine(ChangeState(GameState.SelectReaction)); // or new state like Reacting
+        ChangeState(GameState.SelectReaction); // or new state like Reacting
     }
 
     public void CompleteReaction()
@@ -259,7 +259,7 @@ public class CombatStateManager : MonoBehaviour
         onReactionComplete?.Invoke();
         onReactionComplete = null;
 
-        StartCoroutine(ChangeState(GameState.PlayerTurn));
+        ChangeState(GameState.PlayerTurn);
     }
 
     public void TryReaction(BaseUnit unit, List<MenuOption> options, Action onComplete)
@@ -314,10 +314,10 @@ public class CombatStateManager : MonoBehaviour
     public IEnumerator CombatLoop()
     {
         // Setup phase
-        yield return StartCoroutine(ChangeState(GameState.GenerateGrid));
-        yield return StartCoroutine(ChangeState(GameState.SpawnPCs));
-        yield return StartCoroutine(ChangeState(GameState.SpawnMonsters));
-        yield return StartCoroutine(InitiativeTracker.Instance.RollInitiative());
+        ChangeState(GameState.GenerateGrid);
+        ChangeState(GameState.SpawnPCs);
+        ChangeState(GameState.SpawnMonsters);
+        InitiativeTracker.Instance.RollInitiative();
 
         while (true)
         {
