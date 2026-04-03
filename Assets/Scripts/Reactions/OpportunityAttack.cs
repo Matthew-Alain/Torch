@@ -30,6 +30,7 @@ public class OpportunityAttack : Reaction<MoveContext>
 
     public override void Execute(MoveContext context, BaseUnit owner, Action onComplete)
     {
+        owner.UseReaction();
         context.TriggeringUnit.TakeDamage(5, false);
         UnityEngine.Debug.Log($"{context.TriggeringUnit} takes 5 damage");
         onComplete?.Invoke();

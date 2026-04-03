@@ -10,7 +10,7 @@ public class TargetingManager : MonoBehaviour
     public void StartTargeting(Action<Tile> callback)
     {
         onTileSelected = callback;
-        CombatStateManager.Instance.ChangeState(GameState.SelectTarget);
+        StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.SelectTarget));
     }
 
     public void SelectTile(Tile tile)
@@ -21,7 +21,7 @@ public class TargetingManager : MonoBehaviour
         onTileSelected?.Invoke(tile);
         onTileSelected = null;
 
-        CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
+        StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.PlayerTurn));
     }
 
 }

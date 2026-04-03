@@ -242,7 +242,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     {
         CombatMenuManager.Instance.CloseAllMenus();
         // CombatUnitManager.Instance.SetSelectedPC(null);
-        CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
+        StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.PlayerTurn));
     }
 
     private void SelectPC()

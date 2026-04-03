@@ -11,31 +11,90 @@ public class BasePC : BaseUnit
     {
         SetName(GetName());
     }
-    
-    public string GetClassName()
-    {
-        int class_id = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dnd_class_1 FROM saved_pcs WHERE id = {UnitID}"));
-        return Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT name FROM dndclasses WHERE id = {class_id}"));
-    }
 
-    public int GetClassID()
-    {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dnd_class_1 FROM saved_pcs WHERE id = {UnitID}"));
-    }
-
-    public int GetSpecies()
+    public int GetSpeciesID()
     {
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT species FROM saved_pcs WHERE id = {UnitID}"));
     }
 
     public string GetSpeciesName()
     {
-        return Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT name FROM species WHERE id = {GetSpecies()}"));
+        return Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT name FROM species WHERE id = {GetSpeciesID()}"));
     }
 
     public int GetOriginFeat()
     {
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT origin_feat FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public int GetLevel()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT level FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public int BarbarianLevel()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT barbarian_level FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public int BardLevel()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT bard_level FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public int ClericLevel()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT cleric_level FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public int DruidLevel()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT druid_level FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public int FighterLevel()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT fighter_level FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public int MonkLevel()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT monk_level FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public int PaladinLevel()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT paladin_level FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public int RangerLevel()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT ranger_level FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public int RogueLevel()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT rogue_level FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public int SorcererLevel()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT sorcerer_level FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public int WarlockLevel()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT warlock_level FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public int Wizardevel()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT wizard_level FROM saved_pcs WHERE id = {UnitID}"));
+    }
+    
+    public int GetSubclass()
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT subclass FROM saved_pcs WHERE id = {UnitID}"));
     }
 
     public int GetMainhandID()
@@ -68,16 +127,30 @@ public class BasePC : BaseUnit
         return Convert.ToString($"SELECT name FROM weapons WHERE id = {GetArmorID()}");
     }
 
-    public int GetSubclass()
-    {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT subclass FROM saved_pcs WHERE id = {UnitID}"));
-    }
-
     public bool IsSpellcaster()
     {
-        return GetClassName() == "Bard" || GetClassName() == "Cleric" || GetClassName() == "Druid" || (GetClassName() == "Fighter" && GetSubclass() == 2) ||
-        GetClassName() == "Paladin" || GetClassName() == "Ranger" || (GetClassName() == "Rogue" && GetSubclass() == 0) ||
-        GetClassName() == "Sorcerer" || GetClassName() == "Warlock" || GetClassName() == "Wizard";
+        return GetCasterLevel() > 0 || WarlockLevel() > 0;
+    }
+
+    public int GetCasterLevel()
+    {
+        int casterLevel = 0;
+
+        casterLevel += BardLevel() + ClericLevel() + DruidLevel() + SorcererLevel() + Wizardevel();
+        casterLevel += (int)Math.Ceiling((decimal)(PaladinLevel() / 2));
+        casterLevel += (int)Math.Ceiling((decimal)(RangerLevel() / 2));
+
+        if (FighterLevel() >= 3 && GetSubclass() == 2)
+        {
+            casterLevel += (int)Math.Floor((decimal)(FighterLevel() / 3));
+        }
+
+        if (RogueLevel() >= 3 && GetSubclass() == 0)
+        {
+            casterLevel += (int)Math.Floor((decimal)(RogueLevel() / 3));
+        }
+
+        return casterLevel;
     }
 
 
@@ -85,10 +158,9 @@ public class BasePC : BaseUnit
 
     public void Dash()
     {
-        if (GetResource("major_action") > 0)
+        if (UseResource("major_action"))
         {
             CombatActions.Dash(this);
-            UseResource("major_action");
         }
         else
         {
@@ -98,10 +170,9 @@ public class BasePC : BaseUnit
 
     public void Disengage()
     {
-        if (GetResource("major_action") > 0)
+        if (UseResource("major_action"))
         {
             CombatActions.Disengage(this);
-            UseResource("major_action");
         }
         else
         {
@@ -111,10 +182,9 @@ public class BasePC : BaseUnit
     
     public void Dodge()
     {
-        if (GetResource("major_action") > 0)
+        if (UseResource("major_action"))
         {
             CombatActions.Dodge(this);
-            UseResource("major_action");
         }
         else
         {
@@ -233,7 +303,7 @@ public class BasePC : BaseUnit
         );
     }
 
-    public void Shove()
+    public void ShoveBack()
     {
         CombatStateManager.Instance.StartTargetSelection(
             TargetType.Monster, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
@@ -244,6 +314,60 @@ public class BasePC : BaseUnit
                         target,
                         1
                     );
+
+                if (GetResource("current_number_of_attacks") < GetResource("max_number_of_attacks"))
+                {
+                    UseResource("current_number_of_attacks");
+                }
+                else
+                {
+                    UseResource("major_action");
+                    UseResource("current_number_of_attacks");
+                }
+
+            },
+            (target) =>
+            {
+                if (GetResource("current_number_of_attacks") == 0)
+                {
+                    return (false, "You have used all of your attacks this turn");
+                }
+
+                if (GetResource("major_action") <= 0 && (GetResource("current_number_of_attacks") == GetResource("max_number_of_attacks")))
+                {
+                    return (false, "You don't have a major action available");
+                }
+
+                if (!RangeHelper.IsTargetInRange(this, target, 1)) //Range in tiles
+                {
+                    return (false, "Target is out of range");
+                }
+
+                return (true, "");
+            }
+        );
+    }
+
+    public void ShoveProne()
+    {
+        CombatStateManager.Instance.StartTargetSelection(
+            TargetType.Monster, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
+            (target) =>
+            {
+                bool failed;
+                if (target.GetStat("mSTR") > target.GetStat("mDEX"))
+                {
+                    failed = target.MakeSave("STR", GetStat("str_dc"));
+                }
+                else
+                {
+                    failed = target.MakeSave("DEX", GetStat("str_dc"));
+                }
+
+                if (failed)
+                {
+                    target.SetCondition("prone", true);
+                }
 
                 if (GetResource("current_number_of_attacks") < GetResource("max_number_of_attacks"))
                 {
@@ -373,11 +497,11 @@ public class BasePC : BaseUnit
 
     public void PopulateMajorActions(List<MenuOption> menu)
     {
-        SpeciesFeatures species = new SpeciesFeatures();
-        if (GetSpeciesName() == "Aasimar")
-        {
-            menu.Add(new MenuOption($"Healing Touch", () => species.HealingHands(this)));
-        }
+        //Aasimar Healing Touch
+        menu.Add(new MenuOption($"Healing Touch", () => SpeciesFeatures.HealingHands(this),
+            () => GetSpeciesName() == "Aasimar",
+            () => GetResource("healing_touch") > 0 && GetResource("major_action") > 0));
+
         //Cleric Divine Spark
         //Cleric Turn Undead
         //Life Cleric Preserve Life
@@ -399,15 +523,14 @@ public class BasePC : BaseUnit
 
     public void PopulateAttacks(List<MenuOption> menu)
     {
-        if (GetMainhandName() != "Shield" && GetMainhandName() != "Unarmed")
-        {
-            menu.Add(new MenuOption($"Mainhand ({GetMainhandName()})", () => Attack(GetMainhandID())));
-        }
 
-        if (GetOffhandName() != "Shield" && GetOffhandName() != "Unarmed")
-        {
-            menu.Add(new MenuOption($"Offhand ({GetOffhandName()})", () => Attack(GetOffhandID())));
-        }
+        menu.Add(new MenuOption($"Mainhand ({GetMainhandName()})", () => Attack(GetMainhandID()),
+            () => GetMainhandName() != "Shield" && GetMainhandName() != "Unarmed",
+            () => true));
+
+        menu.Add(new MenuOption($"Offhand ({GetOffhandName()})", () => Attack(GetOffhandID()),
+            () => GetOffhandName() != "Shield" && GetOffhandName() != "Unarmed",
+            () => true));
 
         //Dragonborn breath weapon
         //Druid Beast Form Attack
@@ -419,26 +542,66 @@ public class BasePC : BaseUnit
 
     public void PopulateMinorActions(List<MenuOption> menu)
     {
-        //Offhand Light Attack
-        //Aasimar celestial revelation
-        //Dragonborn draconic flight
-        //Dwarf Stonecunning
-        //Goliath Large Form
-        //Cloud Goliath Cloud's Jaunt
-        //Orc Adrenaline Rush
+        //Light weapon offhand attack
+        menu.Add(new MenuOption($"Offhand Attack", () => Attack(GetOffhandID()), //Make sure this only costs minor action
+            () => Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT light FROM weapons WHERE id = {GetOffhandID()}")) &&
+                Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT light FROM weapons WHERE id = {GetMainhandID()}")),
+            () => GetResource("minor_action") > 0 || GetResource("nick_attack_available") > 0)); //TODO: add way to check if character attacked with a light weapon this turn
 
-        if (GetClassName() == "Barbarian")
-        {
-            menu.Add(new MenuOption("Rage", () => RestoreHealth(1)));
-        }
+        //Aasimar celestial revelation
+        menu.Add(new MenuOption($"Celestial Revelation (Heavenly Wings)", () => SpeciesFeatures.CelestialRevelation1(this),
+            () => GetSpeciesID() == 0 && GetLevel() >= 3,
+            () => GetResource("celestial_revelation") > 0 && GetResource("minor_action") > 0));
+
+        menu.Add(new MenuOption($"Celestial Revelation (Inner Radiance)", () => SpeciesFeatures.CelestialRevelation1(this),
+            () => GetSpeciesID() == 0 && GetLevel() >= 3,
+            () => GetResource("celestial_revelation") > 0 && GetResource("minor_action") > 0));
+
+        menu.Add(new MenuOption($"Celestial Revelation (Necrotic Shroud)", () => SpeciesFeatures.CelestialRevelation1(this),
+            () => GetSpeciesID() == 0 && GetLevel() >= 3,
+            () => GetResource("celestial_revelation") > 0 && GetResource("minor_action") > 0));
+
+        //Dragonborn draconic flight
+        menu.Add(new MenuOption($"Draconic Flight", () => SpeciesFeatures.DraconicFlight(this),
+            () => GetSpeciesID() >= 1 && GetSpeciesID() <= 5 && GetLevel() >= 5,
+            () => GetResource("draconic_flight") > 0 && GetResource("minor_action") > 0));
+
+        //Dwarf Stonecunning
+        menu.Add(new MenuOption($"Stonecunning", () => SpeciesFeatures.Stonecunning(this),
+            () => GetSpeciesID() == 6,
+            () => GetResource("stonecunning") > 0 && GetResource("minor_action") > 0));
+
+        //Goliath Large Form
+        menu.Add(new MenuOption($"Large Form", () => SpeciesFeatures.LargeForm(this),
+            () => GetSpeciesID() >= 12 && GetSpeciesID() <= 17  && GetLevel() >= 5,
+            () => GetResource("large_form") > 0 && GetResource("minor_action") > 0));
+
+        //Cloud Goliath Cloud's Jaunt
+        menu.Add(new MenuOption($"Cloud's Jaunt", () => SpeciesFeatures.CloudsJaunt(this),
+            () => GetSpeciesID() == 12,
+            () => GetResource("giant_ancestry") > 0 && GetResource("minor_action") > 0));
+
+        //Orc Adrenaline Rush
+        menu.Add(new MenuOption($"Adrenaline Rush", () => SpeciesFeatures.AdrenalineRush(this),
+            () => GetSpeciesID() == 20,
+            () => GetResource("adrenaline_rush") > 0 && GetResource("minor_action") > 0));
+
+        //Barbarian rage
+        menu.Add(new MenuOption($"Rage", () => ClassFeatures.Rage(this),
+            () => BarbarianLevel() > 0,
+            () => GetResource("rage") > 0 && GetResource("minor_action") > 0));
 
         //Wild Heart Barbarian Eagle Dash/Dodge
+
+
         //Zealot Barbarian Warrior of the Gods
 
-        if (GetClassName() == "Bard")
-        {
-            menu.Add(new MenuOption("Bardic Inspiration", () => RestoreHealth(2)));
-        }
+
+        //Bard bardic inspiration
+        menu.Add(new MenuOption($"Bardic Inspiration", () => ClassFeatures.BardicInspiration(this),
+            () => BardLevel() > 0,
+            () => GetResource("current_inspiration") > 0 && GetResource("minor_action") > 0));
+
 
         //Glamour Bard Mantle of Inspiration
         //Trickery Cleric Invoke Duplicity

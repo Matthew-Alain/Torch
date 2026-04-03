@@ -32,6 +32,8 @@ public class DNDClassManager : MonoBehaviour
     int lastClassWithSubclass;
     List<int> classIDs = new List<int>();
     List<int> classLevels = new List<int>();
+    int[] allLevels = new int[12];
+
 
     void Awake()
     {
@@ -369,7 +371,32 @@ public class DNDClassManager : MonoBehaviour
         if (classWithSubclass == -1)
             DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET subclass = null WHERE id = {currentPC.UnitID}");
 
+        UpdateSavedClassLevels();
         UpdateProficiencies();
+        UpdateSpellSlots();
+    }
+
+    public void UpdateSavedClassLevels(){
+        
+        for(int i = 0; i < 12; i++){
+            allLevels[i] = 0;
+
+            for(int j = 0; j < classIDs.Count; j++){
+                if(i == classIDs[j]){
+                    allLevels[i] += 1;
+                }
+            }
+        }
+
+        DatabaseManager.Instance.ExecuteNonQuery(
+            $"UPDATE saved_pcs SET barbarian_level = {allLevels[0]}, bard_level = {allLevels[1]}, cleric_level = {allLevels[2]}, " +
+            $"druid_level = {allLevels[3]}, fighter_level = {allLevels[4]}, monk_level = {allLevels[5]}, " +
+            $"paladin_level = {allLevels[6]}, ranger_level = {allLevels[7]},  rogue_level = {allLevels[8]},  " +
+            $" sorcerer_level = {allLevels[9]},  warlock_level = {allLevels[10]},  wizard_level = {allLevels[11]} " +
+            $"WHERE id = {currentPC.UnitID}"
+        );
+
+        UpdateHitDice();
     }
 
     public void UpdateProficiencies()
@@ -411,7 +438,7 @@ public class DNDClassManager : MonoBehaviour
         }
 
         //All weapons
-        if (dndClass1.value == 0 || dndClass1.value == 4 || dndClass1.value == 6 || dndClass1.value == 7)
+        if (allLevels[0] > 0 || allLevels[4] > 0 || allLevels[6] > 0 || allLevels[7] > 0)
         {
             // simple_melee = true;
             // simple_ranged = true;
@@ -439,24 +466,24 @@ public class DNDClassManager : MonoBehaviour
 
         // Light
         if (dndClass1.value == 0 ||
-            dndClass1.value == 1 ||
-            dndClass1.value == 2 ||
-            dndClass1.value == 3 ||
-            dndClass1.value == 4 ||
-            dndClass1.value == 6 ||
-            dndClass1.value == 7 ||
-            dndClass1.value == 8 ||
-            dndClass1.value == 10)
+            allLevels[1] > 0 ||
+            allLevels[2] > 0 ||
+            allLevels[3] > 0 ||
+            allLevels[4] > 0 ||
+            allLevels[6] > 0 ||
+            allLevels[7] > 0 ||
+            allLevels[8] > 0 ||
+            allLevels[10] > 0)
         {
             light = true;
         }
 
         // Medium
         if (dndClass1.value == 0 ||
-            dndClass1.value == 2 ||
-            dndClass1.value == 4 ||
-            dndClass1.value == 6 ||
-            dndClass1.value == 7)
+            allLevels[2] > 0 ||
+            allLevels[4] > 0 ||
+            allLevels[6] > 0 ||
+            allLevels[7] > 0)
         {
             medium = true;
         }
@@ -470,12 +497,12 @@ public class DNDClassManager : MonoBehaviour
         }
 
         // Shields
-        if (dndClass1.value == 0 ||
-            dndClass1.value == 2 ||
-            dndClass1.value == 3 ||
-            dndClass1.value == 4 ||
-            dndClass1.value == 6 ||
-            dndClass1.value == 7)
+        if (allLevels[0] > 0 ||
+            allLevels[2] > 0 ||
+            allLevels[3] > 0 ||
+            allLevels[4] > 0 ||
+            allLevels[6] > 0 ||
+            allLevels[7] > 0)
         {
             shields = true;
         }
@@ -484,7 +511,7 @@ public class DNDClassManager : MonoBehaviour
             $"UPDATE pc_proficiencies SET light_armor = {light}, medium_armor = {medium}, heavy_armor = {heavy}, shields = {shields} WHERE id = {currentPC.UnitID}"
         );
     }
-    
+
     private void UpdateSaveProficiencies()
     {
         bool str_save = false;
@@ -495,39 +522,71 @@ public class DNDClassManager : MonoBehaviour
         bool cha_save = false;
 
         if (dndClass1.value == 0 || dndClass1.value == 4 || dndClass1.value == 5 || dndClass1.value == 7)
-        {
             str_save = true;
-        }
 
         if (dndClass1.value == 1 || dndClass1.value == 5 || dndClass1.value == 7 || dndClass1.value == 8)
-        {
             dex_save = true;
-        }
 
         if (dndClass1.value == 0 || dndClass1.value == 4 || dndClass1.value == 9)
-        {
             con_save = true;
-        }
 
         if (dndClass1.value == 3 || dndClass1.value == 8 || dndClass1.value == 11)
-        {
             int_save = true;
-        }
 
         if (dndClass1.value == 2 || dndClass1.value == 3 || dndClass1.value == 6 || dndClass1.value == 10 || dndClass1.value == 11)
-        {
             wis_save = true;
-        }
 
         if (dndClass1.value == 1 || dndClass1.value == 2 || dndClass1.value == 6 || dndClass1.value == 9 || dndClass1.value == 10)
-        {
             cha_save = true;
-        }
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            $"UPDATE pc_proficiencies SET str_save = {str_save}, dex_save = {dex_save}, con_save = {con_save}, "+
+            $"UPDATE pc_proficiencies SET str_save = {str_save}, dex_save = {dex_save}, con_save = {con_save}, " +
             $"int_save = {int_save}, wis_save = {wis_save}, cha_save = {cha_save} WHERE id = {currentPC.UnitID}"
         );
+    }
+    
+    private void UpdateSpellSlots()
+    {
+        int casterLevel = currentPC.GetCasterLevel();
+        int warlockLevel = currentPC.WarlockLevel();
+        int level_1_slots = 0;
+        int level_2_slots = 0;
+        int level_3_slots = 0;
+
+        if (casterLevel == 1)
+            level_1_slots = 2;
+        else if (casterLevel == 2)
+            level_1_slots = 3;
+        else if (casterLevel >= 3)
+            level_1_slots = 4;
+        if (warlockLevel == 1)
+            level_1_slots += 1;
+        else if (warlockLevel == 2)
+            level_1_slots += 2;
+
+        if (casterLevel == 3)
+            level_2_slots = 2;
+        else if (casterLevel >= 4)
+            level_2_slots = 3;
+        if (warlockLevel == 3 || warlockLevel == 4)
+            level_2_slots += 2;
+
+        if (casterLevel == 5 || warlockLevel == 5)
+            level_3_slots = 2;
+
+        DatabaseManager.Instance.ExecuteNonQuery(
+            $"UPDATE unit_resources SET level_1_slots = {level_1_slots}, level_2_slots = {level_2_slots}, level_3_slots = {level_3_slots} WHERE id = {currentPC.UnitID}"
+        );
+    }
+
+    private void UpdateHitDice()
+    {
+        int d6 = allLevels[9] + allLevels[11];
+        int d8 = allLevels[1] + allLevels[2] + allLevels[3] + allLevels[5] + allLevels[8] + allLevels[10];
+        int d10 = allLevels[4] + allLevels[6] + allLevels[7];
+        int d12 = allLevels[0];
+
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET d6_hd = {d6}, d8_hd = {d8}, d10_hd = {d10}, d12_hd = {d12} WHERE id = {currentPC.UnitID}");
     }
 
     private void CloseFeatureWindow()

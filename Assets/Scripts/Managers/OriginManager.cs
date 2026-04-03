@@ -29,7 +29,7 @@ public class OriginManager : MonoBehaviour
     void Start()
     {
         GetDefaultInfo();
-        UpdateSpeciesFeatures(currentPC.GetSpecies());
+        UpdateSpeciesFeatures(currentPC.GetSpeciesID());
 
         species.onValueChanged.AddListener(UpdateSpeciesFeatures);
         originFeat.onValueChanged.AddListener(UpdateOriginFeat);
@@ -41,7 +41,7 @@ public class OriginManager : MonoBehaviour
 
     void GetDefaultInfo()
     {
-        species.SetValueWithoutNotify(currentPC.GetSpecies());
+        species.SetValueWithoutNotify(currentPC.GetSpeciesID());
         originFeat.SetValueWithoutNotify(currentPC.GetOriginFeat());
     }
 
@@ -129,5 +129,34 @@ public class OriginManager : MonoBehaviour
     void SaveCharacter()
     {
         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET species = {species.value}, origin_feat = {originFeat.value} WHERE id = {currentPC.UnitID}");
+
+        if (species.value == 0)
+        {
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET healing_touch = 1 WHERE id = {currentPC.UnitID}");
+            if (currentPC.GetLevel() >= 3)
+            {
+                DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET celestial_revelation = 1 WHERE id = {currentPC.UnitID}");
+            }
+        }
+        else if (species.value >= 1 && species.value <= 5 && currentPC.GetLevel() >= 5)
+        {
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET draconic_flight = 1 WHERE id = {currentPC.UnitID}");
+        }
+        else if (species.value == 6)
+        {
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET stonecunning = {currentPC.GetPB()} WHERE id = {currentPC.UnitID}");
+        }
+        else if (species.value >= 12 && species.value <= 17)
+        {
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET giant_ancestry = {currentPC.GetPB()} WHERE id = {currentPC.UnitID}");
+            if(currentPC.GetLevel() >= 5)
+            {
+                DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET large_form = 1 WHERE id = {currentPC.UnitID}");
+            }
+        }
+        else if(species.value == 20)
+        {
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET relentless_endurance = 1, adrenaline_rush = {currentPC.GetPB()} WHERE id = {currentPC.UnitID}");
+        }
     }
 }

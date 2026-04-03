@@ -47,7 +47,11 @@ public class BaseUnit : MonoBehaviour
 
     public void SetTempHP(int newTempHP)
     {
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET temp_hp = {newTempHP} WHERE id = {UnitID}");
+        int currentTempHP = GetTempHP();
+        if(newTempHP > currentTempHP)
+        {
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET temp_hp = {newTempHP} WHERE id = {UnitID}");
+        }
     }
 
     public int GetMaxHP()
@@ -67,7 +71,7 @@ public class BaseUnit : MonoBehaviour
 
     public int GetStat(string stat)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT {stat.ToString().ToLower()} FROM unit_stats WHERE id = {UnitID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT {stat} FROM unit_stats WHERE id = {UnitID}"));
     }
 
     public int GetProficiency(string proficiency)
@@ -358,11 +362,58 @@ public class BaseUnit : MonoBehaviour
 
             SetCurrentHP(currentHP);
 
-            if(Faction == Faction.PC)
+            if (Faction == Faction.PC)
             {
                 ((BasePC)this).ClearDeathSaves();
             }
         }
+    }
+    
+    public bool MakeSave(string saveType, int DC)
+    {
+        bool result = false;
+        saveType = saveType.ToUpper();
+        int saveBonus = 0;
+
+        if (saveType == "STR")
+        {
+            saveBonus = GetStat("mSTR") + GetProficiency("str_save");
+        }
+        else if (saveType == "DEX")
+        {
+            saveBonus = GetStat("mDEX") + GetProficiency("dex_save");
+        }
+        else if (saveType == "CON")
+        {
+            saveBonus = GetStat("mCON") + GetProficiency("con_save");
+        }
+        else if (saveType == "INT")
+        {
+            saveBonus = GetStat("mINT") + GetProficiency("int_save");
+        }
+        else if (saveType == "WIS")
+        {
+            saveBonus = GetStat("mWIS") + GetProficiency("wis_save");
+        }
+        else if (saveType == "CHA")
+        {
+            saveBonus = GetStat("mCHA") + GetProficiency("cha_save");
+        }
+
+        int dieRoll = DiceRoller.Rolld20();
+
+        if (dieRoll + saveBonus >= DC)
+        {
+            //Prompt for reaction
+            result = true;
+        }
+        else
+        {
+            //Prompt for reaction
+            result = false;
+        }
+
+        return result;
     }
 
     public void Die()
@@ -418,13 +469,13 @@ public class BaseUnit : MonoBehaviour
 
         if (InitiativeTracker.Instance.currentTurnUnit.Faction == Faction.PC)
         {
-            CombatMenuManager.Instance.CloseAllMenus();
             CombatUnitManager.Instance.SelectedPC?.OnTurnEnded?.Invoke();
         }
         if (InitiativeTracker.Instance.currentTurnUnit.Faction == Faction.Monster)
         {
             
         }
+            CombatMenuManager.Instance.CloseAllMenus();
     }
 
     public IEnumerator PullTarget(BaseUnit user, BaseUnit target, int pullDistance)
@@ -451,5 +502,6 @@ public class BaseUnit : MonoBehaviour
             yield return StartCoroutine(nextTile.MoveUnit(target, true));
         }
     }
+    
     
 }

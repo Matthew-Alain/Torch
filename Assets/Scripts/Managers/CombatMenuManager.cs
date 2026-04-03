@@ -89,8 +89,9 @@ public class CombatMenuManager : MonoBehaviour
         {
             turnMenuPanel.SetActive(false);
             menuStack.Clear();
+            
+            StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.PlayerTurn));
             // CombatUnitManager.Instance.SetSelectedPC(null);
-            CombatStateManager.Instance.ChangeState(GameState.PlayerTurn);
         }
     }
 
@@ -108,14 +109,46 @@ public class CombatMenuManager : MonoBehaviour
         foreach (Transform child in buttonContainer)
             Destroy(child.gameObject);
 
+        // foreach (var option in options)
+        // {
+        //     if (!option.IsAvailable())
+        //         continue;
+
+        //     GameObject btn = Instantiate(buttonPrefab, buttonContainer);
+        //     btn.GetComponentInChildren<TextMeshProUGUI>().text = option.Label;
+        //     btn.GetComponent<Button>().onClick.AddListener(() => option.Action());
+        // }
+
         foreach (var option in options)
         {
-            if (!option.IsAvailable())
+            if (!option.IsVisible())
                 continue;
 
             GameObject btn = Instantiate(buttonPrefab, buttonContainer);
-            btn.GetComponentInChildren<TextMeshProUGUI>().text = option.Label;
-            btn.GetComponent<Button>().onClick.AddListener(() => option.Action());
+
+            var text = btn.GetComponentInChildren<TextMeshProUGUI>();
+            var button = btn.GetComponent<Button>();
+            var image = btn.GetComponent<Image>();
+
+            text.text = option.Label;
+
+            bool isEnabled = option.IsEnabled();
+
+            if (isEnabled)
+            {
+                button.onClick.AddListener(() => option.Action());
+                // button.interactable = true;
+                // image.color = Color.white;
+            }
+            else
+            {
+                button.interactable = false;
+
+                if (image != null)
+                    image.color = Color.grey;
+
+                // text.color = Color.gray;
+            }
         }
 
         StartCoroutine(ResetScrollPosition());
@@ -134,11 +167,14 @@ public class CombatMenuManager : MonoBehaviour
         BasePC pc = CombatUnitManager.Instance.SelectedPC;
         List<MenuOption> rootOptions = new List<MenuOption>()
         {
-            new MenuOption("Major", OpenMajorMenu),
-            new MenuOption("Minor", OpenMinorMenu),
-            new MenuOption("Move", () => CombatStateManager.Instance.ChangeState(GameState.MovingPC)),
-            new MenuOption("End Turn", () => pc.EndTurn()),
-            new MenuOption("Cancel", () => CloseMenu())
+            new MenuOption("Major", OpenMajorMenu, () => true, () => pc.GetResource("major_action") > 0 ||
+                (pc.GetResource("current_number_of_attacks") < pc.GetResource("max_number_of_attacks") && pc.GetResource("current_number_of_attacks") > 0)),
+            new MenuOption("Minor", OpenMinorMenu, () => true, () => pc.GetResource("minor_action") > 0),
+            new MenuOption($"Move {pc.GetResource("current_speed")}", () => StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.MovingPC)),
+                () => true, () => pc.GetResource("current_speed") > 0),
+            new MenuOption("Free", OpenFreeActionMenu, () => true, () => true), //TODO: Add a condition to check for when there are free actions
+            new MenuOption("End Turn", () => pc.EndTurn(), () => true, () => true),
+            // new MenuOption("Cancel", () => CloseMenu())
         };
 
         OpenMenu(rootOptions);
@@ -149,23 +185,21 @@ public class CombatMenuManager : MonoBehaviour
         BasePC pc = CombatUnitManager.Instance.SelectedPC;
         List<MenuOption> majorOptions = new List<MenuOption>()
         {
-            new MenuOption("Attack", OpenAttackMenu)
-        };
+            new MenuOption($"Attack ({pc.GetResource("current_number_of_attacks")})", OpenAttackMenu,
+            () => true, () => pc.GetResource("major_action") > 0 ||
+            (pc.GetResource("current_number_of_attacks") < pc.GetResource("max_number_of_attacks") && pc.GetResource("current_number_of_attacks") > 0)),
 
-        if (pc.IsSpellcaster())
-        {
-            majorOptions.Add(new MenuOption("Magic", () => Debug.Log("Magic")));
-        }
+            new MenuOption("Magic", OpenSpellMenu, pc.IsSpellcaster, () => true)
+        };
 
         pc.PopulateMajorActions(majorOptions);
 
-        // Back option
-        majorOptions.Add(new MenuOption("Dash", () => pc.Dash()));
-        majorOptions.Add(new MenuOption("Disengage", () => pc.Disengage()));
-        majorOptions.Add(new MenuOption("Dodge", () => pc.Dodge()));
-        majorOptions.Add(new MenuOption("Help", () => pc.Help()));
-        majorOptions.Add(new MenuOption("Hide", () => pc.Hide()));
-        majorOptions.Add(new MenuOption("Back", () => CloseMenu()));
+        majorOptions.Add(new MenuOption("Dash", () => pc.Dash(), () => true, () => pc.GetResource("major_action") > 0));
+        majorOptions.Add(new MenuOption("Disengage", () => pc.Disengage(), () => true, () => pc.GetResource("major_action") > 0));
+        majorOptions.Add(new MenuOption("Dodge", () => pc.Dodge(), () => true, () => pc.GetResource("major_action") > 0));
+        majorOptions.Add(new MenuOption("Help", () => pc.Help(), () => true, () => pc.GetResource("major_action") > 0));
+        majorOptions.Add(new MenuOption("Hide", () => pc.Hide(), () => true, () => pc.GetResource("major_action") > 0));
+        majorOptions.Add(new MenuOption("Back", () => CloseMenu(), () => true, () => true));
 
         OpenMenu(majorOptions);
     }
@@ -177,10 +211,9 @@ public class CombatMenuManager : MonoBehaviour
 
         pc.PopulateAttacks(attackOptions);
 
-        attackOptions.Add(new MenuOption("Unarmed Strike", OpenUnarmedStrikeMenu));
+        attackOptions.Add(new MenuOption("Unarmed Strike", OpenUnarmedStrikeMenu, () => true, () => true));
 
-        // Back option
-        attackOptions.Add(new MenuOption("Back", () => CloseMenu()));
+        attackOptions.Add(new MenuOption("Back", () => CloseMenu(), () => true, () => true));
 
         OpenMenu(attackOptions);
     }
@@ -191,13 +224,30 @@ public class CombatMenuManager : MonoBehaviour
 
         List<MenuOption> unarmedStrikeOptions = new List<MenuOption>()
         {
-            new MenuOption("Strike", () => pc.Attack(0)),
-            new MenuOption("Grapple", () => pc.Attack(0)),
-            new MenuOption("Shove", () => pc.Shove()),
-            new MenuOption("Back", () => CloseMenu())
+            new MenuOption($"Damage", () => pc.Attack(0), () => true, () => true),
+            new MenuOption("Grapple", () => pc.Attack(0), () => true, () => true), //TODO: Add grappling mechanics
+            new MenuOption("Shove Backwards", () => pc.ShoveBack(), () => true, () => true),
+            new MenuOption("Shove Prone", () => pc.ShoveProne(), () => true, () => true),
+            new MenuOption("Back", () => CloseMenu(), () => true, () => true)
         };
 
         OpenMenu(unarmedStrikeOptions);
+    }
+
+    public void OpenSpellMenu()
+    {
+        BasePC pc = CombatUnitManager.Instance.SelectedPC;
+
+        List<MenuOption> spellOptions = new List<MenuOption>()
+        {
+            new MenuOption($"Cantrips", () => pc.Attack(0), () => true, () => true),
+            new MenuOption($"Level 1 Spells ({pc.GetResource("level_1_slots")})", () => pc.Attack(0), () => true, () => pc.GetResource("level_1_slots") > 0),
+            new MenuOption($"Level 2 Spells ({pc.GetResource("level_2_slots")})", () => pc.Attack(0), () => true, () => pc.GetResource("level_2_slots") > 0),
+            new MenuOption($"Level 3 Spells ({pc.GetResource("level_3_slots")})", () => pc.Attack(0), () => true, () => pc.GetResource("level_3_slots") > 0),
+            new MenuOption("Back", () => CloseMenu(), () => true, () => true)
+        };
+
+        OpenMenu(spellOptions);
     }
 
     public void OpenMinorMenu()
@@ -211,9 +261,25 @@ public class CombatMenuManager : MonoBehaviour
         pc.PopulateMinorActions(minorOptions);
 
         // Back option
-        minorOptions.Add(new MenuOption("Back", () => CloseMenu()));
+        minorOptions.Add(new MenuOption("Back", () => CloseMenu(), () => true, () => true));
 
         OpenMenu(minorOptions);
+    }
+
+    public void OpenFreeActionMenu()
+    {
+        BasePC pc = CombatUnitManager.Instance.SelectedPC;
+        List<MenuOption> freeActions = new List<MenuOption>()
+        {
+            //Put default options here
+        };
+
+        pc.PopulateFreeActions(freeActions);
+
+        // Back option
+        freeActions.Add(new MenuOption("Back", () => CloseMenu(), () => true, () => true));
+
+        OpenMenu(freeActions);
     }
 
     public void DisplayText(string message)

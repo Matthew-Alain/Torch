@@ -1,6 +1,6 @@
 public class SpeciesFeatures
 {
-    public void HealingHands(BasePC user)
+    public static void HealingHands(BasePC user)
     {
         if (user.UseResource("major_action"))
         {
@@ -10,6 +10,71 @@ public class SpeciesFeatures
                 target.RestoreHealth(result);
             });
 
+        }
+    }
+
+    public static void CelestialRevelation1(BasePC user)
+    {
+        if (user.UseResource("minor_action"))
+        {
+
+        }
+    }
+
+    public static void CelestialRevelation2(BasePC user)
+    {
+        if (user.UseResource("minor_action"))
+        {
+
+        }
+    }
+
+    public static void CelestialRevelation3(BasePC user)
+    {
+        if (user.UseResource("minor_action"))
+        {
+
+        }
+    }
+
+    public static void DraconicFlight(BasePC user)
+    {
+        if (user.UseResource("minor_action"))
+        {
+
+        }
+    }
+
+    public static void Stonecunning(BasePC user)
+    {
+        if (user.UseResource("minor_action"))
+        {
+
+        }
+    }
+
+    public static void LargeForm(BasePC user)
+    {
+        if (user.UseResource("minor_action"))
+        {
+
+        }
+    }
+
+    public static void CloudsJaunt(BasePC user)
+    {
+        if (user.UseResource("minor_action"))
+        {
+            
+        }
+    }
+    
+    public static void AdrenalineRush(BasePC user)
+    {
+        if (user.UseResource("minor_action"))
+        {
+            CombatActions.Dash(user);
+            user.SetTempHP(user.GetPB());
         }
     }
 }
