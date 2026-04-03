@@ -50,11 +50,15 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 destinationTile = this
             };
 
+            // Log("About to check for reactions");
+
             yield return StartCoroutine(ReactionManager.Instance.CheckForReactions(
                 ReactionTrigger.UnitMoves,
                 context
             ));
+            // Log("returned from checking for reactions");
 
+            // Log("Should stop? "+TurnUtility.ShouldStop(movingUnit));
             if (TurnUtility.ShouldStop(movingUnit)) yield break;
 
             int unitSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
@@ -88,6 +92,8 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 CombatMenuManager.Instance.DisplayText($"{movingUnit.UnitName} has {newSpeed} feet of movement left");
                 // Log("Unit has " + newSpeed + " feet of movement left.");
             }
+
+            CombatMenuManager.Instance.ReRenderMenu();
         }
 
         if (moving)
@@ -132,6 +138,9 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     public void OnPointerClick(PointerEventData eventData)
     {
+        if(CombatUnitManager.Instance.SelectedPC == null)
+            return;
+
         CombatMenuManager menu = CombatMenuManager.Instance;
 
         bool leftClick = eventData.button == PointerEventData.InputButton.Left;
@@ -148,7 +157,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         if (!leftClick)
         {
             //Only close this if the stack has more than one layer
-            menu.CloseMenu();
+            // menu.CloseMenu();
             return;
         }
 
@@ -174,7 +183,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                     ClearUnitSelection();
                 }
                 break;
-            
+
             case GameState.MovingPC:
                 if (isWalkable && OccupiedUnit == null)
                 {

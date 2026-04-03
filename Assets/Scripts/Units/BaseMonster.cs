@@ -219,27 +219,12 @@ public class BaseMonster : BaseUnit
             
             if (TurnUtility.ShouldStop(this))
             {
-                Debug.Log("Turn should stop");
+                // Debug.Log("Turn should stop");
                 yield break;
                 
             }
         }
     }
-            // var context = new MoveContext
-            // {
-            //     TriggeringUnit = this,
-            //     originTile = occupiedTile,
-            //     destinationTile = path[i]
-            // };
-
-            // yield return StartCoroutine(ReactionManager.Instance.CheckForReactions(
-            //         ReactionTrigger.UnitMoves,
-            //         context
-            //     )
-            // );
-
-            // Now actually move
-            // Debug.Log("Monster moved to tile: (" + occupiedTile.tileX + ", " + occupiedTile.tileY + ")");
 
     public List<Tile> GetPathToBestAttackTile(Tile targetTile, int attackID)
     {

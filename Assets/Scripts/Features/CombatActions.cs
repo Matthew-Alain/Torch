@@ -123,26 +123,26 @@ public class CombatActions
         {
             attackModifier = mDEX;
         }
-        Debug.Log("Your weapon uses " + attackStat + ", so you add " + attackModifier + " to your d20 roll.");
+        // Debug.Log("Your weapon uses " + attackStat + ", so you add " + attackModifier + " to your d20 roll.");
 
 
         int pb = attacker.GetWeaponProficiency(weaponID);
         if (pb > 0)
         {
-            Debug.Log("You have proficiency with this weapon, so you had your proficiency bonus of " + pb + " to your roll.");
+            // Debug.Log("You have proficiency with this weapon, so you had your proficiency bonus of " + pb + " to your roll.");
         }
         else
         {
-            Debug.Log("You do not have proficiency with this weapon, so you do not add your proficiency bonus to this roll.");
+            // Debug.Log("You do not have proficiency with this weapon, so you do not add your proficiency bonus to this roll.");
         }
 
 
         int totalResult = dieRoll + attackModifier + pb;
-        Debug.Log($"You rolled {dieRoll}, with a modifier of {attackModifier}, and a proficiency of {pb}, for a total result of: {totalResult}");
+        // Debug.Log($"You rolled {dieRoll}, with a modifier of {attackModifier}, and a proficiency of {pb}, for a total result of: {totalResult}");
 
         if (totalResult >= target.GetAC())
         {
-            Debug.Log($"The target's AC is {target.GetAC()}, so you hit!");
+            // Debug.Log($"The target's AC is {target.GetAC()}, so you hit!");
             CombatMenuManager.Instance.DisplayText($"The target's AC is {target.GetAC()}, so you hit!");
 
             if (dieRoll == 20)

@@ -168,7 +168,7 @@ public class BaseUnit : MonoBehaviour
         }
         else
         {
-            Debug.Log("No major action available");
+            // Debug.Log("No reaction available");
         }
 
         return hasReaction;
@@ -246,6 +246,8 @@ public class BaseUnit : MonoBehaviour
 
     public void TakeDamage(int damage, bool wasCrit)
     {
+        // Debug.LogWarning("Called TakeDamage()");
+
         CombatMenuManager menu = CombatMenuManager.Instance;
         menu.DisplayText($"{UnitName} is taking {damage} damage");
 
@@ -291,6 +293,7 @@ public class BaseUnit : MonoBehaviour
             {
                 if(Faction == Faction.Monster)
                 {
+                    // Debug.LogWarning("About to call Die()");
                     Die();
                 }
                 else
@@ -418,11 +421,23 @@ public class BaseUnit : MonoBehaviour
 
     public void Die()
     {
+        StartCoroutine(HandleDeath());
+    }
 
+    private IEnumerator HandleDeath()
+    {
+        SetCondition("unconscious", true);
+        SetCondition("prone", true);
+        SetCondition("dying", false);
+        SetCondition("dead", true);
+
+        yield return new WaitForSeconds(0.1f); // let coroutines finish
+
+        // Debug.LogWarning("Called Die()");
         if (Faction == Faction.Monster)
         {
-            Destroy(gameObject);
             CombatMenuManager.Instance.DisplayText($"{UnitName} has been slain!");
+            Destroy(gameObject);
 
             // Log("Unit " + unitID + " has been slain!");
         }
@@ -433,10 +448,6 @@ public class BaseUnit : MonoBehaviour
             // LogWarning(characterName + " has been killed!");
         }
 
-        SetCondition("unconscious", true);
-        SetCondition("prone", true);
-        SetCondition("dying", false);
-        SetCondition("dead", true);
 
         CombatUnitManager.Instance.baseUnits.Remove(this);
 
@@ -451,8 +462,10 @@ public class BaseUnit : MonoBehaviour
 
         if (InitiativeTracker.Instance.currentTurnUnit == this)
         {
+            // Debug.LogWarning("Unit died on their turn, ending turn");
             EndTurn();
         }
+        yield return null;
     }
 
     public int RollInitiative()
@@ -469,13 +482,16 @@ public class BaseUnit : MonoBehaviour
 
         if (InitiativeTracker.Instance.currentTurnUnit.Faction == Faction.PC)
         {
+            CombatMenuManager.Instance.CloseAllMenus();
             CombatUnitManager.Instance.SelectedPC?.OnTurnEnded?.Invoke();
         }
         if (InitiativeTracker.Instance.currentTurnUnit.Faction == Faction.Monster)
         {
             
         }
-            CombatMenuManager.Instance.CloseAllMenus();
+
+        // InitiativeTracker.Instance.AdvanceTurn();
+        
     }
 
     public IEnumerator PullTarget(BaseUnit user, BaseUnit target, int pullDistance)

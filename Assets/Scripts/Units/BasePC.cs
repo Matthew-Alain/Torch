@@ -477,7 +477,7 @@ public class BasePC : BaseUnit
     public void FallUnconscious()
     {
 
-        Debug.Log("Fallen unconscious");
+        // Debug.Log("Fallen unconscious");
         SetCondition("unconscious", true);
         SetCondition("prone", true);
         SetCondition("dying", true);
@@ -526,11 +526,13 @@ public class BasePC : BaseUnit
 
         menu.Add(new MenuOption($"Mainhand ({GetMainhandName()})", () => Attack(GetMainhandID()),
             () => GetMainhandName() != "Shield" && GetMainhandName() != "Unarmed",
-            () => true));
+            () => GetResource("major_action") > 0 ||
+                (GetResource("current_number_of_attacks") < GetResource("max_number_of_attacks") && GetResource("current_number_of_attacks") > 0)));
 
         menu.Add(new MenuOption($"Offhand ({GetOffhandName()})", () => Attack(GetOffhandID()),
             () => GetOffhandName() != "Shield" && GetOffhandName() != "Unarmed",
-            () => true));
+            () => GetResource("major_action") > 0 ||
+                (GetResource("current_number_of_attacks") < GetResource("max_number_of_attacks") && GetResource("current_number_of_attacks") > 0)));
 
         //Dragonborn breath weapon
         //Druid Beast Form Attack
@@ -573,7 +575,7 @@ public class BasePC : BaseUnit
 
         //Goliath Large Form
         menu.Add(new MenuOption($"Large Form", () => SpeciesFeatures.LargeForm(this),
-            () => GetSpeciesID() >= 12 && GetSpeciesID() <= 17  && GetLevel() >= 5,
+            () => GetSpeciesID() >= 12 && GetSpeciesID() <= 17 && GetLevel() >= 5,
             () => GetResource("large_form") > 0 && GetResource("minor_action") > 0));
 
         //Cloud Goliath Cloud's Jaunt
@@ -592,10 +594,14 @@ public class BasePC : BaseUnit
             () => GetResource("rage") > 0 && GetResource("minor_action") > 0));
 
         //Wild Heart Barbarian Eagle Dash/Dodge
-
+        menu.Add(new MenuOption($"Disengage + Dash", () => ClassFeatures.EagleDashDisengage(this),
+            () => BarbarianLevel() >= 3 && GetSubclass() == 1,
+            () => GetCondition("raging") && GetResource("minor_action") > 0));
 
         //Zealot Barbarian Warrior of the Gods
-
+        menu.Add(new MenuOption($"Warrior of the Gods Healing ({GetResource("warrior_of_the_gods_available")})", () => ClassFeatures.OpenWarriorOfTheGodsMenu(this),
+            () => BarbarianLevel() >= 3 && GetSubclass() == 3,
+            () => GetResource("warrior_of_the_gods_available") > 0 && GetResource("minor_action") > 0));
 
         //Bard bardic inspiration
         menu.Add(new MenuOption($"Bardic Inspiration", () => ClassFeatures.BardicInspiration(this),

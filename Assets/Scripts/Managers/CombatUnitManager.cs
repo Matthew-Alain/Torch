@@ -49,7 +49,7 @@ public class CombatUnitManager : MonoBehaviour
 
             if (pcToSpawn == null)
             {
-                Log($"No ScriptableUnit found with UnitID {activePCIDs[i]}");
+                LogError($"No ScriptableUnit found with UnitID {activePCIDs[i]}");
             }
             if (pcToSpawn.UnitPrefab == null)
             {
@@ -89,7 +89,7 @@ public class CombatUnitManager : MonoBehaviour
 
             if (monsterToSpawn == null)
             {
-                Log($"No ScriptableUnit found with UnitID {activeMonsterIDs[i]}");
+                LogError($"No ScriptableUnit found with UnitID {activeMonsterIDs[i]}");
             }
             if (monsterToSpawn.UnitPrefab == null)
             {

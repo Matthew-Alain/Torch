@@ -124,50 +124,20 @@ public class InitiativeTracker: MonoBehaviour
     {
         do
         {
+            // Debug.LogWarning("Advancing Turn");
+
             IncrementInitiativeOrder();
             if (GetInitiativeOrder() >= GetNumberOfCombatants())
             {
                 ResetInitiativeCount();
                 IncrementTurnCount();
+                // Debug.Log("Increasing turn count");
             }
 
             currentTurnUnit = GetCurrentUnit();
         } while (currentTurnUnit == null);
 
+        // Debug.LogWarning("Current unit turn: "+currentTurnUnit);
     }
-
-    // public IEnumerator EndTurn()
-    // {
-    //     if(currentTurnUnit != null)
-    //     {
-    //         if (currentTurnUnit.Faction == Faction.PC)
-    //         {
-    //             CombatMenuManager.Instance.CloseMenu();
-    //             CombatUnitManager.Instance.SetSelectedPC(null);
-    //         }
-    //         else
-    //         {
-    //             ((BaseMonster)currentTurnUnit).EndTurn();
-    //         }
-    //     }
-
-        
-    //     if(currentTurnUnit == null)
-    //     {
-    //         EndTurn();
-    //     }
-
-    //     CombatUnitManager.Instance.ResetOncePerTurnResources();
-        
-    //     if(currentTurnUnit.Faction == Faction.PC)
-    //     {
-    //         yield return StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.StartPlayerTurn));
-    //     }
-    //     else
-    //     {
-    //         yield return StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.StartMonsterTurn));
-    //     }
-    // }
-
 
 }

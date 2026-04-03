@@ -16,7 +16,8 @@ public class OpportunityAttack : Reaction<MoveContext>
 
         if (context.TriggeringUnit.Faction != owner.Faction &&
         owner.occupiedTile.CheckDistanceInTiles(context.originTile) == 1 &&
-        owner.occupiedTile.CheckDistanceInTiles(context.destinationTile) > 1)
+        owner.occupiedTile.CheckDistanceInTiles(context.destinationTile) > 1 &&
+        !context.TriggeringUnit.GetCondition("disengaging"))
         {
             // CombatMenuManager.Instance.DisplayText($"{owner.UnitName} can take an opportunity attack");
             return true;
@@ -31,8 +32,11 @@ public class OpportunityAttack : Reaction<MoveContext>
     public override void Execute(MoveContext context, BaseUnit owner, Action onComplete)
     {
         owner.UseReaction();
+        // UnityEngine.Debug.LogWarning("About to call TakeDamage()");
         context.TriggeringUnit.TakeDamage(5, false);
-        UnityEngine.Debug.Log($"{context.TriggeringUnit} takes 5 damage");
+        // UnityEngine.Debug.Log($"{context.TriggeringUnit} takes 5 damage");
+        
+        // UnityEngine.Debug.LogWarning("Unit took damage, calling OnComplete");
         onComplete?.Invoke();
     }
 }

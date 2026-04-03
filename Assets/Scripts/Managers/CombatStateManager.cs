@@ -247,7 +247,7 @@ public class CombatStateManager : MonoBehaviour
     {
         onReactionComplete = onComplete;
 
-        CombatMenuManager.Instance.OpenMenu(options);
+        CombatMenuManager.Instance.OpenMenu(() => options);
         
         StartCoroutine(ChangeState(GameState.SelectReaction));
     }
@@ -342,8 +342,6 @@ public class CombatStateManager : MonoBehaviour
         if (!unit.IsActive())
             yield break;
 
-        unit.RefreshStartOfTurnResources();
-
         if (unit.Faction == Faction.PC)
         {
             yield return StartCoroutine(RunPlayerTurn((BasePC)unit));
@@ -419,6 +417,8 @@ public class CombatStateManager : MonoBehaviour
 
     public IEnumerator EndTurnFlow()
     {
+        InitiativeTracker.Instance.currentTurnUnit.RefreshStartOfTurnResources();
+
         CombatUnitManager.Instance.ResetOncePerTurnResources();
 
         InitiativeTracker.Instance.AdvanceTurn();
@@ -434,11 +434,11 @@ public static class TurnUtility
     {
         if(unit == null)
         {
-            Debug.Log("Unit is null");
+            // Debug.Log("Unit is null");
         }
         if(!unit.IsActive())
         {
-            Debug.Log("Unit is inactive");
+            // Debug.Log("Unit is inactive");
         }
 
         return unit == null || !unit.IsActive();
