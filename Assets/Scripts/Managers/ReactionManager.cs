@@ -45,13 +45,7 @@ public class ReactionManager : MonoBehaviour
                 break;
             }
 
-            if (unit == null)
-            {
-                // Debug.LogWarning($"Unit {unit.UnitName} is null");
-                continue;
-            }
-
-            if (unit.GetCondition("unconscious") || unit.GetCondition("dying") || unit.GetCondition("dead"))
+            if (unit == null || unit.GetCondition("unconscious") || unit.GetCondition("dying") || unit.GetCondition("dead"))
             {
                 // Debug.LogWarning($"Unit {unit.UnitName} is unable to react");
                 continue;

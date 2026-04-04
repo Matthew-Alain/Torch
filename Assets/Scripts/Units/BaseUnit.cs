@@ -64,6 +64,50 @@ public class BaseUnit : MonoBehaviour
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT AC FROM unit_stats WHERE id = {UnitID}"));
     }
 
+    public int GetSaveDCForStat(string stat)
+    {
+        switch (stat)
+        {
+            case "STR":
+                return GetStat("str_dc");
+            case "DEX":
+                return GetStat("dex_dc");
+            case "CON":
+                return GetStat("con_dc");
+            case "INT":
+                return GetStat("int_dc");
+            case "WIS":
+                return GetStat("wis_dc");
+            case "CHA":
+                return GetStat("cha_dc");
+            default:
+                Debug.LogError("Tried to retrieve an invalid stat for " + stat);
+                return 0;
+        }
+    }
+
+    public int GetAttackBonusForStat(string stat)
+    {
+        switch (stat)
+        {
+            case "STR":
+                return GetStat("mSTR") + GetPB();
+            case "DEX":
+                return GetStat("mDEX") + GetPB();
+            case "CON":
+                return GetStat("mCON") + GetPB();
+            case "INT":
+                return GetStat("mINT") + GetPB();
+            case "WIS":
+                return GetStat("mWIS") + GetPB();
+            case "CHA":
+                return GetStat("mCHA") + GetPB();
+            default:
+                Debug.LogError("Tried to retrieve an invalid stat for " + stat);
+                return 0;
+        }
+    }
+
     public int GetModifier(string modifier)
     {
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT {modifier} FROM unit_stats WHERE id = {UnitID}"));
@@ -188,11 +232,14 @@ public class BaseUnit : MonoBehaviour
 
     public bool UseResource(string resourceName)
     {
+
         int currentResource = GetResource(resourceName);
 
         if (currentResource > 0)
         {
             DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET {resourceName} = {currentResource - 1} WHERE id = {UnitID}");
+            CombatMenuManager.Instance.ReRenderMenu();
+
             return true;
         }
 
@@ -371,36 +418,37 @@ public class BaseUnit : MonoBehaviour
             }
         }
     }
-    
+
     public bool MakeSave(string saveType, int DC)
     {
         bool result = false;
         saveType = saveType.ToUpper();
         int saveBonus = 0;
 
-        if (saveType == "STR")
+        switch (saveType)
         {
-            saveBonus = GetStat("mSTR") + GetProficiency("str_save");
-        }
-        else if (saveType == "DEX")
-        {
-            saveBonus = GetStat("mDEX") + GetProficiency("dex_save");
-        }
-        else if (saveType == "CON")
-        {
-            saveBonus = GetStat("mCON") + GetProficiency("con_save");
-        }
-        else if (saveType == "INT")
-        {
-            saveBonus = GetStat("mINT") + GetProficiency("int_save");
-        }
-        else if (saveType == "WIS")
-        {
-            saveBonus = GetStat("mWIS") + GetProficiency("wis_save");
-        }
-        else if (saveType == "CHA")
-        {
-            saveBonus = GetStat("mCHA") + GetProficiency("cha_save");
+            case "STR":
+                saveBonus = GetStat("mSTR") + GetProficiency("str_save");
+                break;
+            case "DEX":
+                saveBonus = GetStat("mDEX") + GetProficiency("dex_save");
+                break;
+            case "CON":
+                saveBonus = GetStat("mCON") + GetProficiency("con_save");
+                break;
+            case "INT":
+                saveBonus = GetStat("mINT") + GetProficiency("int_save");
+                break;
+            case "WIS":
+                saveBonus = GetStat("mWIS") + GetProficiency("wis_save");
+                break;
+            case "CHA":
+                saveBonus = GetStat("mCHA") + GetProficiency("cha_save");
+                break;
+            default:
+                Debug.LogError("Tried to make an invalid save for " + saveType);
+                saveBonus = 0;
+                break;
         }
 
         int dieRoll = DiceRoller.Rolld20();
@@ -417,6 +465,63 @@ public class BaseUnit : MonoBehaviour
         }
 
         return result;
+    }
+    
+    public int MakeAttackWithStat(string stat)
+    {
+        bool result = false;
+        int hitBonus = 0;
+
+        switch (stat)
+        {
+            case "STR":
+                hitBonus = GetStat("mSTR") + GetPB();
+                break;
+            case "DEX":
+                hitBonus = GetStat("mDEX") + GetPB();
+                break;
+            case "CON":
+                hitBonus = GetStat("mCON") + GetPB();
+                break;
+            case "INT":
+                hitBonus = GetStat("mINT") + GetPB();
+                break;
+            case "WIS":
+                hitBonus = GetStat("mWIS") + GetPB();
+                break;
+            case "CHA":
+                hitBonus = GetStat("mCHA") + GetPB();
+                break;
+            default:
+                Debug.LogError("Tried to make an invalid save for " + stat);
+                hitBonus = 0;
+                break;
+        }
+
+        int dieRoll = DiceRoller.Rolld20();
+
+        if(dieRoll == 20)
+        {
+            return 200;
+        }
+        else
+        {
+            return dieRoll + hitBonus;
+        }
+
+
+        // if (dieRoll + hitBonus >= target.GetAC())
+        // {
+        //     //Prompt for reaction
+        //     result = true;
+        // }
+        // else
+        // {
+        //     //Prompt for reaction
+        //     result = false;
+        // }
+
+        // return result;
     }
 
     public void Die()

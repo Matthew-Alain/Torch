@@ -204,7 +204,7 @@ public class CombatMenuManager : MonoBehaviour
                 () => true, () => pc.GetResource("major_action") > 0 ||
                 (pc.GetResource("current_number_of_attacks") < pc.GetResource("max_number_of_attacks") && pc.GetResource("current_number_of_attacks") > 0)),
 
-                new MenuOption("Magic", OpenSpellMenu, pc.IsSpellcaster, () => true)
+                new MenuOption("Magic", () => OpenSpellMenu("major_action"), pc.IsSpellcaster, () => pc.GetResource("major_action") > 0)
             };
 
             pc.PopulateMajorActions(majorOptions);
@@ -229,7 +229,9 @@ public class CombatMenuManager : MonoBehaviour
 
             pc.PopulateAttacks(attackOptions);
 
-            attackOptions.Add(new MenuOption("Unarmed Strike", OpenUnarmedStrikeMenu, () => true, () => true));
+            attackOptions.Add(new MenuOption("Unarmed Strike", OpenUnarmedStrikeMenu, () => true, () => pc.GetResource("major_action") > 0 ||
+                (pc.GetResource("current_number_of_attacks") < pc.GetResource("max_number_of_attacks") && pc.GetResource("current_number_of_attacks") > 0)));
+            
             attackOptions.Add(new MenuOption("Back", () => CloseMenu(), () => true, () => true));
 
             return attackOptions;
@@ -244,10 +246,18 @@ public class CombatMenuManager : MonoBehaviour
 
             List<MenuOption> unarmedStrikeOptions = new List<MenuOption>()
             {
-                new MenuOption($"Damage", () => pc.Attack(0), () => true, () => true),
-                new MenuOption("Grapple", () => pc.Attack(0), () => true, () => true), //TODO: Add grappling mechanics
-                new MenuOption("Shove Backwards", () => pc.ShoveBack(), () => true, () => true),
-                new MenuOption("Shove Prone", () => pc.ShoveProne(), () => true, () => true),
+                new MenuOption($"Damage", () => pc.Attack(0), () => true, () => pc.GetResource("major_action") > 0 ||
+                    (pc.GetResource("current_number_of_attacks") < pc.GetResource("max_number_of_attacks") && pc.GetResource("current_number_of_attacks") > 0)),
+
+                new MenuOption("Grapple", () => pc.Attack(0), () => true, () => pc.GetResource("major_action") > 0 ||
+                    (pc.GetResource("current_number_of_attacks") < pc.GetResource("max_number_of_attacks") && pc.GetResource("current_number_of_attacks") > 0)), //TODO: Add grappling mechanics
+                
+                new MenuOption("Shove Backwards", () => pc.ShoveBack(), () => true, () => pc.GetResource("major_action") > 0 ||
+                    (pc.GetResource("current_number_of_attacks") < pc.GetResource("max_number_of_attacks") && pc.GetResource("current_number_of_attacks") > 0)),
+
+                new MenuOption("Shove Prone", () => pc.ShoveProne(), () => true, () => pc.GetResource("major_action") > 0 ||
+                    (pc.GetResource("current_number_of_attacks") < pc.GetResource("max_number_of_attacks") && pc.GetResource("current_number_of_attacks") > 0)),
+
                 new MenuOption("Back", () => CloseMenu(), () => true, () => true)
             };
 
@@ -255,7 +265,7 @@ public class CombatMenuManager : MonoBehaviour
         });
     }
 
-    public void OpenSpellMenu()
+    public void OpenSpellMenu(string actionCost)
     {
         OpenMenu(() =>
         {
@@ -263,14 +273,40 @@ public class CombatMenuManager : MonoBehaviour
 
             List<MenuOption> spellOptions = new List<MenuOption>()
             {
-                new MenuOption($"Cantrips", () => pc.Attack(0), () => true, () => true),
-                new MenuOption($"Level 1 Spells ({pc.GetResource("level_1_slots")})", () => pc.Attack(0), () => true, () => pc.GetResource("level_1_slots") > 0),
-                new MenuOption($"Level 2 Spells ({pc.GetResource("level_2_slots")})", () => pc.Attack(0), () => true, () => pc.GetResource("level_2_slots") > 0),
-                new MenuOption($"Level 3 Spells ({pc.GetResource("level_3_slots")})", () => pc.Attack(0), () => true, () => pc.GetResource("level_3_slots") > 0),
+                new MenuOption($"Cantrips", () => OpenSpellList(0), () => true, () => pc.GetResource(actionCost) > 0),
+
+                new MenuOption($"Level 1 Spells ({pc.GetResource("level_1_slots")})", () => OpenSpellList(1),
+                    () => true,
+                    () => pc.GetResource("level_1_slots") > 0 && pc.GetResource(actionCost) > 0),
+
+                new MenuOption($"Level 2 Spells ({pc.GetResource("level_2_slots")})", () => OpenSpellList(2),
+                    () => true,
+                    () => pc.GetResource("level_2_slots") > 0 && pc.GetResource(actionCost) > 0),
+
+                new MenuOption($"Level 3 Spells ({pc.GetResource("level_3_slots")})", () => OpenSpellList(3),
+                    () => true,
+                    () => pc.GetResource("level_3_slots") > 0 && pc.GetResource(actionCost) > 0),
+
                 new MenuOption("Back", () => CloseMenu(), () => true, () => true)
             };
 
             return spellOptions;
+        });
+    }
+
+    public void OpenSpellList(int spellLevel)
+    {
+        OpenMenu(() =>
+        {
+            BasePC pc = CombatUnitManager.Instance.SelectedPC;
+
+            List<MenuOption> options = new List<MenuOption>();
+
+            pc.PopulateSpells(options, spellLevel);
+
+            options.Add(new MenuOption("Back", () => CloseMenu(), () => true, () => true));
+
+            return options;
         });
     }
 
@@ -281,7 +317,7 @@ public class CombatMenuManager : MonoBehaviour
             BasePC pc = CombatUnitManager.Instance.SelectedPC;
             List<MenuOption> minorOptions = new List<MenuOption>()
             {
-                //Put default options here
+                new MenuOption("Magic", () => OpenSpellMenu("minor_action"), pc.IsSpellcaster, () => pc.GetResource("minor_action") > 0)
             };
 
             pc.PopulateMinorActions(minorOptions);

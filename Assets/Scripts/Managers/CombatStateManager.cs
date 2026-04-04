@@ -91,13 +91,13 @@ public class CombatStateManager : MonoBehaviour
             // case GameState.SelectWeapon:
             //     break;
             case GameState.SelectTarget:
-                Debug.Log("You are now selecting a target");
+                // Debug.Log("You are now selecting a target");
                 break;
             case GameState.SelectTargetUnit:
-                Debug.Log("The target you are selecting is any unit");
+                // Debug.Log("The target you are selecting is any unit");
                 break;
             case GameState.SelectTargetMonster:
-                Debug.Log("The target you are selecting is a monster");
+                // Debug.Log("The target you are selecting is a monster");
                 break;
             // case GameState.StartMonsterTurn:
             //     // Debug.Log("It is now the monster's turn");
@@ -107,57 +107,11 @@ public class CombatStateManager : MonoBehaviour
             //     yield return StartCoroutine(TakeMonsterTurn());
             //     break;
             default:
-                Debug.LogWarning("No state for " + newState);
+                // Debug.LogWarning("No state for " + newState);
                 break;
         }
 
     }
-
-    // public void DeclareAttack(int weaponID)
-    // {
-    //     declaredWeapon = weaponID;
-    //     StartCoroutine(ChangeState(GameState.SelectTarget));
-    //     Debug.Log("Selecting attack target");
-    // }
-
-    // IEnumerator TakeMonsterTurn()
-    // {
-    //     BaseMonster currentMonster = (BaseMonster)InitiativeTracker.Instance.currentTurnUnit;
-
-    //     yield return StartCoroutine(currentMonster.CheckValidActions());
-    //     // Debug.Log("Finished finding valid actions for " + currentMonster.UnitName);
-
-    //     if (currentMonster.validActions != null && currentMonster.validActions.Count > 0)
-    //     {
-    //         (BaseUnit, int) targetAndAttack = currentMonster.ChooseTargetAndAttack();
-
-    //         if (targetAndAttack != (null, -1))
-    //         {
-    //             BaseUnit target = targetAndAttack.Item1;
-    //             int attackID = targetAndAttack.Item2;
-    //             // CombatMenuManager.Instance.DisplayText($"{currentMonster.UnitName} is attacking {target.UnitName}");
-
-    //             yield return StartCoroutine(currentMonster.MoveToTile(currentMonster.GetPathToBestAttackTile(target.occupiedTile, attackID)));
-    //             yield return new WaitForSeconds(0.5f);
-    //             yield return StartCoroutine(currentMonster.AttackTarget(target, attackID));
-    //             yield return new WaitForSeconds(0.5f);
-    //         }
-    //         else
-    //         {
-    //             Debug.Log($"{currentMonster.UnitName} cannot reach any targets, moving as close as possible");
-    //             List<Tile> activePCTiles = currentMonster.GetilesWithActivePCs();
-
-    //             Tile targetTile = activePCTiles[UnityEngine.Random.Range(0, activePCTiles.Count)];
-
-    //             List<Tile> pathToTarget = currentMonster.GetPathToBestAttackTile(targetTile, 0);
-
-    //             yield return StartCoroutine(currentMonster.MoveToTile(pathToTarget));
-    //         }
-    //     }
-
-    //     yield return StartCoroutine(InitiativeTracker.Instance.EndTurn());
-    // }
-
 
 
     public void StartTargetSelection(
@@ -187,14 +141,25 @@ public class CombatStateManager : MonoBehaviour
     }
 
     public void StartTileSelection(
+        TargetType targetType,
         Action<Tile> callback,
         Func<Tile, (bool success, string message)> validator = null
     )
     {
         onTileSelected = callback;
         tileValidator = validator;
-        CombatMenuManager.Instance.DisplayText("Select a tile to target");
-        StartCoroutine(ChangeState(GameState.SelectTargetTile));
+        
+        switch (targetType)
+        {
+            case TargetType.AnyTile:
+                CombatMenuManager.Instance.DisplayText("Select a tile to target");
+                StartCoroutine(ChangeState(GameState.SelectTargetTile));
+                break;
+            case TargetType.EmptyTile:
+                CombatMenuManager.Instance.DisplayText("Select an empty tile to target");
+                StartCoroutine(ChangeState(GameState.SelectTargetEmptyTile));
+                break;
+        }       
     }
 
     public void ConfirmTarget(BaseUnit target)
@@ -463,6 +428,7 @@ public enum GameState
     SelectTargetMonster,
     SelectTargetUnit,
     SelectTargetTile,
+    SelectTargetEmptyTile,
     StartMonsterTurn,
     MonsterTurn
 
@@ -473,5 +439,6 @@ public enum TargetType
     Unit,
     PC,
     Monster,
-    Tile
+    AnyTile,
+    EmptyTile
 }

@@ -91,7 +91,7 @@ public class BasePC : BaseUnit
     {
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT wizard_level FROM saved_pcs WHERE id = {UnitID}"));
     }
-    
+
     public int GetSubclass()
     {
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT subclass FROM saved_pcs WHERE id = {UnitID}"));
@@ -179,7 +179,7 @@ public class BasePC : BaseUnit
             CombatMenuManager.Instance.DisplayText("No action available");
         }
     }
-    
+
     public void Dodge()
     {
         if (UseResource("major_action"))
@@ -230,7 +230,7 @@ public class BasePC : BaseUnit
             (target) =>
             {
                 CombatActions.Help(target);
-                
+
                 UseResource("major_action");
             },
             (target) =>
@@ -402,7 +402,113 @@ public class BasePC : BaseUnit
         );
     }
 
-    
+    public void CastSpell(int spellID)
+    {
+        string targeting = "";
+        int radius = 2;
+
+        // DatabaseManager.Instance.ExecuteReader(
+        //     $"SELECT * FROM spells WHERE id = {spellID}",
+        //     reader =>
+        //     {
+        //         targeting = Convert.ToString(reader["category"]);
+        //         // light = Convert.ToBoolean(reader["light"]);
+        //         // finesse = Convert.ToString(reader["stat"]) == "Finesse";
+        //     }
+        // );
+
+        TargetType targetType = TargetType.AnyTile;
+
+        // var context = new SpellContext
+        //     {
+        //         TriggeringUnit = this,
+        //     };
+
+        // // Log("About to check for reactions");
+
+        // yield return StartCoroutine(ReactionManager.Instance.CheckForReactions(
+        //     ReactionTrigger.BeforeCastSpell,
+        //     context
+        // ));
+
+        if (targetType == TargetType.AnyTile || targetType == TargetType.EmptyTile)
+        {
+            CombatStateManager.Instance.StartTileSelection(
+            targetType,
+            (tile) =>
+            {
+                var targets = AOEHelper.GetUnitsInRadius(tile, radius);
+                // .Where(u => u.Faction == Faction.Monster).ToList(); //If it only affects enemies
+
+                var context = new ActionContext
+                {
+                    TriggeringUnit = this,
+                    Targets = targets,
+                    Damage = 10
+                };
+
+                ReactionManager.Instance.CheckForReactions(
+                    ReactionTrigger.BeforeDamageDealt,
+                    context
+                );
+
+                foreach (BaseUnit target in context.Targets)
+                {
+                    target.TakeDamage(context.Damage, false);
+                    Debug.Log("Damage dealt to " + target.UnitName);
+                }
+
+                UseResource("major_action");
+                UseResource("level_3_slots");
+            },
+            (tile) =>
+            {
+                int maxRange = 6;
+
+                int distance = occupiedTile.CheckDistanceInTiles(tile);
+
+                if (distance > maxRange)
+                    return (false, "That location is out of range");
+
+                if (GetResource("major_action") <= 0)
+                    return (false, "No major action available");
+
+                if (GetResource("level_3_slots") <= 0)
+                    return (false, "No spell slots available");
+
+                return (true, "");
+            }
+            );
+        }
+        else
+        {
+            CombatStateManager.Instance.StartTargetSelection(
+                targetType, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
+                (target) =>
+                {
+                    CombatActions.Help(target);
+
+                    UseResource("major_action");
+                },
+                (target) =>
+                {
+                    if (GetResource("major_action") <= 0)
+                    {
+                        return (false, "You don't have a major action available");
+                    }
+
+                    if (!RangeHelper.IsTargetInRange(this, target, 1))
+                    {
+                        return (false, "Target is out of range");
+                    }
+
+                    return (true, "");
+                }
+            );
+        }
+    }
+
+
 
     public IEnumerator MakeDeathSave()
     {
@@ -431,7 +537,7 @@ public class BasePC : BaseUnit
             }
         }
     }
-    
+
     public void FailDeathSave(int number)
     {
         int currentFails = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT death_save_fails FROM unit_resources WHERE id = {UnitID}"));
@@ -775,4 +881,68 @@ public class BasePC : BaseUnit
         //Shield Master feat Shield Bash (Prone) (after hitting with melee attack)
         //Shield Master feat Interpose Shield (after succeeding DEX save)
     }
+
+    public void PopulateSpells(List<MenuOption> menu, int spellLevel)
+    {
+        if (!IsSpellcaster())
+            return;
+
+        Spells spell = new Spells();
+
+        if(spellLevel == 0)
+        {
+            DatabaseManager.Instance.ExecuteReader(
+                $"SELECT pc_spells.* FROM pc_spells JOIN spells ON pc_spells.spell_id = spells.id WHERE pc_spells.unit_id = {UnitID} AND spells.level = 0",
+            reader =>
+            {
+                int spellID = Convert.ToInt32(reader["spell_id"]);
+                string spellcastingAbility = Convert.ToString(reader["spellcasting_ability"]);
+
+                menu.Add(new MenuOption(Spells.GetName(spellID), () => StartCoroutine(spell.CastSpell(spellID, this, spellLevel, spellcastingAbility)),
+                    () => true,
+                    () => GetResource(Spells.GetCastTime(spellID)) > 0));
+            });
+        }
+        else
+        {
+            DatabaseManager.Instance.ExecuteReader(
+                $"SELECT pc_spells.* FROM pc_spells JOIN spells ON pc_spells.spell_id = spells.id "+
+                $"WHERE pc_spells.unit_id = {UnitID} AND spells.level > 0 AND spells.level <= {spellLevel}",
+            reader =>
+            {
+                int spellID = Convert.ToInt32(reader["spell_id"]);
+                string spellcastingAbility = Convert.ToString(reader["spellcasting_ability"]);
+
+                menu.Add(new MenuOption(Spells.GetName(spellID), () => StartCoroutine(spell.CastSpell(spellID, this, spellLevel, spellcastingAbility)),
+                    () => true,
+                    () => GetResource(Spells.GetCastTime(spellID)) > 0));
+            });
+        }
+
+    }
+
+    // public void PopulateCantrips(List<MenuOption> menu)
+    // {
+    //     bool hasSpells = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT COUNT(*) FROM pc_spells WHERE unit_id = {UnitID}")) > 0;
+
+    //     if (!hasSpells)
+    //         return;
+
+    //     DatabaseManager.Instance.ExecuteReader(
+    //         $"SELECT * FROM pc_spells WHERE unit_id = {UnitID}",
+    //         reader =>
+    //         {
+    //             int spellID = Convert.ToInt32(reader["spell_id"]);
+    //             string spellcastingAbility = Convert.ToString(reader["spellcasting_ability"]);
+
+    //             menu.Add(new MenuOption(Spells.GetName(spellID), () => Spells.CastSpell(spellID, this),
+    //                 () => true,
+    //                 () => GetResource(Spells.GetCastTime(spellID)) > 0));
+    //         }
+    //     );
+    // }
+        // //Fireball
+        // menu.Add(new MenuOption($"Fireball", () => Spells.Fireball(this),
+        //     () => Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT fireball FROM pc_spell_list WHERE id = {UnitID}")),
+        //     () => GetResource("major_action") > 0 || GetResource("level_3_spell_slots") > 0));
 }

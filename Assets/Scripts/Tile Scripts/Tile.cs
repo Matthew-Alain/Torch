@@ -240,6 +240,17 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             case GameState.SelectTargetTile:
                 CombatStateManager.Instance.ConfirmTile(this);
                 break;
+
+            case GameState.SelectTargetEmptyTile:
+                if (OccupiedUnit == null)
+                {
+                    CombatStateManager.Instance.ConfirmTile(this);
+                }
+                else
+                {
+                    menu.DisplayText("You must select an empty tile");
+                }
+                break;
             
             default:
                 Log("No click action for the current game state: " + currentState);

@@ -246,7 +246,7 @@ public static class AOEHelper
     {
         List<BaseUnit> units = new List<BaseUnit>();
 
-        foreach (var tile in CombatGridManager.Instance.tilesList) // however you store tiles
+        foreach (var tile in CombatGridManager.Instance.tilesList)
         {
             int distance = center.CheckDistanceInTiles(tile);
 
@@ -258,14 +258,4 @@ public static class AOEHelper
 
         return units;
     }
-}
-
-
-public static class ForceMovementHelper
-{
-    //Starts top middle
-    public static readonly Vector2Int[] Directions8 = {
-        new(0,1), new(1,1), new(1,0), new(1,-1),
-        new(0,-1), new(-1,-1), new(-1,0), new(-1,1)
-    };
 }
