@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections;
 
-public class CombatActions
+public class CombatActions: MonoBehaviour
 {
 
     public static void Dash(BaseUnit unit)
@@ -59,10 +59,9 @@ public class CombatActions
 
             Tile nextTile = CombatGridManager.Instance.GetTileAtPosition(next);
 
-            if (!nextTile.isWalkable) break;
+            if (nextTile == null || !nextTile.isWalkable) break;
 
-            nextTile.MoveUnit(target, true);
-
+            target.StartCoroutine(nextTile.MoveUnit(target, true));
             currentPos = next;
         }
     }
@@ -89,7 +88,7 @@ public class CombatActions
         }
         else
         {
-            CombatMenuManager.Instance.DisplayText("The target is out of range");
+            CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText("The target is out of range"));
             // Log("The target is out of range");
         }
     }
@@ -143,22 +142,23 @@ public class CombatActions
         if (totalResult >= target.GetAC())
         {
             // Debug.Log($"The target's AC is {target.GetAC()}, so you hit!");
-            CombatMenuManager.Instance.DisplayText($"The target's AC is {target.GetAC()}, so you hit!");
 
             if (dieRoll == 20)
             {
-                target.TakeDamage(DiceRoller.Roll(dice_number * 2, dice_size), true);
+                CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled a natural 20 to hit {target.UnitName}!"));
+                target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number * 2, dice_size), true));
             }
             else
             {
-                target.TakeDamage(DiceRoller.Roll(dice_number, dice_size), false);
+                CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled {totalResult} to hit, which hits {target.UnitName}"));
+                target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number, dice_size), false));
             }
 
 
         }
         else
         {
-            CombatMenuManager.Instance.DisplayText($"The target's AC is {target.GetAC()}, so you miss...");
+            CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled {totalResult} to hit, which misses {target.UnitName}"));
         }
     }
 
@@ -196,31 +196,27 @@ public class CombatActions
             );
 
             int totalResult = dieRoll + hitMod;
-
-            CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} is attacking {target.UnitName} with {attackName}");
-            yield return new WaitForSeconds(2f);
+            yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} is attacking {target.UnitName} with {attackName}"));
 
             if (totalResult >= target.GetAC())
             {
 
                 if (dieRoll == 20)
                 {
-                    CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled a natural 20 to hit!");
-                    yield return new WaitForSeconds(1.5f);
-                    target.TakeDamage(DiceRoller.Roll(dice_number * 2, dice_size) + damageBonus, true);
+                    yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled a natural 20 to hit"));
+                    yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number * 2, dice_size) + damageBonus, true));
                 }
                 else
                 {
-                    CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled a {totalResult} to hit, which hits!");
-                    yield return new WaitForSeconds(1.5f);
-                    target.TakeDamage(DiceRoller.Roll(dice_number, dice_size) + damageBonus, false);
+                    yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled a {totalResult} to hit, which hits"));
+                    yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number, dice_size) + damageBonus, false));
                 }
 
                 yield return ApplyEffect(attacker, target, attackID);
             }
             else
             {
-                CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled a {totalResult} to hit, which misses!");
+                yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled a {totalResult} to hit, which misses"));
             }
 
         }

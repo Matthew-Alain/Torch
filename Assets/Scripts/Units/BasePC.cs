@@ -129,7 +129,7 @@ public class BasePC : BaseUnit
 
     public bool IsSpellcaster()
     {
-        return GetCasterLevel() > 0 || WarlockLevel() > 0;
+        return Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT COUNT(*) FROM pc_spells WHERE unit_id = {UnitID}"));
     }
 
     public int GetCasterLevel()
@@ -161,10 +161,12 @@ public class BasePC : BaseUnit
         if (UseResource("major_action"))
         {
             CombatActions.Dash(this);
+            StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.MovingPC));
+            CombatMenuManager.Instance.ReRenderMenu();
         }
         else
         {
-            CombatMenuManager.Instance.DisplayText("No action available");
+            StartCoroutine(CombatMenuManager.Instance.DisplayText("No action available"));
         }
     }
 
@@ -176,7 +178,7 @@ public class BasePC : BaseUnit
         }
         else
         {
-            CombatMenuManager.Instance.DisplayText("No action available");
+            StartCoroutine(CombatMenuManager.Instance.DisplayText("No action available"));
         }
     }
 
@@ -188,7 +190,7 @@ public class BasePC : BaseUnit
         }
         else
         {
-            CombatMenuManager.Instance.DisplayText("No action available");
+            StartCoroutine(CombatMenuManager.Instance.DisplayText("No action available"));
         }
     }
 
@@ -260,7 +262,7 @@ public class BasePC : BaseUnit
 
     public void Attack(int weaponID)
     {
-        CombatStateManager.Instance.StartTargetSelection(
+        StartCoroutine(CombatStateManager.Instance.StartTargetSelection(
             TargetType.Monster, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
             (target) =>
             {
@@ -300,12 +302,12 @@ public class BasePC : BaseUnit
 
                 return (true, "");
             }
-        );
+        ));
     }
 
     public void ShoveBack()
     {
-        CombatStateManager.Instance.StartTargetSelection(
+        StartCoroutine(CombatStateManager.Instance.StartTargetSelection(
             TargetType.Monster, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
             (target) =>
             {
@@ -345,12 +347,12 @@ public class BasePC : BaseUnit
 
                 return (true, "");
             }
-        );
+        ));
     }
 
     public void ShoveProne()
     {
-        CombatStateManager.Instance.StartTargetSelection(
+        StartCoroutine(CombatStateManager.Instance.StartTargetSelection(
             TargetType.Monster, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
             (target) =>
             {
@@ -399,133 +401,27 @@ public class BasePC : BaseUnit
 
                 return (true, "");
             }
-        );
+        ));
     }
-
-    public void CastSpell(int spellID)
-    {
-        string targeting = "";
-        int radius = 2;
-
-        // DatabaseManager.Instance.ExecuteReader(
-        //     $"SELECT * FROM spells WHERE id = {spellID}",
-        //     reader =>
-        //     {
-        //         targeting = Convert.ToString(reader["category"]);
-        //         // light = Convert.ToBoolean(reader["light"]);
-        //         // finesse = Convert.ToString(reader["stat"]) == "Finesse";
-        //     }
-        // );
-
-        TargetType targetType = TargetType.AnyTile;
-
-        // var context = new SpellContext
-        //     {
-        //         TriggeringUnit = this,
-        //     };
-
-        // // Log("About to check for reactions");
-
-        // yield return StartCoroutine(ReactionManager.Instance.CheckForReactions(
-        //     ReactionTrigger.BeforeCastSpell,
-        //     context
-        // ));
-
-        if (targetType == TargetType.AnyTile || targetType == TargetType.EmptyTile)
-        {
-            CombatStateManager.Instance.StartTileSelection(
-            targetType,
-            (tile) =>
-            {
-                var targets = AOEHelper.GetUnitsInRadius(tile, radius);
-                // .Where(u => u.Faction == Faction.Monster).ToList(); //If it only affects enemies
-
-                var context = new ActionContext
-                {
-                    TriggeringUnit = this,
-                    Targets = targets,
-                    Damage = 10
-                };
-
-                ReactionManager.Instance.CheckForReactions(
-                    ReactionTrigger.BeforeDamageDealt,
-                    context
-                );
-
-                foreach (BaseUnit target in context.Targets)
-                {
-                    target.TakeDamage(context.Damage, false);
-                    Debug.Log("Damage dealt to " + target.UnitName);
-                }
-
-                UseResource("major_action");
-                UseResource("level_3_slots");
-            },
-            (tile) =>
-            {
-                int maxRange = 6;
-
-                int distance = occupiedTile.CheckDistanceInTiles(tile);
-
-                if (distance > maxRange)
-                    return (false, "That location is out of range");
-
-                if (GetResource("major_action") <= 0)
-                    return (false, "No major action available");
-
-                if (GetResource("level_3_slots") <= 0)
-                    return (false, "No spell slots available");
-
-                return (true, "");
-            }
-            );
-        }
-        else
-        {
-            CombatStateManager.Instance.StartTargetSelection(
-                targetType, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
-                (target) =>
-                {
-                    CombatActions.Help(target);
-
-                    UseResource("major_action");
-                },
-                (target) =>
-                {
-                    if (GetResource("major_action") <= 0)
-                    {
-                        return (false, "You don't have a major action available");
-                    }
-
-                    if (!RangeHelper.IsTargetInRange(this, target, 1))
-                    {
-                        return (false, "Target is out of range");
-                    }
-
-                    return (true, "");
-                }
-            );
-        }
-    }
-
-
 
     public IEnumerator MakeDeathSave()
     {
         if (GetCondition("dying"))
         {
-            CombatMenuManager.Instance.DisplayText($"{UnitName} is dying");
-            yield return new WaitForSeconds(1f);
+            yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} is dying"));
             int result = DiceRoller.Rolld20(false, false);
-            yield return new WaitForSeconds(1f);
-
+            if (result == 20)
+                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} rolled a natural 20 on their death save, and is no longer dying!"));
+            else
+                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} rolled a {result} on their death save"));
+            
             if (result == 1)
             {
-                FailDeathSave(2);
+                yield return FailDeathSave(2);
             }
             else if (result < 10)
             {
-                FailDeathSave(1);
+                yield return FailDeathSave(1);
             }
             else if (result == 20)
             {
@@ -533,30 +429,30 @@ public class BasePC : BaseUnit
             }
             else
             {
-                PassDeathSave(1);
+                yield return PassDeathSave(1);
             }
         }
     }
 
-    public void FailDeathSave(int number)
+    public IEnumerator FailDeathSave(int number)
     {
         int currentFails = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT death_save_fails FROM unit_resources WHERE id = {UnitID}"));
         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET death_save_fails = {currentFails + number} WHERE id = {UnitID}");
-        CheckForDeath(currentFails);
+        yield return CheckForDeath(currentFails);
     }
 
-    public void PassDeathSave(int number)
+    public IEnumerator PassDeathSave(int number)
     {
         int currentPasses = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT death_save_successes FROM unit_resources WHERE id = {UnitID}"));
         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET death_save_successes = {currentPasses + number} WHERE id = {UnitID}");
-        CheckForStable(currentPasses);
+        yield return CheckForStable(currentPasses);
     }
 
-    public void CheckForDeath(int currentFails)
+    public IEnumerator CheckForDeath(int currentFails)
     {
         if (currentFails >= 3)
         {
-            Die();
+            yield return StartCoroutine(Die());
         }
         else
         {
@@ -564,13 +460,14 @@ public class BasePC : BaseUnit
         }
     }
 
-    public void CheckForStable(int currentPasses)
+    public IEnumerator CheckForStable(int currentPasses)
     {
         if (currentPasses >= 3)
         {
             SetCondition("dying", false);
         }
         EndTurn();
+        yield return null;
     }
 
     public void ClearDeathSaves()
@@ -580,23 +477,23 @@ public class BasePC : BaseUnit
         SetCondition("unconscious", false);
     }
 
-    public void FallUnconscious()
+    public IEnumerator FallUnconscious()
     {
 
         // Debug.Log("Fallen unconscious");
         SetCondition("unconscious", true);
         SetCondition("prone", true);
         SetCondition("dying", true);
-        CombatMenuManager.Instance.DisplayText($"{UnitName} is dying!");
+        yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} is dying!"));
         // Log($"{unit.UnitName} is dying!");
-
-        CombatStateManager.Instance.CheckForGameOver();
 
         if (InitiativeTracker.Instance.currentTurnUnit == this)
         {
             EndTurn();
         }
 
+        // yield return new WaitForSeconds(0.4f);
+        // StartCoroutine(CombatStateManager.Instance.CheckForGameOver());
     }
 
     //CLASS FEATURES
@@ -882,43 +779,46 @@ public class BasePC : BaseUnit
         //Shield Master feat Interpose Shield (after succeeding DEX save)
     }
 
-    public void PopulateSpells(List<MenuOption> menu, int spellLevel)
+    public void PopulateSpells(List<MenuOption> menu, string actionCost, int spellLevel)
     {
         if (!IsSpellcaster())
             return;
 
-        Spells spell = new Spells();
-
         if(spellLevel == 0)
         {
             DatabaseManager.Instance.ExecuteReader(
-                $"SELECT pc_spells.* FROM pc_spells JOIN spells ON pc_spells.spell_id = spells.id WHERE pc_spells.unit_id = {UnitID} AND spells.level = 0",
+                $"SELECT pc_spells.* FROM pc_spells JOIN spells ON pc_spells.spell_id = spells.id WHERE pc_spells.unit_id = {UnitID} AND spells.cast_time = '{actionCost}' AND spells.level = 0",
             reader =>
             {
-                int spellID = Convert.ToInt32(reader["spell_id"]);
-                string spellcastingAbility = Convert.ToString(reader["spellcasting_ability"]);
+                while (reader.Read())
+                {
+                    int spellID = Convert.ToInt32(reader["spell_id"]);
+                    string spellcastingAbility = Convert.ToString(reader["spellcasting_ability"]);
 
-                menu.Add(new MenuOption(Spells.GetName(spellID), () => StartCoroutine(spell.CastSpell(spellID, this, spellLevel, spellcastingAbility)),
-                    () => true,
-                    () => GetResource(Spells.GetCastTime(spellID)) > 0));
+                    menu.Add(new MenuOption(SpellsManager.GetName(spellID), () => StartCoroutine(SpellsManager.CastSpell(this, spellID, spellLevel, spellcastingAbility)),
+                        () => true,
+                        () => GetResource(SpellsManager.GetCastTime(spellID)) > 0));
+                }     
             });
         }
         else
         {
             DatabaseManager.Instance.ExecuteReader(
                 $"SELECT pc_spells.* FROM pc_spells JOIN spells ON pc_spells.spell_id = spells.id "+
-                $"WHERE pc_spells.unit_id = {UnitID} AND spells.level > 0 AND spells.level <= {spellLevel}",
+                $"WHERE pc_spells.unit_id = {UnitID} AND spells.cast_time = '{actionCost}' AND spells.level > 0 AND spells.level <= {spellLevel}",
             reader =>
             {
-                int spellID = Convert.ToInt32(reader["spell_id"]);
-                string spellcastingAbility = Convert.ToString(reader["spellcasting_ability"]);
+                while (reader.Read())
+                {
+                    int spellID = Convert.ToInt32(reader["spell_id"]);
+                    string spellcastingAbility = Convert.ToString(reader["spellcasting_ability"]);
 
-                menu.Add(new MenuOption(Spells.GetName(spellID), () => StartCoroutine(spell.CastSpell(spellID, this, spellLevel, spellcastingAbility)),
-                    () => true,
-                    () => GetResource(Spells.GetCastTime(spellID)) > 0));
+                    menu.Add(new MenuOption(SpellsManager.GetName(spellID), () => StartCoroutine(SpellsManager.CastSpell(this, spellID, spellLevel, spellcastingAbility)),
+                        () => true,
+                        () => GetResource(SpellsManager.GetCastTime(spellID)) > 0));
+                }
             });
         }
-
     }
 
     // public void PopulateCantrips(List<MenuOption> menu)

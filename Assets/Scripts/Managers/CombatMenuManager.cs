@@ -16,6 +16,11 @@ public class CombatMenuManager : MonoBehaviour
     public GameObject buttonPrefab;
     public GameObject displayText;
 
+    public Button btnShowChat;
+    [SerializeField] private ScrollRect chatPanelScrollRect;
+    public GameObject chatPrefab;
+    public Transform contentParent;
+
     private Stack<Func<List<MenuOption>>> menuStack = new();
 
     void Awake()
@@ -36,6 +41,36 @@ public class CombatMenuManager : MonoBehaviour
 
         //Now safe to create a new instance
         Instance = this;
+    }
+
+    void Start()
+    {
+        btnShowChat.onClick.AddListener(ShowHideChat);
+    }
+
+    public void ShowHideChat()
+    {
+        chatPanelScrollRect.gameObject.SetActive(!chatPanelScrollRect.gameObject.activeSelf);
+
+        if (chatPanelScrollRect.enabled)
+            StartCoroutine(ResetScrollPosition(chatPanelScrollRect));
+    }
+
+    IEnumerator ResetScrollPosition(ScrollRect obj)
+    {
+        yield return null; // wait 1 frame for layout groups
+
+        Canvas.ForceUpdateCanvases();
+        obj.verticalNormalizedPosition = 0f;
+    }
+    
+    public void AddItemToChat(string text)
+    {
+        GameObject obj = Instantiate(chatPrefab, contentParent);
+
+        var ui = obj.GetComponent<TMP_Text>();
+
+        ui.text = text;
     }
 
     public void ShowSelectedPC(BasePC pc)
@@ -129,6 +164,8 @@ public class CombatMenuManager : MonoBehaviour
         //     btn.GetComponent<Button>().onClick.AddListener(() => option.Action());
         // }
 
+        bool hasValidOption = false;
+
         foreach (var option in options)
         {
             if (!option.IsVisible())
@@ -149,6 +186,10 @@ public class CombatMenuManager : MonoBehaviour
                 button.onClick.AddListener(() => option.Action());
                 // button.interactable = true;
                 // image.color = Color.white;
+                if (option.Label != "Back")
+                {
+                    hasValidOption = true;
+                }
             }
             else
             {
@@ -161,7 +202,14 @@ public class CombatMenuManager : MonoBehaviour
             }
         }
 
-        StartCoroutine(ResetScrollPosition());
+        if (!hasValidOption)
+        {
+            CloseMenu();
+        }
+        else
+        {
+            StartCoroutine(ResetScrollPosition());
+        }
     }
 
     IEnumerator ResetScrollPosition()
@@ -273,17 +321,17 @@ public class CombatMenuManager : MonoBehaviour
 
             List<MenuOption> spellOptions = new List<MenuOption>()
             {
-                new MenuOption($"Cantrips", () => OpenSpellList(0), () => true, () => pc.GetResource(actionCost) > 0),
+                new MenuOption($"Cantrips", () => OpenSpellList(actionCost, 0), () => true, () => pc.GetResource(actionCost) > 0),
 
-                new MenuOption($"Level 1 Spells ({pc.GetResource("level_1_slots")})", () => OpenSpellList(1),
+                new MenuOption($"Level 1 Spells ({pc.GetResource("level_1_slots")})", () => OpenSpellList(actionCost, 1),
                     () => true,
                     () => pc.GetResource("level_1_slots") > 0 && pc.GetResource(actionCost) > 0),
 
-                new MenuOption($"Level 2 Spells ({pc.GetResource("level_2_slots")})", () => OpenSpellList(2),
+                new MenuOption($"Level 2 Spells ({pc.GetResource("level_2_slots")})", () => OpenSpellList(actionCost, 2),
                     () => true,
                     () => pc.GetResource("level_2_slots") > 0 && pc.GetResource(actionCost) > 0),
 
-                new MenuOption($"Level 3 Spells ({pc.GetResource("level_3_slots")})", () => OpenSpellList(3),
+                new MenuOption($"Level 3 Spells ({pc.GetResource("level_3_slots")})", () => OpenSpellList(actionCost, 3),
                     () => true,
                     () => pc.GetResource("level_3_slots") > 0 && pc.GetResource(actionCost) > 0),
 
@@ -294,7 +342,7 @@ public class CombatMenuManager : MonoBehaviour
         });
     }
 
-    public void OpenSpellList(int spellLevel)
+    public void OpenSpellList(string actionCost, int spellLevel)
     {
         OpenMenu(() =>
         {
@@ -302,7 +350,7 @@ public class CombatMenuManager : MonoBehaviour
 
             List<MenuOption> options = new List<MenuOption>();
 
-            pc.PopulateSpells(options, spellLevel);
+            pc.PopulateSpells(options, actionCost, spellLevel);
 
             options.Add(new MenuOption("Back", () => CloseMenu(), () => true, () => true));
 
@@ -348,9 +396,13 @@ public class CombatMenuManager : MonoBehaviour
         });
     }
 
-    public void DisplayText(string message)
+    public IEnumerator DisplayText(string message)
     {
         displayText.SetActive(true);
         displayText.GetComponentInChildren<TMP_Text>().text = message;
+        AddItemToChat(message);
+        StartCoroutine(ResetScrollPosition(chatPanelScrollRect));
+        yield return new WaitForSeconds(0.5f);
+        displayText.SetActive(false);
     }
 }

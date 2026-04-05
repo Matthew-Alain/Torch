@@ -202,21 +202,21 @@ public class BaseUnit : MonoBehaviour
         return Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT reaction FROM unit_resources WHERE id = {UnitID}"));
     }
 
-    public bool UseReaction()
-    {
-        bool hasReaction = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT reaction FROM unit_resources WHERE id = {UnitID}"));
+    // public bool UseReaction()
+    // {
+    //     bool hasReaction = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT reaction FROM unit_resources WHERE id = {UnitID}"));
 
-        if (hasReaction)
-        {
-            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET reaction = 0 WHERE id = {UnitID}");
-        }
-        else
-        {
-            // Debug.Log("No reaction available");
-        }
+    //     if (hasReaction)
+    //     {
+    //         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET reaction = 0 WHERE id = {UnitID}");
+    //     }
+    //     else
+    //     {
+    //         // Debug.Log("No reaction available");
+    //     }
 
-        return hasReaction;
-    }
+    //     return hasReaction;
+    // }
     
     public int GetResource(string resourceName)
     {
@@ -243,7 +243,7 @@ public class BaseUnit : MonoBehaviour
             return true;
         }
 
-        CombatMenuManager.Instance.DisplayText($"Insufficent resource to use {resourceName}");
+        Debug.Log($"{UnitName} has Insufficent resource to use {resourceName}");
         return false;
     }
 
@@ -291,38 +291,32 @@ public class BaseUnit : MonoBehaviour
         }
     }
 
-    public void TakeDamage(int damage, bool wasCrit)
+    public IEnumerator TakeDamage(int damage, bool wasCrit)
     {
         // Debug.LogWarning("Called TakeDamage()");
 
-        CombatMenuManager menu = CombatMenuManager.Instance;
-        menu.DisplayText($"{UnitName} is taking {damage} damage");
-
-        // yield return new WaitForSeconds(0.5f);
+        yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} is taking {damage} damage"));
 
         int damageRemaining = damage;
         int currentHP = GetCurrentHP();
         int maxHP = GetMaxHP();
         int tempHP = GetTempHP();
 
-
         if (tempHP > 0 && tempHP >= damageRemaining)
         {
             tempHP -= damageRemaining;
-            damageRemaining = 0;
-            menu.DisplayText($"{UnitName} had {GetTempHP()} temp HP, they now have {tempHP}");
+            yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} took {damageRemaining} damage, they have {tempHP} temp HP left"));
+            SetTempHP(tempHP);
+            yield break;
             // Debug.Log($"{UnitName} had {GetTempHP()} temp HP, they now have {tempHP}");
-            // yield return new WaitForSeconds(0.5f);
         }
         else if (tempHP > 0)
         {
             damageRemaining -= tempHP;
-            tempHP = 0;
-            menu.DisplayText($"{UnitName} had {GetTempHP()} temp HP, they now have {tempHP}");
+            yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} lost their {tempHP} temp HP"));
+            SetTempHP(0);
             // Debug.Log($"{UnitName} had {GetTempHP()} temp HP, they now have {tempHP}");
-            // yield return new WaitForSeconds(0.5f);
         }
-        SetTempHP(tempHP);
 
         // Debug.Log($"Current HP: {currentHP}");
         // Debug.Log($"Max HP: {maxHP}");
@@ -334,14 +328,16 @@ public class BaseUnit : MonoBehaviour
             if (damageRemaining < currentHP)
             {
                 currentHP -= damageRemaining;
-                menu.DisplayText($"The attacker dealt {damageRemaining} damage to {UnitName}, they now have {currentHP} HP left.");
+                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} took {damageRemaining} damage, they now have {currentHP} HP left."));
             }
             else
             {
                 if(Faction == Faction.Monster)
                 {
                     // Debug.LogWarning("About to call Die()");
-                    Die();
+                    yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} took {damageRemaining} damage"));
+                    yield return StartCoroutine(Die());
+                    // Debug.LogWarning("Returned from Die()");
                 }
                 else
                 {
@@ -349,13 +345,13 @@ public class BaseUnit : MonoBehaviour
                     currentHP = 0;
                     if(overflowDamage >= maxHP)
                     {
-                        menu.DisplayText($"The attacker dealt {damageRemaining} damage to {UnitName}, which was enough to instantly kill them!");
-                        Die();
+                        yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} took {damageRemaining} damage, which is enough to instantly kill them"));
+                        yield return StartCoroutine(Die());
                     }
                     else
                     {
-                        menu.DisplayText($"The attacker dealt {damageRemaining} damage to {UnitName}, which knocks them unconscious!");
-                        ((BasePC)this).FallUnconscious();
+                        yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} took {damageRemaining} damage"));
+                        yield return StartCoroutine(((BasePC)this).FallUnconscious());
                     }
                 }
             }
@@ -364,16 +360,18 @@ public class BaseUnit : MonoBehaviour
         {
             if (damageRemaining >= maxHP)
             {
-                menu.DisplayText($"The attacker dealt {damageRemaining} damage to {UnitName}, which was enough to instantly kill them!");
-                Die();
+                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} took {damageRemaining} damage, which is enough to instantly kill them"));
+                yield return StartCoroutine(Die());
             }
             else if (wasCrit)
             {
-                ((BasePC)this).FailDeathSave(2);
+                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} was critically hit, they fail 2 death saves"));
+                yield return StartCoroutine(((BasePC)this).FailDeathSave(2));
             }
             else
             {
-                ((BasePC)this).FailDeathSave(1);
+                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} took damage, they fail a death save"));
+                yield return StartCoroutine(((BasePC)this).FailDeathSave(1));
             }
         }
 
@@ -390,7 +388,7 @@ public class BaseUnit : MonoBehaviour
             if (currentHP + amount >= maxHP)
             {
                 currentHP = maxHP;
-                CombatMenuManager.Instance.DisplayText($"You healed {UnitName} to full hit points!");
+                StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} was healed to full hit points (Current HP: {currentHP})"));
                 // Debug.Log($"You healed {UnitName} to full hit points!");
             }
             else
@@ -401,12 +399,10 @@ public class BaseUnit : MonoBehaviour
                 }
 
                 currentHP += amount;
-                CombatMenuManager.Instance.DisplayText($"You healed {UnitName} by {amount} HP!");
+                StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} healed {amount} HP (Current HP: {currentHP})"));
 
                 // Debug.Log($"You healed {UnitName} by {amount} HP!");
             }
-
-            CombatMenuManager.Instance.DisplayText($"{UnitName} now has {currentHP} HP.");
 
             // Debug.Log($"{UnitName} now has {currentHP} HP.");
 
@@ -469,7 +465,6 @@ public class BaseUnit : MonoBehaviour
     
     public int MakeAttackWithStat(string stat)
     {
-        bool result = false;
         int hitBonus = 0;
 
         switch (stat)
@@ -524,12 +519,7 @@ public class BaseUnit : MonoBehaviour
         // return result;
     }
 
-    public void Die()
-    {
-        StartCoroutine(HandleDeath());
-    }
-
-    private IEnumerator HandleDeath()
+    public IEnumerator Die()
     {
         SetCondition("unconscious", true);
         SetCondition("prone", true);
@@ -541,36 +531,43 @@ public class BaseUnit : MonoBehaviour
         // Debug.LogWarning("Called Die()");
         if (Faction == Faction.Monster)
         {
-            CombatMenuManager.Instance.DisplayText($"{UnitName} has been slain!");
-            Destroy(gameObject);
+            // Debug.LogWarning($"{UnitName} is about to die");
+            yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} has been slain!"));
+            // Destroy(gameObject);
 
             // Log("Unit " + unitID + " has been slain!");
         }
         else
         {
-            CombatMenuManager.Instance.DisplayText($"{UnitName} has been killed!");
-
+            yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} has been killed."));
             // LogWarning(characterName + " has been killed!");
         }
 
 
+        // Debug.LogWarning($"Removing {UnitName} from BaseUnits");
         CombatUnitManager.Instance.baseUnits.Remove(this);
 
-
+        // Debug.LogWarning($"Removing {UnitName} from initiative");
         InitiativeTracker.Instance.RemoveFromInitiative(UnitID);
-
-        occupiedTile.EmptyTile();
-
-        CombatUnitManager.Instance.UpdateActivePCList();
-        CombatUnitManager.Instance.UpdateActiveMonsterList();
-        CombatStateManager.Instance.CheckForGameOver();
 
         if (InitiativeTracker.Instance.currentTurnUnit == this)
         {
             // Debug.LogWarning("Unit died on their turn, ending turn");
             EndTurn();
         }
-        yield return null;
+
+        // Debug.LogWarning($"Emptying {UnitName} from tile");
+        occupiedTile.EmptyTile();
+
+        // Debug.LogWarning($"Updating active unit lists");
+        CombatUnitManager.Instance.UpdateActivePCList();
+        CombatUnitManager.Instance.UpdateActiveMonsterList();
+
+        // Debug.LogWarning($"Waiting for gameover");
+        // yield return new WaitForSeconds(0.5f);
+        // Debug.LogWarning($"Checking for gameover");
+        // StartCoroutine(CombatStateManager.Instance.CheckForGameOver());
+        // Debug.Log("Made it to the end of Die()");
     }
 
     public int RollInitiative()

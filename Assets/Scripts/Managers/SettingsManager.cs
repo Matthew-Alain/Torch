@@ -113,6 +113,7 @@ public class SettingsManager : MonoBehaviour
         }
         else
         {
+            StopAllCoroutines();
             SceneManager.LoadScene(0);
             settingsCanvas.SetActive(false);
         }

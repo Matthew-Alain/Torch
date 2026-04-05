@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
 
 public class CombatStateManager : MonoBehaviour
@@ -15,7 +17,14 @@ public class CombatStateManager : MonoBehaviour
     private Func<BaseUnit, (bool, string)> targetValidator;
     private Func<Tile, (bool, string)> tileValidator;
     private Action onReactionComplete;
+    public bool endTurn = false;
     private bool gameOver = false;
+    public bool isSelectingTile;
+    public Tile selectedTile;
+    public bool isSelectingTarget;
+    public BaseUnit selectedTarget;
+    public bool reloadedPreviousSave;
+
 
     void Awake()
     {
@@ -82,10 +91,10 @@ public class CombatStateManager : MonoBehaviour
             //     // StartCoroutine(InitiativeTracker.Instance.StartTurn());
             //     break;
             case GameState.PlayerTurn:
-                CheckForGameOver();
+                StartCoroutine(CheckForGameOver());
                 break;
             case GameState.MovingPC:
-                CombatMenuManager.Instance.DisplayText($"{CombatUnitManager.Instance.SelectedPC.UnitName} is now moving");
+                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{CombatUnitManager.Instance.SelectedPC.UnitName} is now moving"));
                 // Debug.Log("Select the space to move to.");
                 break;
             // case GameState.SelectWeapon:
@@ -114,57 +123,46 @@ public class CombatStateManager : MonoBehaviour
     }
 
 
-    public void StartTargetSelection(
+    public IEnumerator StartTargetSelection(
         TargetType targetType,
         Action<BaseUnit> callback,
         Func<BaseUnit, (bool success, string message)> validator = null
     )
     {
+        isSelectingTarget = true;
+        selectedTarget = null;
+
         onTargetSelected = callback;
         targetValidator = validator;
+
+        // EnableTargetSelectionVisuals(targetType);
 
         switch (targetType)
         {
             case TargetType.Monster:
-                CombatMenuManager.Instance.DisplayText("Select a monster to target");
+                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText("Select a monster to target"));
                 StartCoroutine(ChangeState(GameState.SelectTargetMonster));
                 break;
             case TargetType.PC:
-                CombatMenuManager.Instance.DisplayText("Select a PC to target");
+                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText("Select a PC to target"));
                 StartCoroutine(ChangeState(GameState.SelectTargetPC));
                 break;
             case TargetType.Unit:
-                CombatMenuManager.Instance.DisplayText("Select a unit to target");
+                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText("Select a unit to target"));
                 StartCoroutine(ChangeState(GameState.SelectTargetUnit));
                 break;
         }
+
+        yield return new WaitUntil(() => selectedTarget != null);
+
+        // DisableTargetSelectionVisuals();
+
+        onTargetSelected?.Invoke(selectedTarget);
     }
 
-    public void StartTileSelection(
-        TargetType targetType,
-        Action<Tile> callback,
-        Func<Tile, (bool success, string message)> validator = null
-    )
+    public IEnumerator ConfirmTarget(BaseUnit target)
     {
-        onTileSelected = callback;
-        tileValidator = validator;
-        
-        switch (targetType)
-        {
-            case TargetType.AnyTile:
-                CombatMenuManager.Instance.DisplayText("Select a tile to target");
-                StartCoroutine(ChangeState(GameState.SelectTargetTile));
-                break;
-            case TargetType.EmptyTile:
-                CombatMenuManager.Instance.DisplayText("Select an empty tile to target");
-                StartCoroutine(ChangeState(GameState.SelectTargetEmptyTile));
-                break;
-        }       
-    }
-
-    public void ConfirmTarget(BaseUnit target)
-    {
-        if (onTargetSelected == null) return;
+        if (onTargetSelected == null) yield break;
 
         if (targetValidator != null)
         {
@@ -172,22 +170,59 @@ public class CombatStateManager : MonoBehaviour
 
             if (!result.Item1)
             {
-                CombatMenuManager.Instance.DisplayText(result.Item2);
-                return;
+                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText(result.Item2));
+                yield break;
             }
         }
 
         onTargetSelected.Invoke(target);
 
+        selectedTarget = target;
+
         onTargetSelected = null;
         targetValidator = null;
-        
-        StartCoroutine(ChangeState(GameState.PlayerTurn));
+
+        // yield return StartCoroutine(ChangeState(GameState.PlayerTurn));
     }
 
-    public void ConfirmTile(Tile tile)
+    public IEnumerator StartTileSelection(
+        TargetType targetType,
+        Action<Tile> callback,
+        Func<Tile, (bool success, string message)> validator = null
+    )
     {
-        if (onTileSelected == null) return;
+        isSelectingTile = true;
+        selectedTile = null;
+
+        onTileSelected = callback;
+        tileValidator = validator;
+
+        // EnableTileSelectionVisuals(targetType);
+
+        switch (targetType)
+        {
+            case TargetType.AnyTile:
+                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText("Select a tile to target"));
+                yield return StartCoroutine(ChangeState(GameState.SelectTargetTile));
+                break;
+            case TargetType.EmptyTile:
+                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText("Select an empty tile to target"));
+                yield return StartCoroutine(ChangeState(GameState.SelectTargetEmptyTile));
+                break;
+        }
+
+        yield return new WaitUntil(() => selectedTile != null);
+
+        // DisableTileSelectionVisuals();
+
+        isSelectingTile = false;
+
+        onTileSelected?.Invoke(selectedTile);
+    }
+
+    public IEnumerator ConfirmTile(Tile tile)
+    {
+        if (onTileSelected == null) yield break;
 
         if (tileValidator != null)
         {
@@ -195,25 +230,40 @@ public class CombatStateManager : MonoBehaviour
 
             if (!result.Item1)
             {
-                CombatMenuManager.Instance.DisplayText(result.Item2);
-                return;
+                yield return CombatMenuManager.Instance.DisplayText(result.Item2);
+                yield break;
             }
         }
 
         onTileSelected.Invoke(tile);
 
+        selectedTile = tile;
+
         onTileSelected = null;
         tileValidator = null;
-        
-        StartCoroutine(ChangeState(GameState.PlayerTurn));
     }
+
+    // if (!isSelectingTile)
+    //     yield break;
+
+    // var (isValid, message) = tileValidator?.Invoke(tile) ?? (true, "");
+
+    // if (!isValid)
+    // {
+    //     Debug.Log(message);
+    //     yield break;
+    // }
+
+    // selectedTile = tile;
+
+    // yield return StartCoroutine(ChangeState(GameState.PlayerTurn));
 
     public void RequestReaction(List<MenuOption> options, Action onComplete)
     {
         onReactionComplete = onComplete;
 
         CombatMenuManager.Instance.OpenMenu(() => options);
-        
+
         StartCoroutine(ChangeState(GameState.SelectReaction));
     }
 
@@ -223,8 +273,8 @@ public class CombatStateManager : MonoBehaviour
 
         onReactionComplete?.Invoke();
         onReactionComplete = null;
-        
-        StartCoroutine(ChangeState(GameState.PlayerTurn));
+
+        // StartCoroutine(ChangeState(GameState.PlayerTurn));
     }
 
     public void TryReaction(BaseUnit unit, List<MenuOption> options, Action onComplete)
@@ -240,7 +290,7 @@ public class CombatStateManager : MonoBehaviour
     }
 
 
-    public void CheckForGameOver()
+    public IEnumerator CheckForGameOver()
     {
         bool activePC = false;
 
@@ -267,9 +317,10 @@ public class CombatStateManager : MonoBehaviour
         }
         else
         {
-            return;
+            yield break;
         }
         gameOver = true;
+        StopAllCoroutines();
         SceneManager.LoadScene(0);
         DatabaseManager.Instance.DeleteEncounterDatabase(DatabaseManager.Instance.currentEncounter);
     }
@@ -279,10 +330,11 @@ public class CombatStateManager : MonoBehaviour
     public IEnumerator CombatLoop()
     {
         // Setup phase
+        reloadedPreviousSave = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT in_progress FROM encounters WHERE id = {DatabaseManager.Instance.currentEncounter}"));
         yield return StartCoroutine(ChangeState(GameState.GenerateGrid));
         yield return StartCoroutine(ChangeState(GameState.SpawnPCs));
         yield return StartCoroutine(ChangeState(GameState.SpawnMonsters));
-        yield return StartCoroutine(InitiativeTracker.Instance.RollInitiative());
+        yield return StartCoroutine(InitiativeTracker.Instance.RollInitiative(reloadedPreviousSave));
 
         while (true)
         {
@@ -302,10 +354,15 @@ public class CombatStateManager : MonoBehaviour
 
     private IEnumerator RunTurn(BaseUnit unit)
     {
-        CheckForGameOver();
+        StartCoroutine(CheckForGameOver());
 
-        if (!unit.IsActive())
+        if (unit.GetCondition("dead") || (unit.GetCurrentHP() <= 0 && !unit.GetCondition("dying")))
             yield break;
+
+        StartCoroutine(CombatMenuManager.Instance.DisplayText($"Current turn: {unit.UnitName}"));
+
+        if(!reloadedPreviousSave)
+            InitiativeTracker.Instance.currentTurnUnit.RefreshStartOfTurnResources();
 
         if (unit.Faction == Faction.PC)
         {
@@ -326,7 +383,10 @@ public class CombatStateManager : MonoBehaviour
             yield return StartCoroutine(pc.MakeDeathSave());
 
             if (pc.GetCurrentHP() == 0)
+            {
+                CombatUnitManager.Instance.SetSelectedPC(null);
                 yield break;
+            }
         }
 
         bool turnComplete = false;
@@ -382,9 +442,9 @@ public class CombatStateManager : MonoBehaviour
 
     public IEnumerator EndTurnFlow()
     {
-        InitiativeTracker.Instance.currentTurnUnit.RefreshStartOfTurnResources();
-
         CombatUnitManager.Instance.ResetOncePerTurnResources();
+
+        reloadedPreviousSave = false;
 
         InitiativeTracker.Instance.AdvanceTurn();
 
@@ -409,7 +469,6 @@ public static class TurnUtility
         return unit == null || !unit.IsActive();
     }
 }
-
 
 public enum GameState
 {

@@ -66,7 +66,7 @@ public class DiceRoller
             // Debug.Log("On your d20, you rolled: " + dieRoll);
         }
         
-        CombatMenuManager.Instance.DisplayText($"You rolled {dieRoll}");
+        // CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"You rolled {dieRoll}"));
 
         //Check for automatic rerolls (halfling luck)
 

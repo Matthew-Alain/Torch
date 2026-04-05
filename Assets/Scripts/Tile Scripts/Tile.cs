@@ -78,7 +78,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
             if (movementCost > unitSpeed || unitSpeed <= 0)
             {
-                CombatMenuManager.Instance.DisplayText($"{movingUnit.UnitName} does not have enough movement to move to this tile");
+                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{movingUnit.UnitName} does not have enough movement to move to this tile"));
                 moving = false;
             }
             else
@@ -88,8 +88,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 DatabaseManager.Instance.ExecuteNonQuery(
                     $"UPDATE unit_resources SET current_speed = {newSpeed} WHERE id = {movingUnit.UnitID}"
                 );
-
-                CombatMenuManager.Instance.DisplayText($"{movingUnit.UnitName} has {newSpeed} feet of movement left");
+                // yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{movingUnit.UnitName} has {newSpeed} feet of movement left"));
                 // Log("Unit has " + newSpeed + " feet of movement left.");
             }
 
@@ -99,7 +98,8 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         if (moving)
         {
             yield return StartCoroutine(SetUnit(movingUnit)); //Set this tile's unit as the selected unit
-            yield return new WaitForSeconds(0.5f);
+            if(movingUnit.Faction == Faction.Monster)
+                yield return new WaitForSeconds(0.5f);
         }
     }
 
@@ -170,7 +170,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                     {
                         if(OccupiedUnit.GetCondition("dying") || OccupiedUnit.GetCondition("unconscious") || OccupiedUnit.GetCondition("dead"))
                         {
-                            menu.DisplayText($"{OccupiedUnit.UnitName} is unable to act this turn.");
+                            StartCoroutine(menu.DisplayText($"{OccupiedUnit.UnitName} is unable to act this turn."));
                             return;
                         }
 
@@ -199,7 +199,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 }
                 else
                 {
-                    menu.DisplayText("That tile is not walkable");
+                    StartCoroutine(menu.DisplayText("That tile is not walkable"));
                 }
                 break;
 
@@ -207,48 +207,48 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             case GameState.SelectTargetMonster:
                 if (OccupiedUnit != null && OccupiedUnit.Faction == Faction.Monster)
                 {
-                    CombatStateManager.Instance.ConfirmTarget(OccupiedUnit);
+                    StartCoroutine(CombatStateManager.Instance.ConfirmTarget(OccupiedUnit));
                 }
                 else
                 {
-                    menu.DisplayText("You are only allowed to select monsters");
+                    StartCoroutine(menu.DisplayText("You are only allowed to select monsters"));
                 }
                 break;
             
             case GameState.SelectTargetPC:
                 if (OccupiedUnit != null && OccupiedUnit.Faction == Faction.PC)
                 {
-                    CombatStateManager.Instance.ConfirmTarget(OccupiedUnit);
+                    StartCoroutine(CombatStateManager.Instance.ConfirmTarget(OccupiedUnit));
                 }
                 else
                 {
-                    menu.DisplayText("You are only allowed to select PCs");
+                    StartCoroutine(menu.DisplayText("You are only allowed to select PCs"));
                 }
                 break;
             
             case GameState.SelectTargetUnit:
                 if (OccupiedUnit != null)
                 {
-                    CombatStateManager.Instance.ConfirmTarget(OccupiedUnit);
+                    StartCoroutine(CombatStateManager.Instance.ConfirmTarget(OccupiedUnit));
                 }
                 else
                 {
-                    menu.DisplayText("There's no unit there that tile");
+                    StartCoroutine(menu.DisplayText("There's no unit there that tile"));
                 }
                 break;
             
             case GameState.SelectTargetTile:
-                CombatStateManager.Instance.ConfirmTile(this);
+                StartCoroutine(CombatStateManager.Instance.ConfirmTile(this));
                 break;
 
             case GameState.SelectTargetEmptyTile:
                 if (OccupiedUnit == null)
                 {
-                    CombatStateManager.Instance.ConfirmTile(this);
+                    StartCoroutine(CombatStateManager.Instance.ConfirmTile(this));
                 }
                 else
                 {
-                    menu.DisplayText("You must select an empty tile");
+                    StartCoroutine(menu.DisplayText("You must select an empty tile"));
                 }
                 break;
             
@@ -262,7 +262,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     {
         CombatMenuManager.Instance.CloseAllMenus();
         // CombatUnitManager.Instance.SetSelectedPC(null);
-        StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.PlayerTurn));
+        // StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.PlayerTurn));
     }
 
     private void SelectPC()

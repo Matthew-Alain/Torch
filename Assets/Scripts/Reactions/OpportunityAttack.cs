@@ -31,11 +31,19 @@ public class OpportunityAttack : Reaction<MoveContext>
 
     public override void Execute(MoveContext context, BaseUnit owner, Action onComplete)
     {
-        owner.UseReaction();
+        // owner.UseResource("reaction");
         // UnityEngine.Debug.LogWarning("About to call TakeDamage()");
-        context.TriggeringUnit.TakeDamage(5, false);
+        if(owner.Faction == Faction.PC)
+        {
+            CombatActions.AttackWithWeapon(owner, context.TriggeringUnit, ((BasePC)owner).GetMainhandID());
+        }
+        else
+        {
+            CombatActions.AttackWithWeapon(owner, context.TriggeringUnit, 0);
+        }
+        // .TakeDamage(5, false);
         // UnityEngine.Debug.Log($"{context.TriggeringUnit} takes 5 damage");
-        
+
         // UnityEngine.Debug.LogWarning("Unit took damage, calling OnComplete");
         onComplete?.Invoke();
     }

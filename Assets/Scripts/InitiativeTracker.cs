@@ -32,9 +32,9 @@ public class InitiativeTracker: MonoBehaviour
         // DontDestroyOnLoad(gameObject);
     }
 
-    public IEnumerator RollInitiative()
+    public IEnumerator RollInitiative(bool reloadedPreviousSave)
     {
-        if (!Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT in_progress FROM encounters WHERE id = {DatabaseManager.Instance.currentEncounter}")))
+        if (!reloadedPreviousSave)
         {
             foreach (BaseUnit unit in CombatUnitManager.Instance.baseUnits)
             {
@@ -49,13 +49,13 @@ public class InitiativeTracker: MonoBehaviour
             for (int i = 0; i < initiativeRolls.Count; i++)
             {
                 // Debug.Log(initiativeRolls[i].Item1.UnitName);
-
                 DatabaseManager.Instance.ExecuteNonQuery($"INSERT INTO initiative_order (unit_id, turn_order) VALUES ({initiativeRolls[i].Item1.UnitID}, {i})");
             }
 
             DatabaseManager.Instance.ExecuteNonQuery($"UPDATE encounters SET in_progress = 1 WHERE id = {DatabaseManager.Instance.currentEncounter}");
+            
+            yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"The turn order is: {string.Join(", ", initiativeRolls)}"));
         }
-
         currentTurnUnit = GetCurrentUnit();
 
         yield return null;

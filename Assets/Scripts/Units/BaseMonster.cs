@@ -195,7 +195,7 @@ public class BaseMonster : BaseUnit
         {
             BaseUnit pc = CombatUnitManager.Instance.GetUnitByID(CombatUnitManager.Instance.activePCIDs[i]);
 
-            if (pc.GetCondition("dying") || pc.GetCondition("dead") || pc.GetCondition("unconscious"))
+            if (!pc.IsActive())
             {
                 // Debug.Log($"{potentialTarget.UnitName} is dying or dead.");
                 continue;

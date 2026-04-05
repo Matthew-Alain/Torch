@@ -237,7 +237,6 @@ public static class RangeHelper
     {
         return Math.Max(GetMeleeRangeInTiles(weaponID), Math.Max(GetMeleeRangeInTiles(weaponID), GetMeleeRangeInTiles(weaponID)));
     }
-    
 }
 
 public static class AOEHelper
