@@ -8,6 +8,8 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 {
     [SerializeField] protected SpriteRenderer rend;     //Derived tiles can now access
     [SerializeField] private GameObject highlight;
+    [SerializeField] private GameObject validHighlight;
+    [SerializeField] private GameObject invalidHighlight;
     public bool isWalkable;
     public bool isDifficult;
     public bool isSwimmable;
@@ -24,6 +26,62 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         tileID = id;
         tileX = x;
         tileY = y;
+    }
+
+    public void ShowValidTargeting(TargetType type)
+    {
+        switch (type)
+        {
+            case TargetType.Unit:
+                if (OccupiedUnit != null)
+                {
+                    validHighlight.SetActive(true);
+                }
+                else
+                {
+                    invalidHighlight.SetActive(true);
+                }
+                break;
+            case TargetType.Monster:
+                if (OccupiedUnit != null && OccupiedUnit.Faction == Faction.Monster)
+                {
+                    validHighlight.SetActive(true);
+                }
+                else
+                {
+                    invalidHighlight.SetActive(true);
+                }
+                break;
+            case TargetType.PC:
+                if (OccupiedUnit != null && OccupiedUnit.Faction == Faction.PC)
+                {
+                    validHighlight.SetActive(true);
+                }
+                else
+                {
+                    invalidHighlight.SetActive(true);
+                }
+                break;
+            case TargetType.AnyTile:
+                validHighlight.SetActive(true);
+                break;
+            case TargetType.EmptyTile:
+                if (OccupiedUnit == null)
+                {
+                    validHighlight.SetActive(true);
+                }
+                else
+                {
+                    invalidHighlight.SetActive(true);
+                }
+                break;
+        }
+    }
+
+    public void HideValidTargeting()
+    {
+        validHighlight.SetActive(false);
+        invalidHighlight.SetActive(false);
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -207,7 +265,8 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             case GameState.SelectTargetMonster:
                 if (OccupiedUnit != null && OccupiedUnit.Faction == Faction.Monster)
                 {
-                    StartCoroutine(CombatStateManager.Instance.ConfirmTarget(OccupiedUnit));
+                    // StartCoroutine(CombatStateManager.Instance.ConfirmTarget(OccupiedUnit));
+                    StartCoroutine(CombatStateManager.Instance.ConfirmTileTargetSelection(this));
                 }
                 else
                 {
@@ -218,7 +277,8 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             case GameState.SelectTargetPC:
                 if (OccupiedUnit != null && OccupiedUnit.Faction == Faction.PC)
                 {
-                    StartCoroutine(CombatStateManager.Instance.ConfirmTarget(OccupiedUnit));
+                    // StartCoroutine(CombatStateManager.Instance.ConfirmTarget(OccupiedUnit));
+                    StartCoroutine(CombatStateManager.Instance.ConfirmTileTargetSelection(this));
                 }
                 else
                 {
@@ -229,7 +289,8 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             case GameState.SelectTargetUnit:
                 if (OccupiedUnit != null)
                 {
-                    StartCoroutine(CombatStateManager.Instance.ConfirmTarget(OccupiedUnit));
+                    // StartCoroutine(CombatStateManager.Instance.ConfirmTarget(OccupiedUnit));
+                    StartCoroutine(CombatStateManager.Instance.ConfirmTileTargetSelection(this));
                 }
                 else
                 {
@@ -238,13 +299,15 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 break;
             
             case GameState.SelectTargetTile:
-                StartCoroutine(CombatStateManager.Instance.ConfirmTile(this));
+                // StartCoroutine(CombatStateManager.Instance.ConfirmTile(this));
+                StartCoroutine(CombatStateManager.Instance.ConfirmTileTargetSelection(this));
                 break;
 
             case GameState.SelectTargetEmptyTile:
                 if (OccupiedUnit == null)
                 {
-                    StartCoroutine(CombatStateManager.Instance.ConfirmTile(this));
+                    // StartCoroutine(CombatStateManager.Instance.ConfirmTile(this));
+                    StartCoroutine(CombatStateManager.Instance.ConfirmTileTargetSelection(this));
                 }
                 else
                 {

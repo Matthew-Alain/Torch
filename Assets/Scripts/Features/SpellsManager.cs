@@ -73,7 +73,7 @@ public class SpellsManager : MonoBehaviour
             case "TargetType.EmptyTile":
                 return TargetType.EmptyTile;
             default:
-                UnityEngine.Debug.LogError("Invalid targetype for spell id " + id);
+                Debug.LogError("Invalid targetype for spell id " + id);
                 return TargetType.AnyTile;
         }
     }
@@ -144,37 +144,44 @@ public class SpellsManager : MonoBehaviour
 
     public static int GetDiceNumber(int id)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dice_number FROM spells WHERE id = {id}"));
+        var dice = DatabaseManager.Instance.ExecuteScalar($"SELECT dice_number FROM spells WHERE id = {id}");
+        if (dice != DBNull.Value)
+            return Convert.ToInt32(dice);
+        else
+            return 0;
     }
 
     public static int GetDiceSize(int id)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dice_size FROM spells WHERE id = {id}"));
+        var size = DatabaseManager.Instance.ExecuteScalar($"SELECT dice_size FROM spells WHERE id = {id}");
+        if (size != DBNull.Value)
+            return Convert.ToInt32(size);
+        else
+            return 0;
     }
 
     public static bool DoesHalfOnSave(int id)
     {
-        return Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT half_on_save FROM spells WHERE id = {id}"));
-    }
-
-
-
-    public static void AcidSplash(BaseUnit caster, string spellcastingAbility)
-    {
-
-    }
-
-    public static void FireBolt(BaseUnit caster, string spellcastingAbility)
-    {
-
-    }
-
-    public static void CureWounds(BaseUnit caster, int spellLevel, string spellcastingAbility)
-    {
-
+        var dice = DatabaseManager.Instance.ExecuteScalar($"SELECT half_on_save FROM spells WHERE id = {id}");
+        if (dice != DBNull.Value)
+            return Convert.ToBoolean(dice);
+        else
+            return false;
     }
 
     public static IEnumerator CastSpell(BaseUnit caster, int id, int spellLevel, string spellcastingAbility)
+    {
+        string spellType = "tile";
+
+
+        if (spellType == "tile")
+            yield return Instance.StartCoroutine(CastTileSpell(caster, id, spellLevel, spellcastingAbility));
+        if (spellType == "target")
+            yield return Instance.StartCoroutine(CastTileSpell(caster, id, spellLevel, spellcastingAbility));
+
+    }
+    
+    public static IEnumerator CastTileSpell(BaseUnit caster, int id, int spellLevel, string spellcastingAbility)
     {
         //TODO: Add damage scaling based on spell level, and multi-targeting
 
@@ -182,27 +189,62 @@ public class SpellsManager : MonoBehaviour
         int spellAttack = caster.GetAttackBonusForStat(spellcastingAbility);
 
         Tile chosenTile = null;
+        BaseUnit chosenTarget = null;
+        List<BaseUnit> targets = new();
 
-        yield return CombatStateManager.Instance.StartTileSelection(
-            GetTargetType(id),
-            (tile) => chosenTile = tile,
-            (tile) =>
-            {
-                int maxRange = GetRange(id);
+        if(GetTargetType(id) == TargetType.AnyTile || GetTargetType(id) == TargetType.EmptyTile)
+        {
+            yield return CombatStateManager.Instance.StartTileSelection(
+                GetTargetType(id),
+                (tile) => chosenTile = tile,
+                (tile) =>
+                {
+                    int maxRange = GetRange(id);
 
-                int distance = caster.occupiedTile.CheckDistanceInTiles(tile);
+                    int distance = caster.occupiedTile.CheckDistanceInTiles(tile);
 
-                if (distance > maxRange)
-                    return (false, "That target is out of range");
+                    if (distance > maxRange)
+                        return (false, "That target is out of range");
 
-                if (caster.GetResource(GetCastTime(id)) <= 0)
-                    return (false, "Insufficient actions");
+                    if (caster.GetResource(GetCastTime(id)) <= 0)
+                        return (false, "Insufficient actions");
 
-                return (true, "");
-            }
-        );
+                    return (true, "");
+                }
+            );
 
-        var targets = AOEHelper.GetUnitsInRadius(chosenTile, GetRadius(id));
+            if(chosenTile == null)
+                yield break;
+
+            targets = AOEHelper.GetUnitsInRadius(chosenTile, GetRadius(id));
+        }
+        else
+        {
+            yield return CombatStateManager.Instance.StartTargetSelection(
+                GetTargetType(id),
+                (target) => chosenTarget = target,
+                (target) =>
+                {
+                    int maxRange = GetRange(id);
+
+                    int distance = caster.occupiedTile.CheckDistanceInTiles(target.occupiedTile);
+
+                    if (distance > maxRange)
+                        return (false, "That target is out of range");
+
+                    if (caster.GetResource(GetCastTime(id)) <= 0)
+                        return (false, "Insufficient actions");
+
+                    return (true, "");
+                }
+            );
+
+            if(chosenTarget == null)
+                yield break;
+
+            targets = AOEHelper.GetUnitsInRadius(chosenTarget.occupiedTile, GetRadius(id));
+        }
+
         // .Where(u => u.Faction == Faction.Monster).ToList(); //If it only affects enemies
 
         // Debug.Log("Target tile is is " + chosenTile.tileX + ", "+chosenTile.tileY);
@@ -249,12 +291,14 @@ public class SpellsManager : MonoBehaviour
                 if (roll == 200)
                 {
                     yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{caster} rolled a natural 20 to hit {target.UnitName}"));
-                    yield return Instance.StartCoroutine(target.TakeDamage(damage, true));
+                    if(damage > 0)
+                        yield return Instance.StartCoroutine(target.TakeDamage(damage*2, true)); //TODO: Currently this doubles all damage, not just dice
                 }
                 else if (roll >= target.GetAC())
                 {
                     yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{caster} rolled {roll} to hit {target.UnitName}, which hits"));
-                    yield return Instance.StartCoroutine(target.TakeDamage(damage, false));
+                    if(damage > 0)
+                        yield return Instance.StartCoroutine(target.TakeDamage(damage, false));
                 }
                 else
                 {

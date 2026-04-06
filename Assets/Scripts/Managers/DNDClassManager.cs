@@ -332,7 +332,17 @@ public class DNDClassManager : MonoBehaviour
                         int featureScene = Convert.ToInt32(sceneToLoad);
                         btnNextScene.gameObject.SetActive(true);
                         btnNextScene.onClick.RemoveAllListeners();
-                        btnNextScene.onClick.AddListener(() => SceneManager.LoadScene(featureScene));
+                        btnNextScene.onClick.AddListener(() => {
+                            SaveCharacter();
+                            if (featureName.text == "Spellcasting")
+                            {
+                                if(rowClass == 4 || rowClass == 8)
+                                    DatabaseManager.Instance.spellListToEdit = 11;
+                                else
+                                    DatabaseManager.Instance.spellListToEdit = rowClass;
+                            }
+                            SceneManager.LoadScene(featureScene);
+                        });
                     }
                     else
                     {
@@ -382,6 +392,8 @@ public class DNDClassManager : MonoBehaviour
             allLevels[i] = 0;
 
             for(int j = 0; j < classIDs.Count; j++){
+                // Debug.Log($"Checking {i}: class {j} is {classIDs[j]}");
+
                 if(i == classIDs[j]){
                     allLevels[i] += 1;
                 }

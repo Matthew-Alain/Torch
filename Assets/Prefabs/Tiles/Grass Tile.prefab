@@ -96,7 +96,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rend: {fileID: 3927935595944268705}
   highlight: {fileID: 404980462921528550}
+  validHighlight: {fileID: 4166099416112873555}
+  invalidHighlight: {fileID: 3917445127666044947}
   isWalkable: 1
+  isDifficult: 0
+  isSwimmable: 0
+  isClimbable: 0
   TileName: Grass
   tileEncounter: 0
   tileID: 0
@@ -105,8 +110,18 @@ MonoBehaviour:
   OccupiedUnit: {fileID: 0}
   baseColour: {r: 0.24476346, g: 0.6509434, b: 0.21800464, a: 1}
   offsetColour: {r: 0.2868701, g: 0.754717, b: 0.25987896, a: 1}
+--- !u!1 &3917445127666044947 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 91109095362844043, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+  m_PrefabInstance: {fileID: 3971647843914368408}
+  m_PrefabAsset: {fileID: 0}
 --- !u!212 &3927935595944268705 stripped
 SpriteRenderer:
   m_CorrespondingSourceObject: {fileID: 116236206754797113, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+  m_PrefabInstance: {fileID: 3971647843914368408}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &4166099416112873555 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1067025402614547915, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
   m_PrefabInstance: {fileID: 3971647843914368408}
   m_PrefabAsset: {fileID: 0}

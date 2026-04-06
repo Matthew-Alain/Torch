@@ -117,6 +117,8 @@ public class CombatMenuManager : MonoBehaviour
 
     public void CloseMenu()
     {
+        CombatStateManager.Instance.CancelSelection();
+        
         if (menuStack.Count > 1)
         {
             menuStack.Pop();

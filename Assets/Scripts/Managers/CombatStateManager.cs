@@ -24,7 +24,7 @@ public class CombatStateManager : MonoBehaviour
     public bool isSelectingTarget;
     public BaseUnit selectedTarget;
     public bool reloadedPreviousSave;
-
+    public bool cancelSelection = false;
 
     void Awake()
     {
@@ -122,6 +122,13 @@ public class CombatStateManager : MonoBehaviour
 
     }
 
+    public void CancelSelection()
+    {
+        if (!isSelectingTarget && !isSelectingTile)
+            return;
+
+        cancelSelection = true;
+    }
 
     public IEnumerator StartTargetSelection(
         TargetType targetType,
@@ -131,11 +138,12 @@ public class CombatStateManager : MonoBehaviour
     {
         isSelectingTarget = true;
         selectedTarget = null;
+        cancelSelection = false;
 
         onTargetSelected = callback;
         targetValidator = validator;
 
-        // EnableTargetSelectionVisuals(targetType);
+        EnableSelectionVisuals(targetType);
 
         switch (targetType)
         {
@@ -153,36 +161,15 @@ public class CombatStateManager : MonoBehaviour
                 break;
         }
 
-        yield return new WaitUntil(() => selectedTarget != null);
+        yield return new WaitUntil(() => selectedTarget != null || cancelSelection);
 
-        // DisableTargetSelectionVisuals();
+        isSelectingTarget = false;
+        DisableSelectionVisuals();
+
+        if (cancelSelection)
+            yield break;
 
         onTargetSelected?.Invoke(selectedTarget);
-    }
-
-    public IEnumerator ConfirmTarget(BaseUnit target)
-    {
-        if (onTargetSelected == null) yield break;
-
-        if (targetValidator != null)
-        {
-            var result = targetValidator(target);
-
-            if (!result.Item1)
-            {
-                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText(result.Item2));
-                yield break;
-            }
-        }
-
-        onTargetSelected.Invoke(target);
-
-        selectedTarget = target;
-
-        onTargetSelected = null;
-        targetValidator = null;
-
-        // yield return StartCoroutine(ChangeState(GameState.PlayerTurn));
     }
 
     public IEnumerator StartTileSelection(
@@ -193,11 +180,12 @@ public class CombatStateManager : MonoBehaviour
     {
         isSelectingTile = true;
         selectedTile = null;
+        cancelSelection = false;
 
         onTileSelected = callback;
         tileValidator = validator;
 
-        // EnableTileSelectionVisuals(targetType);
+        EnableSelectionVisuals(targetType);
 
         switch (targetType)
         {
@@ -211,52 +199,126 @@ public class CombatStateManager : MonoBehaviour
                 break;
         }
 
-        yield return new WaitUntil(() => selectedTile != null);
-
-        // DisableTileSelectionVisuals();
+        yield return new WaitUntil(() => selectedTile != null || cancelSelection);
 
         isSelectingTile = false;
+        DisableSelectionVisuals();
+
+        if (cancelSelection)
+            yield break;
 
         onTileSelected?.Invoke(selectedTile);
     }
 
-    public IEnumerator ConfirmTile(Tile tile)
+    public IEnumerator ConfirmTileTargetSelection(Tile tile)
     {
-        if (onTileSelected == null) yield break;
-
-        if (tileValidator != null)
+        if (GameState == GameState.SelectTargetTile || GameState == GameState.SelectTargetEmptyTile)
         {
-            var result = tileValidator(tile);
-
-            if (!result.Item1)
+            if (tileValidator != null)
             {
-                yield return CombatMenuManager.Instance.DisplayText(result.Item2);
-                yield break;
+                var result = tileValidator(tile);
+
+                if (!result.Item1)
+                {
+                    yield return StartCoroutine(CombatMenuManager.Instance.DisplayText(result.Item2));
+                    yield break;
+                }
             }
+
+            onTileSelected.Invoke(tile);
+            selectedTile = tile;
+            onTileSelected = null;
+            tileValidator = null;
         }
+        else
+        {
+            BaseUnit target = tile.OccupiedUnit;
 
-        onTileSelected.Invoke(tile);
+            if (onTargetSelected == null && onTileSelected == null)
+                yield break;
 
-        selectedTile = tile;
+            if (targetValidator != null)
+            {
+                var result = targetValidator(target);
 
-        onTileSelected = null;
-        tileValidator = null;
+                if (!result.Item1)
+                {
+                    yield return StartCoroutine(CombatMenuManager.Instance.DisplayText(result.Item2));
+                    yield break;
+                }
+            }
+
+            onTargetSelected.Invoke(target);
+            selectedTarget = target;
+            onTargetSelected = null;
+            targetValidator = null;
+        }
     }
 
-    // if (!isSelectingTile)
-    //     yield break;
-
-    // var (isValid, message) = tileValidator?.Invoke(tile) ?? (true, "");
-
-    // if (!isValid)
+    // public IEnumerator ConfirmTarget(BaseUnit target)
     // {
-    //     Debug.Log(message);
-    //     yield break;
+    //     if (onTargetSelected == null) yield break;
+
+    //     if (targetValidator != null)
+    //     {
+    //         var result = targetValidator(target);
+
+    //         if (!result.Item1)
+    //         {
+    //             yield return StartCoroutine(CombatMenuManager.Instance.DisplayText(result.Item2));
+    //             yield break;
+    //         }
+    //     }
+
+    //     onTargetSelected.Invoke(target);
+
+    //     selectedTarget = target;
+
+    //     onTargetSelected = null;
+    //     targetValidator = null;
+
+    //     // yield return StartCoroutine(ChangeState(GameState.PlayerTurn));
     // }
 
-    // selectedTile = tile;
+    // public IEnumerator ConfirmTile(Tile tile)
+    // {
+    //     if (onTileSelected == null) yield break;
 
-    // yield return StartCoroutine(ChangeState(GameState.PlayerTurn));
+    //     if (tileValidator != null)
+    //     {
+    //         var result = tileValidator(tile);
+
+    //         if (!result.Item1)
+    //         {
+    //             yield return StartCoroutine(CombatMenuManager.Instance.DisplayText(result.Item2));
+    //             yield break;
+    //         }
+    //     }
+
+    //     onTileSelected.Invoke(tile);
+
+    //     selectedTile = tile;
+
+    //     onTileSelected = null;
+    //     tileValidator = null;
+    // }
+
+    public void EnableSelectionVisuals(TargetType type)
+    {
+        foreach (Tile tile in CombatGridManager.Instance.tilesList)
+        {
+            tile.ShowValidTargeting(type);
+        }
+    }
+    
+    public void DisableSelectionVisuals()
+    {
+        foreach (Tile tile in CombatGridManager.Instance.tilesList)
+        {
+            tile.HideValidTargeting();
+        }
+    }
+
 
     public void RequestReaction(List<MenuOption> options, Action onComplete)
     {

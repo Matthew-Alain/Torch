@@ -77,6 +77,16 @@ SpriteRenderer:
   m_CorrespondingSourceObject: {fileID: 116236206754797113, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
   m_PrefabInstance: {fileID: 210191389186198011}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &263760509719993456 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 91109095362844043, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+  m_PrefabInstance: {fileID: 210191389186198011}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &874940806558026800 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1067025402614547915, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+  m_PrefabInstance: {fileID: 210191389186198011}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &3149613797308328917 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2981122351337398830, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
@@ -96,6 +106,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WaterTile
   rend: {fileID: 249470129096794050}
   highlight: {fileID: 3488698487759272069}
+  validHighlight: {fileID: 874940806558026800}
+  invalidHighlight: {fileID: 263760509719993456}
   isWalkable: 1
   isDifficult: 1
   isSwimmable: 1

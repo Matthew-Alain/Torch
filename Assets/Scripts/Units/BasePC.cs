@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class BasePC : BaseUnit
@@ -87,9 +88,29 @@ public class BasePC : BaseUnit
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT warlock_level FROM saved_pcs WHERE id = {UnitID}"));
     }
 
-    public int Wizardevel()
+    public int WizardLevel()
     {
         return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT wizard_level FROM saved_pcs WHERE id = {UnitID}"));
+    }
+
+    public int GetClassLevelFromID(int id)
+    {
+        return id switch
+        {
+            0 => BarbarianLevel(),
+            1 => BardLevel(),
+            2 => ClericLevel(),
+            3 => DruidLevel(),
+            4 => FighterLevel(),
+            5 => MonkLevel(),
+            6 => PaladinLevel(),
+            7 => RangerLevel(),
+            8 => RogueLevel(),
+            9 => SorcererLevel(),
+            10 => WarlockLevel(),
+            11 => WizardLevel(),
+            _ => 0,
+        };
     }
 
     public int GetSubclass()
@@ -136,19 +157,20 @@ public class BasePC : BaseUnit
     {
         int casterLevel = 0;
 
-        casterLevel += BardLevel() + ClericLevel() + DruidLevel() + SorcererLevel() + Wizardevel();
-        casterLevel += (int)Math.Ceiling((decimal)(PaladinLevel() / 2));
-        casterLevel += (int)Math.Ceiling((decimal)(RangerLevel() / 2));
+        casterLevel += BardLevel() + ClericLevel() + DruidLevel() + SorcererLevel() + WizardLevel();
+        casterLevel += (int)Math.Ceiling((float)(PaladinLevel() / 2f));
+        casterLevel += (int)Math.Ceiling((float)(RangerLevel() / 2f));
 
         if (FighterLevel() >= 3 && GetSubclass() == 2)
         {
-            casterLevel += (int)Math.Floor((decimal)(FighterLevel() / 3));
+            casterLevel += (int)Math.Ceiling((float)(FighterLevel() / 3f));
         }
 
         if (RogueLevel() >= 3 && GetSubclass() == 0)
         {
-            casterLevel += (int)Math.Floor((decimal)(RogueLevel() / 3));
+            casterLevel += (int)Math.Ceiling((float)(RogueLevel() / 3f));
         }
+        // Debug.Log("Caster Level: " + casterLevel);
 
         return casterLevel;
     }
@@ -795,10 +817,11 @@ public class BasePC : BaseUnit
                     int spellID = Convert.ToInt32(reader["spell_id"]);
                     string spellcastingAbility = Convert.ToString(reader["spellcasting_ability"]);
 
-                    menu.Add(new MenuOption(SpellsManager.GetName(spellID), () => StartCoroutine(SpellsManager.CastSpell(this, spellID, spellLevel, spellcastingAbility)),
+                    menu.Add(new MenuOption($"{SpellsManager.GetName(spellID)}",
+                        () => StartCoroutine(SpellsManager.CastSpell(this, spellID, spellLevel, spellcastingAbility)),
                         () => true,
                         () => GetResource(SpellsManager.GetCastTime(spellID)) > 0));
-                }     
+                }
             });
         }
         else
@@ -813,36 +836,12 @@ public class BasePC : BaseUnit
                     int spellID = Convert.ToInt32(reader["spell_id"]);
                     string spellcastingAbility = Convert.ToString(reader["spellcasting_ability"]);
 
-                    menu.Add(new MenuOption(SpellsManager.GetName(spellID), () => StartCoroutine(SpellsManager.CastSpell(this, spellID, spellLevel, spellcastingAbility)),
+                    menu.Add(new MenuOption($"{SpellsManager.GetName(spellID)}",
+                        () => StartCoroutine(SpellsManager.CastSpell(this, spellID, spellLevel, spellcastingAbility)),
                         () => true,
                         () => GetResource(SpellsManager.GetCastTime(spellID)) > 0));
                 }
             });
         }
     }
-
-    // public void PopulateCantrips(List<MenuOption> menu)
-    // {
-    //     bool hasSpells = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT COUNT(*) FROM pc_spells WHERE unit_id = {UnitID}")) > 0;
-
-    //     if (!hasSpells)
-    //         return;
-
-    //     DatabaseManager.Instance.ExecuteReader(
-    //         $"SELECT * FROM pc_spells WHERE unit_id = {UnitID}",
-    //         reader =>
-    //         {
-    //             int spellID = Convert.ToInt32(reader["spell_id"]);
-    //             string spellcastingAbility = Convert.ToString(reader["spellcasting_ability"]);
-
-    //             menu.Add(new MenuOption(Spells.GetName(spellID), () => Spells.CastSpell(spellID, this),
-    //                 () => true,
-    //                 () => GetResource(Spells.GetCastTime(spellID)) > 0));
-    //         }
-    //     );
-    // }
-        // //Fireball
-        // menu.Add(new MenuOption($"Fireball", () => Spells.Fireball(this),
-        //     () => Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT fireball FROM pc_spell_list WHERE id = {UnitID}")),
-        //     () => GetResource("major_action") > 0 || GetResource("level_3_spell_slots") > 0));
 }

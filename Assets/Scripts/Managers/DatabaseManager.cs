@@ -19,6 +19,7 @@ public class DatabaseManager : MonoBehaviour
     public BasePC lastPCEdited;
     public int lastScene;
     public int currentEncounter;
+    public int spellListToEdit;
 
     void Awake()
     {
@@ -219,15 +220,44 @@ public class DatabaseManager : MonoBehaviour
         }
     }
 
-}
-
-public static class UnitIDGenerator
-{
-    private static int currentID = 0;
-
-    public static int GetNextID()
+    public static string GetClassNameFromID(int id)
     {
-        currentID++;
-        return currentID;
+        return id switch
+        {
+            0 => "Barbarian",
+            1 => "Bard",
+            2 => "Cleric",
+            3 => "Druid",
+            4 => "Fighter",
+            5 => "Monk",
+            6 => "Paladin",
+            7 => "Ranger",
+            8 => "Rogue",
+            9 => "Sorcerer",
+            10 => "Warlock",
+            11 => "Wizard",
+            _ => "Error",
+        };
     }
+    
+    public static string GetSpellcastingAbilityFromID(int id)
+    {
+        return id switch
+        {
+            0 => "Barbarian has no casting stat",
+            1 => "CHA",
+            2 => "WIS",
+            3 => "WIS",
+            4 => "INT",
+            5 => "Monk has no casting stat",
+            6 => "CHA",
+            7 => "WIS",
+            8 => "INT",
+            9 => "CHA",
+            10 =>"CHA", 
+            11 =>"INT", 
+            _ => "Error",
+        };
+    }
+
 }
