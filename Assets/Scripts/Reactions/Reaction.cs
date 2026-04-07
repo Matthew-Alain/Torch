@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 
 public abstract class Reaction<TContext> : IReaction where TContext : BaseContext
 {
@@ -7,7 +8,7 @@ public abstract class Reaction<TContext> : IReaction where TContext : BaseContex
     public bool CostsReaction;
 
     public abstract bool CanTrigger(TContext context, BaseUnit owner);
-    public abstract void Execute(TContext context, BaseUnit owner, Action onComplete);
+    public abstract IEnumerator Execute(TContext context, BaseUnit owner, Action onComplete);
 
     // Interface implementations (bridge)
     bool IReaction.CanTrigger(BaseContext context, BaseUnit owner)
@@ -21,7 +22,7 @@ public abstract class Reaction<TContext> : IReaction where TContext : BaseContex
     void IReaction.Execute(BaseContext context, BaseUnit owner, Action onComplete)
     {
         if (context is TContext typedContext)
-            Execute(typedContext, owner, onComplete);
+            owner.StartCoroutine(Execute(typedContext, owner, onComplete));
         else
             onComplete?.Invoke();
     }

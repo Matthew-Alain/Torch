@@ -10,6 +10,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     [SerializeField] private GameObject highlight;
     [SerializeField] private GameObject validHighlight;
     [SerializeField] private GameObject invalidHighlight;
+    [SerializeField] private GameObject inWalkingRangeHighlight;
     public bool isWalkable;
     public bool isDifficult;
     public bool isSwimmable;
@@ -28,8 +29,11 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         tileY = y;
     }
 
-    public void ShowValidTargeting(TargetType type)
+    public void ShowValidTargeting(TargetType type, Tile source, int range)
     {
+        if (CheckDistanceInTiles(source) > range)
+            return;
+        
         switch (type)
         {
             case TargetType.Unit:
@@ -78,10 +82,21 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         }
     }
 
+    public void ShowMovementHighlighting(Tile movingPCCurrenTile, int speedInTiles)
+    {
+        if(CheckDistanceInTiles(movingPCCurrenTile) == speedInTiles + 1 || !isWalkable || OccupiedUnit != null)
+            invalidHighlight.SetActive(true);
+        else if (CheckDistanceInTiles(movingPCCurrenTile) == 1)
+            validHighlight.SetActive(true);
+        else if (CheckDistanceInTiles(movingPCCurrenTile) <= speedInTiles)
+            inWalkingRangeHighlight.SetActive(true);
+    }
+
     public void HideValidTargeting()
     {
         validHighlight.SetActive(false);
         invalidHighlight.SetActive(false);
+        inWalkingRangeHighlight.SetActive(false);
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -156,8 +171,11 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         if (moving)
         {
             yield return StartCoroutine(SetUnit(movingUnit)); //Set this tile's unit as the selected unit
-            if(movingUnit.Faction == Faction.Monster)
+            if (movingUnit.Faction == Faction.Monster || forced)
                 yield return new WaitForSeconds(0.5f);
+
+            CombatStateManager.Instance.DisableSelectionVisuals();
+            CombatGridManager.UpdateMovementHighlighting();
         }
     }
 
@@ -196,7 +214,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        if(CombatUnitManager.Instance.SelectedPC == null)
+        if (CombatUnitManager.Instance.SelectedPC == null || CombatStateManager.Instance.processing)
             return;
 
         CombatMenuManager menu = CombatMenuManager.Instance;

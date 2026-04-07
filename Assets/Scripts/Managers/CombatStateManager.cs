@@ -25,6 +25,7 @@ public class CombatStateManager : MonoBehaviour
     public BaseUnit selectedTarget;
     public bool reloadedPreviousSave;
     public bool cancelSelection = false;
+    public bool processing = false;
 
     void Awake()
     {
@@ -92,9 +93,11 @@ public class CombatStateManager : MonoBehaviour
             //     break;
             case GameState.PlayerTurn:
                 StartCoroutine(CheckForGameOver());
+                DisableSelectionVisuals();
                 break;
             case GameState.MovingPC:
-                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{CombatUnitManager.Instance.SelectedPC.UnitName} is now moving"));
+                // yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{CombatUnitManager.Instance.SelectedPC.UnitName} is now moving"));
+                CombatGridManager.UpdateMovementHighlighting();
                 // Debug.Log("Select the space to move to.");
                 break;
             // case GameState.SelectWeapon:
@@ -131,11 +134,13 @@ public class CombatStateManager : MonoBehaviour
     }
 
     public IEnumerator StartTargetSelection(
-        TargetType targetType,
+        TargetType targetType, BaseUnit user, int range,
         Action<BaseUnit> callback,
         Func<BaseUnit, (bool success, string message)> validator = null
     )
     {
+        Instance.processing = true;
+
         isSelectingTarget = true;
         selectedTarget = null;
         cancelSelection = false;
@@ -143,7 +148,7 @@ public class CombatStateManager : MonoBehaviour
         onTargetSelected = callback;
         targetValidator = validator;
 
-        EnableSelectionVisuals(targetType);
+        EnableSelectionVisuals(targetType, user, range);
 
         switch (targetType)
         {
@@ -166,6 +171,8 @@ public class CombatStateManager : MonoBehaviour
         isSelectingTarget = false;
         DisableSelectionVisuals();
 
+        Instance.processing = false;
+
         if (cancelSelection)
             yield break;
 
@@ -173,11 +180,13 @@ public class CombatStateManager : MonoBehaviour
     }
 
     public IEnumerator StartTileSelection(
-        TargetType targetType,
+        TargetType targetType, BaseUnit user, int range, 
         Action<Tile> callback,
         Func<Tile, (bool success, string message)> validator = null
     )
     {
+        Instance.processing = true;
+
         isSelectingTile = true;
         selectedTile = null;
         cancelSelection = false;
@@ -185,7 +194,7 @@ public class CombatStateManager : MonoBehaviour
         onTileSelected = callback;
         tileValidator = validator;
 
-        EnableSelectionVisuals(targetType);
+        EnableSelectionVisuals(targetType, user, range);
 
         switch (targetType)
         {
@@ -203,6 +212,8 @@ public class CombatStateManager : MonoBehaviour
 
         isSelectingTile = false;
         DisableSelectionVisuals();
+
+        Instance.processing = false;
 
         if (cancelSelection)
             yield break;
@@ -303,11 +314,11 @@ public class CombatStateManager : MonoBehaviour
     //     tileValidator = null;
     // }
 
-    public void EnableSelectionVisuals(TargetType type)
+    public void EnableSelectionVisuals(TargetType type, BaseUnit user, int range)
     {
         foreach (Tile tile in CombatGridManager.Instance.tilesList)
         {
-            tile.ShowValidTargeting(type);
+            tile.ShowValidTargeting(type, user.occupiedTile, range);
         }
     }
     
@@ -469,38 +480,31 @@ public class CombatStateManager : MonoBehaviour
 
         if (monster.validActions.Count > 0)
         {
-            var (target, attackID) = monster.ChooseTargetAndAttack();
+            var (target, actionID) = monster.ChooseTargetAndAction();
 
             if (target != null)
-            {
-                var path = monster.GetPathToBestAttackTile(target.occupiedTile, attackID);
-
-                yield return StartCoroutine(monster.MoveToTile(path));
-
-                if (TurnUtility.ShouldStop(monster)) goto EndTurn;
-
-                yield return new WaitForSeconds(0.5f);
-
-                yield return StartCoroutine(monster.AttackTarget(target, attackID));
-
-                if (TurnUtility.ShouldStop(monster)) goto EndTurn;
-
-                yield return new WaitForSeconds(0.5f);
-            }
-            else
-            {
-                // fallback movement
-                var tiles = monster.GetilesWithActivePCs();
-                var randomTile = tiles[UnityEngine.Random.Range(0, tiles.Count)];
-                var path = monster.GetPathToBestAttackTile(randomTile, 0);
-
-                yield return StartCoroutine(monster.MoveToTile(path));
-            }
+                yield return StartCoroutine(monster.ExecuteAction(actionID, target));
         }
-
-        EndTurn:
-            monster.ClearActionList();
+        
+        monster.ClearActionList();
     }
+
+    //  if (monster.GetActionType(actionID) == 1) //If action targets a PC
+    // {
+    //     var path = monster.GetPathToBestAttackTile(target.occupiedTile, actionID);
+
+    //     yield return StartCoroutine(monster.MoveToTile(path));
+
+    //     if (TurnUtility.ShouldStop(monster)) goto EndTurn;
+
+    //     yield return new WaitForSeconds(0.5f);
+
+    //     yield return StartCoroutine(monster.AttackTarget(target, actionID));
+
+    //     if (TurnUtility.ShouldStop(monster)) goto EndTurn;
+
+    //     yield return new WaitForSeconds(0.5f);
+    // }
 
     public IEnumerator EndTurnFlow()
     {

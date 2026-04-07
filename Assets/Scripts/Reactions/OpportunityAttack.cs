@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Diagnostics;
 using UnityEngine;
 
@@ -29,21 +30,23 @@ public class OpportunityAttack : Reaction<MoveContext>
         }
     }
 
-    public override void Execute(MoveContext context, BaseUnit owner, Action onComplete)
+    public override IEnumerator Execute(MoveContext context, BaseUnit owner, Action onComplete)
     {
+        if (CombatStateManager.Instance.processing)
+            yield break;
+        
+        CombatStateManager.Instance.processing = true;
         // owner.UseResource("reaction");
         // UnityEngine.Debug.LogWarning("About to call TakeDamage()");
-        if(owner.Faction == Faction.PC)
+        if (owner.Faction == Faction.PC)
         {
-            CombatActions.AttackWithWeapon(owner, context.TriggeringUnit, ((BasePC)owner).GetMainhandID());
+            yield return CombatUnitManager.Instance.StartCoroutine(CombatActions.AttackWithWeapon(owner, context.TriggeringUnit, ((BasePC)owner).GetMainhandID(), (success) => { }));
         }
         else
         {
-            CombatActions.AttackWithWeapon(owner, context.TriggeringUnit, 0);
+            yield return CombatUnitManager.Instance.StartCoroutine(CombatActions.AttackWithWeapon(owner, context.TriggeringUnit, 0, (success) => { }));
         }
-        // .TakeDamage(5, false);
-        // UnityEngine.Debug.Log($"{context.TriggeringUnit} takes 5 damage");
-
+        CombatStateManager.Instance.processing = false;
         // UnityEngine.Debug.LogWarning("Unit took damage, calling OnComplete");
         onComplete?.Invoke();
     }

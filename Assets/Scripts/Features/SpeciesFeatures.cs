@@ -4,7 +4,7 @@ public class SpeciesFeatures
     {
         if (user.UseResource("major_action"))
         {
-            CombatStateManager.Instance.StartTargetSelection(TargetType.PC, (target) =>
+            CombatStateManager.Instance.StartTargetSelection(TargetType.PC, (BaseUnit)user, 1, (target) =>
             {
                 int result = DiceRoller.Roll(user.GetPB(), 4);
                 target.RestoreHealth(result);

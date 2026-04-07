@@ -6,11 +6,7 @@ using UnityEngine;
 
 public class BaseMonster : BaseUnit
 {
-    public List<(int, int)> actionList = new List<(int, int)>()
-    {
-        (2, 0),
-        (3, 0),
-    };
+    public List<(int, int)> actionList = new List<(int, int)>();
     public List<int> validActions;
     public List<(BaseUnit, int, int)> validTargetsWithAttackAndPriority = new List<(BaseUnit, int, int)>();
     public int attackMod;
@@ -19,10 +15,7 @@ public class BaseMonster : BaseUnit
     public string BaseName;
     public string DisplayName;
 
-    public override void Initialize()
-    {
-        
-    }
+    public override void Initialize(){}
     
     public void ClearActionList()
     {
@@ -34,17 +27,20 @@ public class BaseMonster : BaseUnit
     {
         for (int i = 0; i < actionList.Count; i++)
         {
+            int actionID = actionList[i].Item1;
+
             bool valid = false;
 
-            int actionType = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT action_type FROM monster_actions WHERE id = {actionList[i].Item1}"));
+            int actionType = GetActionType(actionID);
 
             if (actionType == 0)
             {
                 valid = true;
+                validTargetsWithAttackAndPriority.Add((this, actionID, actionList[i].Item2));
             }
             else if (actionType == 1) //Checks for attacks
             {
-                valid = CheckValidAttack(actionList[i].Item1);
+                valid = CheckValidAttack(actionID);
             }
             else if (actionType == 2) //Check for saving throws
             {
@@ -134,39 +130,68 @@ public class BaseMonster : BaseUnit
         return false;
     }
 
-    public (BaseUnit, int) ChooseTargetAndAttack()
+    public (BaseUnit, int) ChooseTargetAndAction()
     {
-        if(validTargetsWithAttackAndPriority.Count > 0)
+        if (validTargetsWithAttackAndPriority.Count > 0)
         {
-            // Debug.Log($"There are {validTargetsWithAttackAndPriority.Count} options to check");
-            for(int i = validTargetsWithAttackAndPriority.Max(t => t.Item3); i >= 0 ; i--) //Starting with the highest priority in the list
-            {
-                // Debug.Log($"Starting at priority {i}");
-                List<(BaseUnit, int)> options = new List<(BaseUnit, int)>();  
+            List<(BaseUnit, int)> options = new List<(BaseUnit, int)>();
 
-                for(int j = 0; j < validTargetsWithAttackAndPriority.Count; j++) //For every item in the list
+            for (int i = 0; i < validTargetsWithAttackAndPriority.Count; i++)
+            {
+                // Debug.Log("Checking option " + validTargetsWithAttackAndPriority[j]);
+                if (validTargetsWithAttackAndPriority[i].Item3 == validTargetsWithAttackAndPriority.Max(t => t.Item3)) //If the item has the highest priority
                 {
-                    // Debug.Log("Checking option " + validTargetsWithAttackAndPriority[j]);
-                    if (validTargetsWithAttackAndPriority[j].Item3 == i) //If the item has the same priority as the priority being searched
+                    // Debug.Log($"Option {j} has priority {i}");
+                    options.Add((validTargetsWithAttackAndPriority[i].Item1, validTargetsWithAttackAndPriority[i].Item2));
+                }
+            }
+
+            if (options.Count > 0) //After all items have been searched, if there is at least one attack of that priority, pick one of them
+            {
+                //For all options that are of the highest priority, only selects those that target the nearest PC, or target a monster
+                List<(BaseUnit, int)> selectableOptions = new();
+                List<BaseUnit> closestUnits = ListOfClosestPCs();
+
+                foreach ((BaseUnit, int) option in options)
+                {
+                    if (option.Item1 == this || closestUnits.Contains(option.Item1))
                     {
-                        // Debug.Log($"Option {j} has priority {i}");
-                        options.Add((validTargetsWithAttackAndPriority[j].Item1, validTargetsWithAttackAndPriority[j].Item2));
+                        selectableOptions.Add(option);
                     }
                 }
 
-                if(options.Count > 0) //After all items have been searched, if there is at least one attack of that priority, pick one of them
-                {
-                    int chosenOption = UnityEngine.Random.Range(0, options.Count);
+                return selectableOptions[UnityEngine.Random.Range(0, selectableOptions.Count)];
 
-                    // Debug.Log($"{UnitName} is attacking {validTargetsWithAttackAndPriority[chosenOption].Item1.UnitName} with {validTargetsWithAttackAndPriority[chosenOption].Item2}, which has priority {GetPriority(validTargetsWithAttackAndPriority[chosenOption].Item2)}");
-                    
-                    return (options[chosenOption].Item1, options[chosenOption].Item2); //Return that item's target and attack
-                }
+                // Debug.Log($"{UnitName} is attacking {validTargetsWithAttackAndPriority[chosenOption].Item1.UnitName} with 
+                // {validTargetsWithAttackAndPriority[chosenOption].Item2}, which has priority {GetPriority(validTargetsWithAttackAndPriority[chosenOption].Item2)}");
+
+                //== This selects an attack at random, while the above selects the first option (usually melee) ==
+
+                // BaseUnit closestPC = GetClosestPC(unitList); //Select one of the closest PCs at random
+
+                // List<(BaseUnit, int)> validAtacksOnClosestPC = new();
+                // for(int i = 0; i < options.Count; i++)
+                // {
+                //     if(options[i].Item1 == closestPC)
+                //         validAtacksOnClosestPC.Add((options[i].Item1, options[i].Item2)); //Get every attack option that targets that
+                // }
+
+                // var result = validAtacksOnClosestPC[UnityEngine.Random.Range(0, validAtacksOnClosestPC.Count)];
+
+                // // Debug.Log($"{UnitName} is attacking {validTargetsWithAttackAndPriority[chosenOption].Item1.UnitName} with 
+                // // {validTargetsWithAttackAndPriority[chosenOption].Item2}, which has priority {GetPriority(validTargetsWithAttackAndPriority[chosenOption].Item2)}");
+
+                // return (result.Item1, result.Item2); //Return that item's target and attackID
             }
+            // Debug.Log($"There are {validTargetsWithAttackAndPriority.Count} options to check");
+            // for (int i = validTargetsWithAttackAndPriority.Max(t => t.Item3); i >= 0; i--) //Starting with the highest priority in the list.
+            // {
+                // Debug.Log($"Starting at priority {i}");
+            // }
         }
 
         // Debug.Log("No valid targets found");
-        return (null, -1);        
+        return (null, -1);
 
     }
 
@@ -176,7 +201,7 @@ public class BaseMonster : BaseUnit
 
         if(targetDistance <= GetMeleeRange(attackID) || targetDistance <= GetNormalRange(attackID) || targetDistance <= GetLongRange(attackID))
         {
-            yield return StartCoroutine(CombatActions.MonsterAttack(this, target, attackID));
+            yield return StartCoroutine(MonsterActions.Attack(this, target, attackID));
         }
         else
         {
@@ -409,36 +434,34 @@ public class BaseMonster : BaseUnit
         return path;
     }
 
-
-
-    public int GetHitMod(int attackID)
+    public int GetHitMod(int actionID)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT hit_modifier FROM monster_actions WHERE id = {attackID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT hit_modifier FROM monster_actions WHERE id = {actionID}"));
     }
 
-    public int GetDiceNumber(int attackID)
+    public int GetDiceNumber(int actionID)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dice_number FROM monster_actions WHERE id = {attackID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dice_number FROM monster_actions WHERE id = {actionID}"));
     }
 
-    public int GetDiceSize(int attackID)
+    public int GetDiceSize(int actionID)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dice_size FROM monster_actions WHERE id = {attackID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT dice_size FROM monster_actions WHERE id = {actionID}"));
     }
 
-    public int GetDamageBonus(int attackID)
+    public int GetDamageBonus(int actionID)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT damage_bonus FROM monster_actions WHERE id = {attackID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT damage_bonus FROM monster_actions WHERE id = {actionID}"));
     }
 
-    public int GetDamageType(int attackID)
+    public int GetDamageType(int actionID)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT damage_type FROM monster_actions WHERE id = {attackID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT damage_type FROM monster_actions WHERE id = {actionID}"));
     }
 
-    public int GetMeleeRange(int attackID)
+    public int GetMeleeRange(int actionID)
     {
-        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT melee_range FROM monster_actions WHERE id = {attackID}");
+        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT melee_range FROM monster_actions WHERE id = {actionID}");
         
         if(range == DBNull.Value)
         {
@@ -450,9 +473,9 @@ public class BaseMonster : BaseUnit
         }
     }
 
-    public int GetNormalRange(int attackID)
+    public int GetNormalRange(int actionID)
     {
-        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT normal_range FROM monster_actions WHERE id = {attackID}");
+        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT normal_range FROM monster_actions WHERE id = {actionID}");
         
         if(range == DBNull.Value)
         {
@@ -464,9 +487,9 @@ public class BaseMonster : BaseUnit
         }
     }
 
-    public int GetLongRange(int attackID)
+    public int GetLongRange(int actionID)
     {
-        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT long_range FROM monster_actions WHERE id = {attackID}");
+        var range = DatabaseManager.Instance.ExecuteScalar($"SELECT long_range FROM monster_actions WHERE id = {actionID}");
 
         if (range == DBNull.Value)
         {
@@ -478,9 +501,136 @@ public class BaseMonster : BaseUnit
         }
     }
 
-    public int GetPriority(int attackID)
+    public int GetPriority(int actionID)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT priority FROM monster_actions WHERE id = {attackID}"));
+        return actionList.FirstOrDefault(x => x.Item1 == actionID).Item2;
+        // return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT priority FROM monster_actions WHERE id = {actionID}"));
+    }
+
+    public int GetActionType(int actionID)
+    {
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT action_type FROM monster_actions WHERE id = {actionID}"));
+    }
+
+    public BaseUnit GetClosestPC()
+    {
+        return GetClosestPC(GetilesWithActivePCs());
+    }
+
+    public BaseUnit GetClosestPC(List<BaseUnit> unitList)
+    {
+        List<Tile> tileList = new();
+        foreach (BaseUnit unit in unitList)
+        {
+            tileList.Add(unit.occupiedTile);
+        }
+
+        return GetClosestPC(tileList);
+    }
+
+    public BaseUnit GetClosestPC(List<Tile> tileList)
+    {
+        List<Tile> closestTiles = new(); //List of tiles
+        int shortestDistance = 1000;
+
+        foreach (Tile tile in tileList)
+        {
+            int distance = occupiedTile.CheckDistanceInTiles(tile);
+            // Debug.Log($"Distance to {tile.OccupiedUnit.UnitName} is {distance}");
+            if (distance <= shortestDistance)
+            {
+                if (distance < shortestDistance)
+                {
+                    // Debug.Log($"This is the new shortest distance");
+                    closestTiles.Clear(); //If it's closer than any other tile, none of the other options are valid anymore
+                    shortestDistance = distance;
+                }
+
+                // Debug.Log($"{tile.OccupiedUnit.UnitName} is the closest target");
+                closestTiles.Add(tile); //This option becomes valid
+            }
+        }
+
+        // Debug.Log($"valid tile targets include:");
+        // foreach(Tile tile in closestTiles)
+        // {
+        //     Debug.Log($"{tile.OccupiedUnit.UnitName}");
+        // }
+
+        int randomSelection = UnityEngine.Random.Range(0, closestTiles.Count);
+
+        // Debug.Log("Randomly selected unit is " + closestTiles[randomSelection].OccupiedUnit);
+
+        return closestTiles[randomSelection].OccupiedUnit; //Pick a random tile among the closest ones
+    }
+
+    public List<BaseUnit> ListOfClosestPCs()
+    {
+        List<BaseUnit> closestUnits = new(); //List of tiles
+        int shortestDistance = 1000;
+
+        foreach (Tile tile in GetilesWithActivePCs())
+        {
+            int distance = occupiedTile.CheckDistanceInTiles(tile);
+            // Debug.Log($"Distance to {tile.OccupiedUnit.UnitName} is {distance}");
+            if (distance <= shortestDistance)
+            {
+                if (distance < shortestDistance)
+                {
+                    // Debug.Log($"This is the new shortest distance");
+                    closestUnits.Clear(); //If it's closer than any other tile, none of the other options are valid anymore
+                    shortestDistance = distance;
+                }
+
+                // Debug.Log($"{tile.OccupiedUnit.UnitName} is the closest target");
+                closestUnits.Add(tile.OccupiedUnit); //This option becomes valid
+            }
+        }
+
+        return closestUnits;
+    }
+
+    public IEnumerator MoveToClosestPC()
+    {
+        var path = GetPathToBestAttackTile(GetClosestPC().occupiedTile, 0); //Try to get as close as possible to them
+        yield return StartCoroutine(MoveToTile(path));
+    }
+
+    public IEnumerator ExecuteAction(int actionID, BaseUnit target)
+    {
+        if (GetActionType(actionID) == 1)
+        {
+            var path = GetPathToBestAttackTile(target.occupiedTile, actionID);
+            
+            yield return StartCoroutine(MoveToTile(path));
+
+            if (TurnUtility.ShouldStop(this))
+                yield break;
+
+            yield return new WaitForSeconds(0.5f);
+
+            yield return StartCoroutine(AttackTarget(target, actionID));
+
+            if (TurnUtility.ShouldStop(this))
+                yield break; ;
+
+            yield return new WaitForSeconds(0.5f);
+        }
+        else
+        {
+            switch (actionID)
+            {
+                case 2:
+                    Dodge();
+                    yield return MoveToClosestPC();
+                    break;
+                case 3:
+                    Dash(); //Take the dash action
+                    yield return MoveToClosestPC();
+                    break;
+
+            }
+        }
     }
 
 }

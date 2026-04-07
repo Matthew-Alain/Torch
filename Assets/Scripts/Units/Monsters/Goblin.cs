@@ -4,9 +4,11 @@ public class Goblin : BaseMonster
 {
     void Start()
     {
-        (int, int)[] actions = { (5, 2) };
+        (int, int)[] actions = { 
+            (2, 0),
+            (3, 0),
+            (5, 2),
+        };
         actionList.AddRange(actions);
-        attackMod = 2;
-        proficiency = 2;
     }
 }

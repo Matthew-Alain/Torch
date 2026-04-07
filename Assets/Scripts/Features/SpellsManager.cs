@@ -195,7 +195,7 @@ public class SpellsManager : MonoBehaviour
         if(GetTargetType(id) == TargetType.AnyTile || GetTargetType(id) == TargetType.EmptyTile)
         {
             yield return CombatStateManager.Instance.StartTileSelection(
-                GetTargetType(id),
+                GetTargetType(id), caster, GetRange(id),
                 (tile) => chosenTile = tile,
                 (tile) =>
                 {
@@ -221,7 +221,7 @@ public class SpellsManager : MonoBehaviour
         else
         {
             yield return CombatStateManager.Instance.StartTargetSelection(
-                GetTargetType(id),
+                GetTargetType(id), caster, GetRange(id),
                 (target) => chosenTarget = target,
                 (target) =>
                 {
@@ -286,23 +286,30 @@ public class SpellsManager : MonoBehaviour
             if (GetAttackSaveNone(id) == "attack")
             {
                 // Debug.Log("Making attack roll");
-                int roll = caster.MakeAttackWithStat(spellcastingAbility);
+                bool hit = false;
+                bool crit = false;
 
-                if (roll == 200)
+                yield return StartCoroutine(caster.MakeAttackWithStat(spellcastingAbility, true, target.GetAC(), (hitResult, critResult) =>
+                {
+                    hit = hitResult;
+                    crit = critResult;
+                }));
+
+                if (crit)
                 {
                     yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{caster} rolled a natural 20 to hit {target.UnitName}"));
                     if(damage > 0)
                         yield return Instance.StartCoroutine(target.TakeDamage(damage*2, true)); //TODO: Currently this doubles all damage, not just dice
                 }
-                else if (roll >= target.GetAC())
+                else if (hit)
                 {
-                    yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{caster} rolled {roll} to hit {target.UnitName}, which hits"));
+                    yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{caster} hit {target.UnitName}"));
                     if(damage > 0)
                         yield return Instance.StartCoroutine(target.TakeDamage(damage, false));
                 }
                 else
                 {
-                    yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{caster} rolled {roll} to hit {target.UnitName}, which misses"));
+                    yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{caster} missed {target.UnitName}"));
                     // Debug.Log("Missed " + target.UnitName);
                 }
             }

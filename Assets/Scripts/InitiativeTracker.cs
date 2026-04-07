@@ -44,17 +44,19 @@ public class InitiativeTracker: MonoBehaviour
             }
 
             initiativeRolls = initiativeRolls.OrderByDescending(x => x.Item2).ToList();
+            List<string> unitNames = new();
 
             // Debug.Log("The turn order is: ");
             for (int i = 0; i < initiativeRolls.Count; i++)
             {
                 // Debug.Log(initiativeRolls[i].Item1.UnitName);
                 DatabaseManager.Instance.ExecuteNonQuery($"INSERT INTO initiative_order (unit_id, turn_order) VALUES ({initiativeRolls[i].Item1.UnitID}, {i})");
+                unitNames.Add(initiativeRolls[i].Item1.UnitName);
             }
 
             DatabaseManager.Instance.ExecuteNonQuery($"UPDATE encounters SET in_progress = 1 WHERE id = {DatabaseManager.Instance.currentEncounter}");
             
-            yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"The turn order is: {string.Join(", ", initiativeRolls)}"));
+            yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"The turn order is: {string.Join(", ", unitNames)}"));
         }
         currentTurnUnit = GetCurrentUnit();
 
@@ -115,7 +117,6 @@ public class InitiativeTracker: MonoBehaviour
             }
         );
 
-        // Debug.Log("No unit found at initiative order " + GetInitiativeOrder());
 
         return nextUnit;
     }

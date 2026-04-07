@@ -179,6 +179,22 @@ public class CombatGridManager : MonoBehaviour
     {
         throw new NotImplementedException();
     }
+
+    public static void UpdateMovementHighlighting()
+    {
+        CombatStateManager.Instance.DisableSelectionVisuals();
+        if(CombatStateManager.Instance.GameState == GameState.MovingPC)
+        {
+            BaseUnit currentPC = InitiativeTracker.Instance.currentTurnUnit;
+            int speedInTiles = currentPC.GetResource("current_speed") / 5;
+
+            foreach (Tile tile in Instance.tilesList)
+            {
+                tile.ShowMovementHighlighting(currentPC.occupiedTile, speedInTiles);
+            }
+        }
+
+    }
 }
 
 

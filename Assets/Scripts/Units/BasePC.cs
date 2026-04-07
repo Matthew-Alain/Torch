@@ -178,44 +178,6 @@ public class BasePC : BaseUnit
 
     //COMBAT ACTIONS
 
-    public void Dash()
-    {
-        if (UseResource("major_action"))
-        {
-            CombatActions.Dash(this);
-            StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.MovingPC));
-            CombatMenuManager.Instance.ReRenderMenu();
-        }
-        else
-        {
-            StartCoroutine(CombatMenuManager.Instance.DisplayText("No action available"));
-        }
-    }
-
-    public void Disengage()
-    {
-        if (UseResource("major_action"))
-        {
-            CombatActions.Disengage(this);
-        }
-        else
-        {
-            StartCoroutine(CombatMenuManager.Instance.DisplayText("No action available"));
-        }
-    }
-
-    public void Dodge()
-    {
-        if (UseResource("major_action"))
-        {
-            CombatActions.Dodge(this);
-        }
-        else
-        {
-            StartCoroutine(CombatMenuManager.Instance.DisplayText("No action available"));
-        }
-    }
-
     public void ActionTemplate()
     {
         // CombatStateManager.Instance.StartTargetSelection(
@@ -250,7 +212,7 @@ public class BasePC : BaseUnit
     public void Help()
     {
         CombatStateManager.Instance.StartTargetSelection(
-            TargetType.Monster, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
+            TargetType.Monster, this, 1, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
             (target) =>
             {
                 CombatActions.Help(target);
@@ -282,30 +244,17 @@ public class BasePC : BaseUnit
         }
     }
 
-    public void Attack(int weaponID)
+    public IEnumerator Attack(int weaponID)
     {
-        StartCoroutine(CombatStateManager.Instance.StartTargetSelection(
-            TargetType.Monster, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
-            (target) =>
+        BaseUnit target = null;
+
+        yield return StartCoroutine(CombatStateManager.Instance.StartTargetSelection(
+            TargetType.Monster, this, 1, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
+            (selectedTarget) =>
             {
-                CombatActions.AttackWithWeapon(
-                        this,
-                        target,
-                        weaponID
-                    );
-
-                if (GetResource("current_number_of_attacks") < GetResource("max_number_of_attacks"))
-                {
-                    UseResource("current_number_of_attacks");
-                }
-                else
-                {
-                    UseResource("major_action");
-                    UseResource("current_number_of_attacks");
-                }
-
+                target = selectedTarget;
             },
-            (target) =>
+            (selectedTarget) =>
             {
                 if (GetResource("current_number_of_attacks") == 0)
                 {
@@ -317,7 +266,7 @@ public class BasePC : BaseUnit
                     return (false, "You don't have a major action available");
                 }
 
-                if (!RangeHelper.IsTargetInRange(this, target, RangeHelper.GetMaximumRange(weaponID))) //Range in tiles
+                if (!RangeHelper.IsTargetInRange(this, selectedTarget, RangeHelper.GetMaximumRange(weaponID))) //Range in tiles
                 {
                     return (false, "Target is out of range");
                 }
@@ -325,30 +274,31 @@ public class BasePC : BaseUnit
                 return (true, "");
             }
         ));
+
+        if(target != null)
+        {
+            yield return StartCoroutine(CombatActions.AttackWithWeapon(this, target, weaponID, (success) =>
+            {
+                if (success)
+                {
+                    if (!(GetResource("current_number_of_attacks") < GetResource("max_number_of_attacks")))
+                    {
+                        UseResource("major_action");
+                    }
+                    UseResource("current_number_of_attacks");
+                }
+            }));
+        }
     }
 
-    public void ShoveBack()
+    public IEnumerator ShoveBack()
     {
-        StartCoroutine(CombatStateManager.Instance.StartTargetSelection(
-            TargetType.Monster, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
-            (target) =>
+        BaseUnit target = null;
+        yield return StartCoroutine(CombatStateManager.Instance.StartTargetSelection(
+            TargetType.Monster, this, 1, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
+            (selectedTarget) =>
             {
-                CombatActions.PushTarget(
-                        this,
-                        target,
-                        1
-                    );
-
-                if (GetResource("current_number_of_attacks") < GetResource("max_number_of_attacks"))
-                {
-                    UseResource("current_number_of_attacks");
-                }
-                else
-                {
-                    UseResource("major_action");
-                    UseResource("current_number_of_attacks");
-                }
-
+                target = selectedTarget;
             },
             (target) =>
             {
@@ -370,39 +320,32 @@ public class BasePC : BaseUnit
                 return (true, "");
             }
         ));
+
+        if (target != null)
+        {
+            yield return StartCoroutine(PushTarget(target, 1));
+
+            if (GetResource("current_number_of_attacks") < GetResource("max_number_of_attacks"))
+            {
+                UseResource("current_number_of_attacks");
+            }
+            else
+            {
+                UseResource("major_action");
+                UseResource("current_number_of_attacks");
+            }
+        }
     }
 
     public void ShoveProne()
     {
+        BaseUnit target = null;
+
         StartCoroutine(CombatStateManager.Instance.StartTargetSelection(
-            TargetType.Monster, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
-            (target) =>
+            TargetType.Monster, this, 1, //Change depending on if the valid target is a Monster, PC, Unit, or Tile
+            (selectedTarget) =>
             {
-                bool failed;
-                if (target.GetStat("mSTR") > target.GetStat("mDEX"))
-                {
-                    failed = target.MakeSave("STR", GetStat("str_dc"));
-                }
-                else
-                {
-                    failed = target.MakeSave("DEX", GetStat("str_dc"));
-                }
-
-                if (failed)
-                {
-                    target.SetCondition("prone", true);
-                }
-
-                if (GetResource("current_number_of_attacks") < GetResource("max_number_of_attacks"))
-                {
-                    UseResource("current_number_of_attacks");
-                }
-                else
-                {
-                    UseResource("major_action");
-                    UseResource("current_number_of_attacks");
-                }
-
+                target = selectedTarget;
             },
             (target) =>
             {
@@ -424,6 +367,34 @@ public class BasePC : BaseUnit
                 return (true, "");
             }
         ));
+        
+        if(target != null)
+        {
+            bool failed;
+            if (target.GetStat("mSTR") > target.GetStat("mDEX"))
+            {
+                failed = target.MakeSave("STR", GetStat("str_dc"));
+            }
+            else
+            {
+                failed = target.MakeSave("DEX", GetStat("str_dc"));
+            }
+
+            if (failed)
+            {
+                target.SetCondition("prone", true);
+            }
+
+            if (GetResource("current_number_of_attacks") < GetResource("max_number_of_attacks"))
+            {
+                UseResource("current_number_of_attacks");
+            }
+            else
+            {
+                UseResource("major_action");
+                UseResource("current_number_of_attacks");
+            }
+        }
     }
 
     public IEnumerator MakeDeathSave()
@@ -549,12 +520,12 @@ public class BasePC : BaseUnit
     public void PopulateAttacks(List<MenuOption> menu)
     {
 
-        menu.Add(new MenuOption($"Mainhand ({GetMainhandName()})", () => Attack(GetMainhandID()),
+        menu.Add(new MenuOption($"Mainhand ({GetMainhandName()})", () => StartCoroutine(Attack(GetMainhandID())),
             () => GetMainhandName() != "Shield" && GetMainhandName() != "Unarmed",
             () => GetResource("major_action") > 0 ||
                 (GetResource("current_number_of_attacks") < GetResource("max_number_of_attacks") && GetResource("current_number_of_attacks") > 0)));
 
-        menu.Add(new MenuOption($"Offhand ({GetOffhandName()})", () => Attack(GetOffhandID()),
+        menu.Add(new MenuOption($"Offhand ({GetOffhandName()})", () => StartCoroutine(Attack(GetOffhandID())),
             () => GetOffhandName() != "Shield" && GetOffhandName() != "Unarmed",
             () => GetResource("major_action") > 0 ||
                 (GetResource("current_number_of_attacks") < GetResource("max_number_of_attacks") && GetResource("current_number_of_attacks") > 0)));
@@ -570,7 +541,7 @@ public class BasePC : BaseUnit
     public void PopulateMinorActions(List<MenuOption> menu)
     {
         //Light weapon offhand attack
-        menu.Add(new MenuOption($"Offhand Attack", () => Attack(GetOffhandID()), //Make sure this only costs minor action
+        menu.Add(new MenuOption($"Offhand Attack", () => StartCoroutine(Attack(GetOffhandID())), //Make sure this only costs minor action
             () => Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT light FROM weapons WHERE id = {GetOffhandID()}")) &&
                 Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT light FROM weapons WHERE id = {GetMainhandID()}")),
             () => GetResource("minor_action") > 0 || GetResource("nick_attack_available") > 0)); //TODO: add way to check if character attacked with a light weapon this turn

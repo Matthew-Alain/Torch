@@ -77,6 +77,11 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 3639162752458518910, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
   m_PrefabInstance: {fileID: 3971647843914368408}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &502992705911131959 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3595242050221787823, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+  m_PrefabInstance: {fileID: 3971647843914368408}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2180079013836826550 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2981122351337398830, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
@@ -98,6 +103,7 @@ MonoBehaviour:
   highlight: {fileID: 404980462921528550}
   validHighlight: {fileID: 4166099416112873555}
   invalidHighlight: {fileID: 3917445127666044947}
+  inWalkingRangeHighlight: {fileID: 502992705911131959}
   isWalkable: 1
   isDifficult: 0
   isSwimmable: 0

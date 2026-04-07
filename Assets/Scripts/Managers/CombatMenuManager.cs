@@ -15,6 +15,8 @@ public class CombatMenuManager : MonoBehaviour
     public Transform buttonContainer;
     public GameObject buttonPrefab;
     public GameObject displayText;
+    public GameObject displayDice;
+    public List<string> displayDiceText;
 
     public Button btnShowChat;
     [SerializeField] private ScrollRect chatPanelScrollRect;
@@ -118,6 +120,7 @@ public class CombatMenuManager : MonoBehaviour
     public void CloseMenu()
     {
         CombatStateManager.Instance.CancelSelection();
+        StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.PlayerTurn));
         
         if (menuStack.Count > 1)
         {
@@ -129,16 +132,16 @@ public class CombatMenuManager : MonoBehaviour
             turnMenuPanel.SetActive(false);
             menuStack.Clear();
             
-            StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.PlayerTurn));
             // CombatUnitManager.Instance.SetSelectedPC(null);
         }
     }
 
     public void CloseAllMenus()
     {
-        turnMenuPanel.SetActive(false);
-        menuStack.Clear();
-        // CombatUnitManager.Instance.SetSelectedPC(null);
+        for(int i = 0; i < menuStack.Count; i++)
+        {
+            CloseMenu();
+        }
     }
 
     public void ReRenderMenu()
@@ -152,6 +155,7 @@ public class CombatMenuManager : MonoBehaviour
     public void RenderMenu(List<MenuOption> options)
     {
         turnMenuPanel.SetActive(true);
+        // StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.PlayerTurn));
 
         foreach (Transform child in buttonContainer)
             Destroy(child.gameObject);
@@ -296,10 +300,10 @@ public class CombatMenuManager : MonoBehaviour
 
             List<MenuOption> unarmedStrikeOptions = new List<MenuOption>()
             {
-                new MenuOption($"Damage", () => pc.Attack(0), () => true, () => pc.GetResource("major_action") > 0 ||
+                new MenuOption($"Damage", () => StartCoroutine(pc.Attack(0)), () => true, () => pc.GetResource("major_action") > 0 ||
                     (pc.GetResource("current_number_of_attacks") < pc.GetResource("max_number_of_attacks") && pc.GetResource("current_number_of_attacks") > 0)),
 
-                new MenuOption("Grapple", () => pc.Attack(0), () => true, () => pc.GetResource("major_action") > 0 ||
+                new MenuOption("Grapple", () => StartCoroutine(pc.Attack(0)), () => true, () => pc.GetResource("major_action") > 0 ||
                     (pc.GetResource("current_number_of_attacks") < pc.GetResource("max_number_of_attacks") && pc.GetResource("current_number_of_attacks") > 0)), //TODO: Add grappling mechanics
                 
                 new MenuOption("Shove Backwards", () => pc.ShoveBack(), () => true, () => pc.GetResource("major_action") > 0 ||
@@ -406,5 +410,49 @@ public class CombatMenuManager : MonoBehaviour
         StartCoroutine(ResetScrollPosition(chatPanelScrollRect));
         yield return new WaitForSeconds(0.5f);
         displayText.SetActive(false);
+    }
+
+    public IEnumerator DisplayDiceRoll(BaseUnit roller, int dieResult, int modifier, int PB, bool result)
+    {
+        displayDice.SetActive(true);
+        int total = dieResult + modifier;
+
+        string message = $"Dice roll: {dieResult}. ";
+
+        displayDice.GetComponentInChildren<TMP_Text>().text = message;
+        yield return new WaitForSeconds(1f);
+
+        message += "Modifier: ";
+        if (modifier < 0)
+            message += "-";
+        else
+            message += "+";
+        message += modifier.ToString()+". ";
+
+        displayDice.GetComponentInChildren<TMP_Text>().text = message;
+        yield return new WaitForSeconds(1f);
+
+        if (PB > 0)
+        {
+            message += $"Proficiency: {roller.GetPB()}. ";
+            total += roller.GetPB();
+            displayDice.GetComponentInChildren<TMP_Text>().text = message;
+            yield return new WaitForSeconds(1f);
+        }
+
+        message += $"Total: {total}. ";
+
+        displayDice.GetComponentInChildren<TMP_Text>().text = message;
+        yield return new WaitForSeconds(1f);
+
+        if (result)
+            message += $"Result: Success";
+        else
+            message += $"Result: Fail";
+
+        displayDice.GetComponentInChildren<TMP_Text>().text = message;
+        yield return new WaitForSeconds(2f);
+
+        displayDice.SetActive(false);
     }
 }

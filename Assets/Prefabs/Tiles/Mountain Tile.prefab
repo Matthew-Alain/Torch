@@ -108,6 +108,7 @@ MonoBehaviour:
   highlight: {fileID: 3488698487759272069}
   validHighlight: {fileID: 874940806558026800}
   invalidHighlight: {fileID: 263760509719993456}
+  inWalkingRangeHighlight: {fileID: 3678986164998390612}
   isWalkable: 0
   isDifficult: 0
   isSwimmable: 0
@@ -121,5 +122,10 @@ MonoBehaviour:
 --- !u!1 &3488698487759272069 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3639162752458518910, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
+  m_PrefabInstance: {fileID: 210191389186198011}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &3678986164998390612 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3595242050221787823, guid: aa7e731ae7cd18045a3993839573c598, type: 3}
   m_PrefabInstance: {fileID: 210191389186198011}
   m_PrefabAsset: {fileID: 0}

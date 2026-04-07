@@ -419,37 +419,43 @@ public class BaseUnit : MonoBehaviour
     {
         bool result = false;
         saveType = saveType.ToUpper();
-        int saveBonus = 0;
+        int saveModifier = 0;
+        int savePB = 0;
 
         switch (saveType)
         {
             case "STR":
-                saveBonus = GetStat("mSTR") + GetProficiency("str_save");
+                saveModifier = GetStat("mSTR");
+                savePB = GetProficiency("str_save");
                 break;
             case "DEX":
-                saveBonus = GetStat("mDEX") + GetProficiency("dex_save");
+                saveModifier = GetStat("mDEX");
+                savePB = GetProficiency("dex_save");
                 break;
             case "CON":
-                saveBonus = GetStat("mCON") + GetProficiency("con_save");
+                saveModifier = GetStat("mCON");
+                savePB = GetProficiency("con_save");
                 break;
             case "INT":
-                saveBonus = GetStat("mINT") + GetProficiency("int_save");
+                saveModifier = GetStat("mINT");
+                savePB = GetProficiency("int_save");
                 break;
             case "WIS":
-                saveBonus = GetStat("mWIS") + GetProficiency("wis_save");
+                saveModifier = GetStat("mWIS");
+                savePB = GetProficiency("wis_save");
                 break;
             case "CHA":
-                saveBonus = GetStat("mCHA") + GetProficiency("cha_save");
+                saveModifier = GetStat("mCHA");
+                savePB = GetProficiency("cha_save");
                 break;
             default:
                 Debug.LogError("Tried to make an invalid save for " + saveType);
-                saveBonus = 0;
                 break;
         }
 
         int dieRoll = DiceRoller.Rolld20();
 
-        if (dieRoll + saveBonus >= DC)
+        if (dieRoll + saveModifier + savePB >= DC)
         {
             //Prompt for reaction
             result = true;
@@ -460,63 +466,92 @@ public class BaseUnit : MonoBehaviour
             result = false;
         }
 
+        StartCoroutine(CombatMenuManager.Instance.DisplayDiceRoll(this, dieRoll, saveModifier, savePB, result));
+
         return result;
     }
-    
-    public int MakeAttackWithStat(string stat)
+
+    public void Dash()
     {
-        int hitBonus = 0;
-
-        switch (stat)
+        if (UseResource("major_action"))
         {
-            case "STR":
-                hitBonus = GetStat("mSTR") + GetPB();
-                break;
-            case "DEX":
-                hitBonus = GetStat("mDEX") + GetPB();
-                break;
-            case "CON":
-                hitBonus = GetStat("mCON") + GetPB();
-                break;
-            case "INT":
-                hitBonus = GetStat("mINT") + GetPB();
-                break;
-            case "WIS":
-                hitBonus = GetStat("mWIS") + GetPB();
-                break;
-            case "CHA":
-                hitBonus = GetStat("mCHA") + GetPB();
-                break;
-            default:
-                Debug.LogError("Tried to make an invalid save for " + stat);
-                hitBonus = 0;
-                break;
-        }
-
-        int dieRoll = DiceRoller.Rolld20();
-
-        if(dieRoll == 20)
-        {
-            return 200;
+            CombatActions.Dash(this);
+            if(Faction == Faction.PC)
+            {
+                StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.MovingPC));
+                CombatMenuManager.Instance.ReRenderMenu();                
+            }
         }
         else
         {
-            return dieRoll + hitBonus;
+            StartCoroutine(CombatMenuManager.Instance.DisplayText("No action available"));
+        }
+    }
+
+    public void Disengage()
+    {
+        if (UseResource("major_action"))
+        {
+            CombatActions.Disengage(this);
+        }
+        else
+        {
+            StartCoroutine(CombatMenuManager.Instance.DisplayText("No action available"));
+        }
+    }
+
+    public void Dodge()
+    {
+        if (UseResource("major_action"))
+        {
+            CombatActions.Dodge(this);
+        }
+        else
+        {
+            StartCoroutine(CombatMenuManager.Instance.DisplayText("No action available"));
+        }
+    }
+    
+    public IEnumerator MakeAttackWithStat(
+        string stat,
+        bool proficient,
+        int AC,
+        Action<bool, bool> onComplete)
+    {
+        int hitMod = 0;
+        int hitPB = 0;
+        if (proficient) hitPB = GetPB();
+        bool crit = false;
+        int total = 0;
+
+        int dieRoll = DiceRoller.Rolld20();
+
+        switch (stat)
+        {
+            case "STR": hitMod = GetStat("mSTR"); break;
+            case "DEX": hitMod = GetStat("mDEX"); break;
+            case "CON": hitMod = GetStat("mCON"); break;
+            case "INT": hitMod = GetStat("mINT"); break;
+            case "WIS": hitMod = GetStat("mWIS"); break;
+            case "CHA": hitMod = GetStat("mCHA"); break;
+            default:
+                Debug.LogError("Invalid attack stat: " + stat);
+                yield break;
         }
 
+        if (dieRoll == 20)
+            crit = true;
 
-        // if (dieRoll + hitBonus >= target.GetAC())
-        // {
-        //     //Prompt for reaction
-        //     result = true;
-        // }
-        // else
-        // {
-        //     //Prompt for reaction
-        //     result = false;
-        // }
+        total += dieRoll + hitMod + hitPB;
 
-        // return result;
+        bool result = crit || total > AC;
+
+        yield return StartCoroutine(CombatMenuManager.Instance.DisplayDiceRoll(this, dieRoll, hitMod, hitPB, result));
+
+        if (result)
+            onComplete?.Invoke(true, crit);
+        else
+            onComplete?.Invoke(false, false);
     }
 
     public IEnumerator Die()
@@ -596,28 +631,56 @@ public class BaseUnit : MonoBehaviour
         
     }
 
-    public IEnumerator PullTarget(BaseUnit user, BaseUnit target, int pullDistance)
+    public IEnumerator PullTarget(BaseUnit target, int pullDistance)
     {
-
         for (int i = 0; i < pullDistance; i++)
         {
-            Vector2Int userPos = new Vector2Int(user.occupiedTile.tileX, user.occupiedTile.tileY);
+            Vector2Int userPos = new Vector2Int(occupiedTile.tileX, occupiedTile.tileY);
             Vector2Int targetPos = new Vector2Int(target.occupiedTile.tileX, target.occupiedTile.tileY);
 
             Vector2Int delta = targetPos - userPos;
-            
+
             Vector2Int direction = new Vector2Int(
                 Mathf.Clamp(delta.x, -1, 1),
                 Mathf.Clamp(delta.y, -1, 1)
             );
-            
+
             Vector2Int next = targetPos - direction;
 
             Tile nextTile = CombatGridManager.Instance.GetTileAtPosition(next);
 
-            if (!nextTile.isWalkable || target.occupiedTile.CheckDistanceInTiles(user.occupiedTile) == 1) break;
+            if (!nextTile.isWalkable || target.occupiedTile.CheckDistanceInTiles(occupiedTile) == 1) break;
 
             yield return StartCoroutine(nextTile.MoveUnit(target, true));
+        }
+    }
+    
+    public IEnumerator PushTarget(BaseUnit target, int pushDistance)
+    {
+        Vector2Int userPos = new Vector2Int(occupiedTile.tileX, occupiedTile.tileY);
+        Vector2Int targetPos = new Vector2Int(target.occupiedTile.tileX, target.occupiedTile.tileY);
+
+        Vector2Int delta = targetPos - userPos;
+
+        Vector2Int direction = new Vector2Int(
+            Mathf.Clamp(delta.x, -1, 1),
+            Mathf.Clamp(delta.y, -1, 1)
+        );
+
+        // Vector2Int newTargetPos = targetPos + direction * pushDistance;
+
+        Vector2Int currentPos = targetPos;
+
+        for (int i = 0; i < pushDistance; i++)
+        {
+            Vector2Int next = currentPos + direction;
+
+            Tile nextTile = CombatGridManager.Instance.GetTileAtPosition(next);
+
+            if (nextTile == null || !nextTile.isWalkable) break;
+
+            yield return StartCoroutine(nextTile.MoveUnit(target, true));
+            currentPos = next;
         }
     }
     
