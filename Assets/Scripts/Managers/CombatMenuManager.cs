@@ -236,7 +236,7 @@ public class CombatMenuManager : MonoBehaviour
                 new MenuOption("Major", OpenMajorMenu, () => true, () => pc.GetResource("major_action") > 0 ||
                     (pc.GetResource("current_number_of_attacks") < pc.GetResource("max_number_of_attacks") && pc.GetResource("current_number_of_attacks") > 0)),
                 new MenuOption("Minor", OpenMinorMenu, () => true, () => pc.GetResource("minor_action") > 0),
-                new MenuOption($"Move {pc.GetResource("current_speed")}", () => StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.MovingPC)),
+                new MenuOption($"Move ({pc.GetResource("current_speed")}ft left)", () => StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.MovingPC)),
                     () => true, () => pc.GetResource("current_speed") > 0),
                 new MenuOption("Free", OpenFreeActionMenu, () => true, () => true), //TODO: Add a condition to check for when there are free actions
                 new MenuOption("End Turn", () => pc.EndTurn(), () => true, () => true),
@@ -390,7 +390,9 @@ public class CombatMenuManager : MonoBehaviour
             BasePC pc = CombatUnitManager.Instance.SelectedPC;
             List<MenuOption> freeActions = new List<MenuOption>()
             {
-                //Put default options here
+                new MenuOption($"Fall Prone", () => pc.FallProne(), () => true, () => !pc.GetCondition("prone")),
+                new MenuOption($"Stand Up (Costs {pc.GetResource("base_speed") / 2}ft of speed)", () => pc.StandUp(),
+                () => true, () => pc.GetCondition("prone") && pc.GetResource("current_speed") >= pc.GetResource("base_speed") / 2)
             };
 
             pc.PopulateFreeActions(freeActions);

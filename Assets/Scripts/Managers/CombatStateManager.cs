@@ -92,6 +92,7 @@ public class CombatStateManager : MonoBehaviour
             //     // StartCoroutine(InitiativeTracker.Instance.StartTurn());
             //     break;
             case GameState.PlayerTurn:
+                Instance.processing = false;
                 StartCoroutine(CheckForGameOver());
                 DisableSelectionVisuals();
                 break;
@@ -139,7 +140,6 @@ public class CombatStateManager : MonoBehaviour
         Func<BaseUnit, (bool success, string message)> validator = null
     )
     {
-        Instance.processing = true;
 
         isSelectingTarget = true;
         selectedTarget = null;
@@ -166,9 +166,10 @@ public class CombatStateManager : MonoBehaviour
                 break;
         }
 
+        // Instance.processing = true;
         yield return new WaitUntil(() => selectedTarget != null || cancelSelection);
+        // isSelectingTarget = false;
 
-        isSelectingTarget = false;
         DisableSelectionVisuals();
 
         Instance.processing = false;
@@ -185,7 +186,6 @@ public class CombatStateManager : MonoBehaviour
         Func<Tile, (bool success, string message)> validator = null
     )
     {
-        Instance.processing = true;
 
         isSelectingTile = true;
         selectedTile = null;
@@ -208,12 +208,13 @@ public class CombatStateManager : MonoBehaviour
                 break;
         }
 
+        // Instance.processing = true;
         yield return new WaitUntil(() => selectedTile != null || cancelSelection);
+        Instance.processing = false;
 
         isSelectingTile = false;
         DisableSelectionVisuals();
 
-        Instance.processing = false;
 
         if (cancelSelection)
             yield break;

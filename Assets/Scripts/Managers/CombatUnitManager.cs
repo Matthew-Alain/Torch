@@ -12,7 +12,7 @@ public class CombatUnitManager : MonoBehaviour
     public List<int> activeMonsterIDs = new List<int>();
     public BasePC SelectedPC; //We only ever want a PC to be actionable
     public static CombatUnitManager Instance;
-    public string PCList = "(0,1,2,3,4,5)";
+    public string PCList = "(0,1,2,3,4,5,9991)";
 
     void Awake()
     {

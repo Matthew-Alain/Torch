@@ -82,14 +82,32 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         }
     }
 
-    public void ShowMovementHighlighting(Tile movingPCCurrenTile, int speedInTiles)
+    public void ShowMovementHighlighting(Tile movingPCCurrentTile, int speedInTiles)
     {
-        if(CheckDistanceInTiles(movingPCCurrenTile) == speedInTiles + 1 || !isWalkable || OccupiedUnit != null)
+        if (OccupiedUnit == InitiativeTracker.Instance.currentTurnUnit)
+            return;
+
+        int distance = CheckDistanceInTiles(movingPCCurrentTile);
+
+        if (distance == speedInTiles + 1 || (distance < speedInTiles && !isWalkable) || OccupiedUnit != null)
             invalidHighlight.SetActive(true);
-        else if (CheckDistanceInTiles(movingPCCurrenTile) == 1)
+        else if (distance == 1)
             validHighlight.SetActive(true);
-        else if (CheckDistanceInTiles(movingPCCurrenTile) <= speedInTiles)
+        else if (distance <= speedInTiles)
             inWalkingRangeHighlight.SetActive(true);
+    }
+
+    public void HighlightGreen()
+    {
+        validHighlight.SetActive(true);
+    }
+    public void HighlightRed()
+    {
+        invalidHighlight.SetActive(true);
+    }
+    public void HighlightBlue()
+    {
+        inWalkingRangeHighlight.SetActive(true);
     }
 
     public void HideValidTargeting()
@@ -103,12 +121,19 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     {
         highlight.SetActive(true);
         CombatMenuManager.Instance.ShowTileInfo(this);
+        if(CombatGridManager.inAOERange.Item1 != null)
+        {
+            CombatGridManager.HighlightTilesInRange(this);
+        }
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
         highlight.SetActive(false);
         CombatMenuManager.Instance.ShowTileInfo(null);
+
+        if (CombatGridManager.inAOERange.Item1 != null)
+            CombatStateManager.Instance.DisableSelectionVisuals();
     }
 
     public IEnumerator MoveUnit(BaseUnit movingUnit, bool forced)
@@ -215,7 +240,11 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     public void OnPointerClick(PointerEventData eventData)
     {
         if (CombatUnitManager.Instance.SelectedPC == null || CombatStateManager.Instance.processing)
+        {
+            // Log("Selected PC: " + CombatUnitManager.Instance.SelectedPC);
+            Log("Processing? " + CombatStateManager.Instance.processing);
             return;
+        }
 
         CombatMenuManager menu = CombatMenuManager.Instance;
 
@@ -228,8 +257,11 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             // currentState == GameState.Precombat ||
             currentState == GameState.RollInitiative ||
             currentState == GameState.MonsterTurn
-        ) return; //If it's not your turn, you can't click
-
+        )
+        {
+            Log("Current state is: " + currentState);
+            return; //If it's not your turn, you can't click
+        }
         if (!leftClick)
         {
             //Only close this if the stack has more than one layer

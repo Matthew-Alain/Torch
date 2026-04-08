@@ -192,7 +192,12 @@ public class SpellsManager : MonoBehaviour
         BaseUnit chosenTarget = null;
         List<BaseUnit> targets = new();
 
-        if(GetTargetType(id) == TargetType.AnyTile || GetTargetType(id) == TargetType.EmptyTile)
+        if(GetRadius(id) > 0)
+        {
+            CombatGridManager.inAOERange = (caster.occupiedTile, GetRange(id), GetRadius(id), false);
+        }
+
+        if (GetTargetType(id) == TargetType.AnyTile || GetTargetType(id) == TargetType.EmptyTile)
         {
             yield return CombatStateManager.Instance.StartTileSelection(
                 GetTargetType(id), caster, GetRange(id),
@@ -213,10 +218,13 @@ public class SpellsManager : MonoBehaviour
                 }
             );
 
-            if(chosenTile == null)
+            CombatGridManager.inAOERange = (null, 0, 0, false);
+
+            if (chosenTile == null)
                 yield break;
 
             targets = AOEHelper.GetUnitsInRadius(chosenTile, GetRadius(id));
+            // .Where(u => u.Faction == Faction.Monster).ToList(); //If it only affects enemies
         }
         else
         {
@@ -239,13 +247,15 @@ public class SpellsManager : MonoBehaviour
                 }
             );
 
-            if(chosenTarget == null)
+            CombatGridManager.inAOERange = (null, 0, 0, false);
+
+            if (chosenTarget == null)
                 yield break;
 
             targets = AOEHelper.GetUnitsInRadius(chosenTarget.occupiedTile, GetRadius(id));
         }
-
-        // .Where(u => u.Faction == Faction.Monster).ToList(); //If it only affects enemies
+        
+        CombatStateManager.Instance.processing = true;
 
         // Debug.Log("Target tile is is " + chosenTile.tileX + ", "+chosenTile.tileY);
         // Debug.Log("Radius is " + GetRadius(id));

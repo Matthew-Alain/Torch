@@ -185,6 +185,7 @@ public class BaseUnit : MonoBehaviour
             value = 1;
         }
         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_conditions SET {condition} = {value} WHERE id = {UnitID}");
+        CombatMenuManager.Instance.ReRenderMenu();
     }
 
     public bool CanSwim()
@@ -250,6 +251,7 @@ public class BaseUnit : MonoBehaviour
     public void SetResource(string resourceName, int newValue)
     {
         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET {resourceName} = {newValue} WHERE id = {UnitID}");
+        CombatMenuManager.Instance.ReRenderMenu();
     }
 
     public bool IsActive()
@@ -654,7 +656,7 @@ public class BaseUnit : MonoBehaviour
             yield return StartCoroutine(nextTile.MoveUnit(target, true));
         }
     }
-    
+
     public IEnumerator PushTarget(BaseUnit target, int pushDistance)
     {
         Vector2Int userPos = new Vector2Int(occupiedTile.tileX, occupiedTile.tileY);
@@ -683,6 +685,24 @@ public class BaseUnit : MonoBehaviour
             currentPos = next;
         }
     }
+
+    public void FallProne()
+    {
+        SetCondition("prone", true);
+    }
     
+    public void StandUp()
+    {
+        int movementCost = GetResource("base_speed") / 2;
+        if (GetResource("current_speed") >= movementCost)
+        {
+            SetCondition("prone", false);
+            SetResource("current_speed", GetResource("current_speed") - movementCost);
+        }
+        else
+        {
+            Debug.Log("Not enough speed to stand up");
+        }
+    }
     
 }

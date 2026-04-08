@@ -3,6 +3,7 @@ using UnityEngine;
 using System;
 using static UnityEngine.Debug;
 using UnityEngine.EventSystems;
+using UnityEditor;
 
 public class CombatGridManager : MonoBehaviour
 {
@@ -11,9 +12,9 @@ public class CombatGridManager : MonoBehaviour
     [SerializeField] private Tile grassTile, mountainTile, waterTile, wallTile;
     [SerializeField] private Transform cam;
 
-
     public List<Tile> tilesList = new List<Tile>();
     public Dictionary<Vector2, Tile> tiles;
+    public static (Tile, int, int, bool) inAOERange = (null, 0, 0, false);
 
     void Awake()
     {
@@ -183,7 +184,7 @@ public class CombatGridManager : MonoBehaviour
     public static void UpdateMovementHighlighting()
     {
         CombatStateManager.Instance.DisableSelectionVisuals();
-        if(CombatStateManager.Instance.GameState == GameState.MovingPC)
+        if (CombatStateManager.Instance.GameState == GameState.MovingPC)
         {
             BaseUnit currentPC = InitiativeTracker.Instance.currentTurnUnit;
             int speedInTiles = currentPC.GetResource("current_speed") / 5;
@@ -193,7 +194,28 @@ public class CombatGridManager : MonoBehaviour
                 tile.ShowMovementHighlighting(currentPC.occupiedTile, speedInTiles);
             }
         }
+    }
 
+    public static void HighlightTilesInRange(Tile hoveredTile)
+    {
+        foreach (Tile tile in Instance.tilesList)
+        {
+            if (hoveredTile.CheckDistanceInTiles(tile) <= inAOERange.Item3 && inAOERange.Item1.CheckDistanceInTiles(hoveredTile) <= inAOERange.Item2)
+            {
+                if (tile.OccupiedUnit == null)
+                {
+                    tile.HighlightBlue();
+                }
+                else if (!(inAOERange.Item4 && tile.OccupiedUnit.Faction == Faction.PC))
+                {
+                    tile.HighlightRed();
+                }
+            }
+            else if (inAOERange.Item1.CheckDistanceInTiles(tile) <= inAOERange.Item2)
+            {
+                tile.HighlightGreen();
+            }
+        }
     }
 }
 
