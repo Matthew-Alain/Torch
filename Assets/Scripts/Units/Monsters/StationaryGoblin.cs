@@ -1,11 +1,11 @@
 using UnityEngine;
 
-public class UnderseaGrappler : BaseMonster
+public class StationaryGoblin : BaseMonster
 {
     void Start()
     {
-        (int, int)[] actions = {
-            (6, 9)
+        (int, int)[] actions = { 
+            
         };
         actionList.AddRange(actions);
     }

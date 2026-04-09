@@ -7,7 +7,7 @@ public class GoblinMage : BaseMonster
         (int, int)[] actions = {
             (2, 0),
             (3, 0),
-            (8, 2)
+            (7, 2)
         };
         actionList.AddRange(actions);
     }

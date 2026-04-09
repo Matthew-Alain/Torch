@@ -86,6 +86,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/26_Encounter_3.unity
     guid: bf238f13585e69b43977c16f788e8b0f
+  - enabled: 1
+    path: Assets/Scenes/27_Encounter_4.unity
+    guid: f76520a08eb90cd48b86459f08711a92
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

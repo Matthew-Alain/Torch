@@ -12,7 +12,7 @@ public class CombatUnitManager : MonoBehaviour
     public List<int> activeMonsterIDs = new List<int>();
     public BasePC SelectedPC; //We only ever want a PC to be actionable
     public static CombatUnitManager Instance;
-    public string PCList = "(0,1,2,3,4,5,9991)";
+    public string PCList;
 
     void Awake()
     {
@@ -36,6 +36,7 @@ public class CombatUnitManager : MonoBehaviour
 
         //Goes into resources folder, goes into units folder, look into all subfolders for all types of scriptable units and put them into this list
         units = Resources.LoadAll<ScriptableUnit>("Units").ToList();
+        PCList = "(0,1,2,3,4,5,9991)";
     }
 
     public void SpawnPCs(int encounterID)
@@ -132,6 +133,8 @@ public class CombatUnitManager : MonoBehaviour
     {
         activePCIDs.Clear();
 
+        // Debug.Log("PCList: "+PCList);
+
         DatabaseManager.Instance.ExecuteReader(
             $"SELECT unit_id FROM grid_contents WHERE unit_id IN {PCList} AND encounter_id = {DatabaseManager.Instance.currentEncounter}",
             reader =>
@@ -139,6 +142,7 @@ public class CombatUnitManager : MonoBehaviour
                 while (reader.Read())
                 {
                     activePCIDs.Add(Convert.ToInt32(reader["unit_id"]));
+                    // Debug.Log("Found unit " + Convert.ToInt32(reader["unit_id"]));
                 }
             }
         );

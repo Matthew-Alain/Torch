@@ -10,7 +10,7 @@ public class DatabaseManager : MonoBehaviour
     //Database configurations
     private const string baseDBName = "torch.db";
     private string dbName = "torch.db";
-    private List<string> encounterDBNames = new List<string> { "encounter_1.db", "encounter_2.db", "encounter_3.db" };
+    private List<string> encounterDBNames = new List<string> { "encounter_1.db", "encounter_2.db", "encounter_3.db", "encounter_4.db" };
     public static DatabaseManager Instance;
     private string dbPath;
     private SqliteConnection connection;

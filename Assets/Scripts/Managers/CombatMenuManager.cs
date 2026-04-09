@@ -306,7 +306,7 @@ public class CombatMenuManager : MonoBehaviour
                 new MenuOption("Grapple", () => StartCoroutine(pc.Attack(0)), () => true, () => pc.GetResource("major_action") > 0 ||
                     (pc.GetResource("current_number_of_attacks") < pc.GetResource("max_number_of_attacks") && pc.GetResource("current_number_of_attacks") > 0)), //TODO: Add grappling mechanics
                 
-                new MenuOption("Shove Backwards", () => pc.ShoveBack(), () => true, () => pc.GetResource("major_action") > 0 ||
+                new MenuOption("Shove Backwards", () => StartCoroutine(pc.ShoveBack()), () => true, () => pc.GetResource("major_action") > 0 ||
                     (pc.GetResource("current_number_of_attacks") < pc.GetResource("max_number_of_attacks") && pc.GetResource("current_number_of_attacks") > 0)),
 
                 new MenuOption("Shove Prone", () => pc.ShoveProne(), () => true, () => pc.GetResource("major_action") > 0 ||
