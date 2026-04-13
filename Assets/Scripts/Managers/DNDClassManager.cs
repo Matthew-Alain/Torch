@@ -374,9 +374,9 @@ public class DNDClassManager : MonoBehaviour
             DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET dnd_class_5 = null WHERE id = {currentPC.UnitID}");
 
         if (level.value == 4)
-            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_stats SET proficiency = 3 WHERE id = {currentPC.UnitID}");
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_info SET proficiency = 3 WHERE id = {currentPC.UnitID}");
         else
-            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_stats SET proficiency = 2 WHERE id = {currentPC.UnitID}");
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_info SET proficiency = 2 WHERE id = {currentPC.UnitID}");
 
         if (classWithSubclass == -1)
             DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET subclass = null WHERE id = {currentPC.UnitID}");
@@ -587,7 +587,7 @@ public class DNDClassManager : MonoBehaviour
             level_3_slots = 2;
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            $"UPDATE unit_resources SET level_1_slots = {level_1_slots}, level_2_slots = {level_2_slots}, level_3_slots = {level_3_slots} WHERE id = {currentPC.UnitID}"
+            $"UPDATE unit_info SET level_1_slots = {level_1_slots}, level_2_slots = {level_2_slots}, level_3_slots = {level_3_slots} WHERE id = {currentPC.UnitID}"
         );
     }
 
@@ -598,7 +598,7 @@ public class DNDClassManager : MonoBehaviour
         int d10 = allLevels[4] + allLevels[6] + allLevels[7];
         int d12 = allLevels[0];
 
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET d6_hd = {d6}, d8_hd = {d8}, d10_hd = {d10}, d12_hd = {d12} WHERE id = {currentPC.UnitID}");
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_info SET d6_hd = {d6}, d8_hd = {d8}, d10_hd = {d10}, d12_hd = {d12} WHERE id = {currentPC.UnitID}");
     }
 
     private void CloseFeatureWindow()

@@ -95,7 +95,7 @@ public class AbilityScoreManager : MonoBehaviour
 
         DatabaseManager.Instance.ExecuteReader(
             "SELECT strength, dexterity, constitution, intelligence, wisdom, charisma, mSTR, mDEX, mCON, mINT, mWIS, mCHA " +
-                $"FROM unit_stats WHERE id = {currentPC.UnitID}",
+                $"FROM unit_info WHERE id = {currentPC.UnitID}",
             reader =>
             {
                 while (reader.Read())
@@ -412,7 +412,7 @@ public class AbilityScoreManager : MonoBehaviour
         );
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            "UPDATE unit_stats SET " +
+            "UPDATE unit_info SET " +
                 $"strength = {finalStatsList[0]}, dexterity = {finalStatsList[1]}, constitution = {finalStatsList[2]}, "+
                 $"intelligence = {finalStatsList[3]}, wisdom = {finalStatsList[4]}, charisma = {finalStatsList[5]}, " +
                 $"mSTR = {modsList[0]}, mDEX = {modsList[1]}, mCON = {modsList[2]}, mINT = {modsList[3]}, mWIS = {modsList[4]}, mCHA = {modsList[5]} " +

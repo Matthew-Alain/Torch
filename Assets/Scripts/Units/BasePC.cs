@@ -429,15 +429,15 @@ public class BasePC : BaseUnit
 
     public IEnumerator FailDeathSave(int number)
     {
-        int currentFails = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT death_save_fails FROM unit_resources WHERE id = {UnitID}"));
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET death_save_fails = {currentFails + number} WHERE id = {UnitID}");
+        int currentFails = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT death_save_fails FROM unit_info WHERE id = {UnitID}"));
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_info SET death_save_fails = {currentFails + number} WHERE id = {UnitID}");
         yield return CheckForDeath(currentFails);
     }
 
     public IEnumerator PassDeathSave(int number)
     {
-        int currentPasses = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT death_save_successes FROM unit_resources WHERE id = {UnitID}"));
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET death_save_successes = {currentPasses + number} WHERE id = {UnitID}");
+        int currentPasses = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT death_save_successes FROM unit_info WHERE id = {UnitID}"));
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_info SET death_save_successes = {currentPasses + number} WHERE id = {UnitID}");
         yield return CheckForStable(currentPasses);
     }
 
@@ -465,7 +465,7 @@ public class BasePC : BaseUnit
 
     public void ClearDeathSaves()
     {
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET death_save_successes = 0, death_save_fails = 0 WHERE id = {UnitID}");
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_info SET death_save_successes = 0, death_save_fails = 0 WHERE id = {UnitID}");
         SetCondition("dying", false);
         SetCondition("unconscious", false);
     }

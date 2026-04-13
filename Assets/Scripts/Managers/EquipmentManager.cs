@@ -327,7 +327,7 @@ public class EquipmentManager : MonoBehaviour
         );
 
         DatabaseManager.Instance.ExecuteNonQuery(
-            $"UPDATE unit_stats SET AC = {totalACLabel.text} WHERE id = {currentPC.UnitID}"
+            $"UPDATE unit_info SET AC = {totalACLabel.text} WHERE id = {currentPC.UnitID}"
         );
     }
 }

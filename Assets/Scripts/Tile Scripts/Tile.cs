@@ -160,7 +160,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             if (TurnUtility.ShouldStop(movingUnit)) yield break;
 
             int unitSpeed = Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar(
-                $"SELECT current_speed FROM unit_resources WHERE id = {movingUnit.UnitID}"
+                $"SELECT current_speed FROM unit_info WHERE id = {movingUnit.UnitID}"
             ));
 
             //If tile is difficult terrain, multiply by 10 instead
@@ -184,7 +184,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 int newSpeed = unitSpeed - movementCost;
 
                 DatabaseManager.Instance.ExecuteNonQuery(
-                    $"UPDATE unit_resources SET current_speed = {newSpeed} WHERE id = {movingUnit.UnitID}"
+                    $"UPDATE unit_info SET current_speed = {newSpeed} WHERE id = {movingUnit.UnitID}"
                 );
                 // yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{movingUnit.UnitName} has {newSpeed} feet of movement left"));
                 // Log("Unit has " + newSpeed + " feet of movement left.");
@@ -397,7 +397,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     // private bool CheckWithinUnitSpeed(int numberOfTiles, BaseUnit movingUnit)
     // {
     //     decimal unitSpeed = Convert.ToDecimal(DatabaseManager.Instance.ExecuteScalar(
-    //         $"SELECT current_speed FROM unit_resources WHERE id = {movingUnit.UnitID}"
+    //         $"SELECT current_speed FROM unit_info WHERE id = {movingUnit.UnitID}"
     //     )) / 5;
 
     //     int speedInTiles = (int)Math.Floor(unitSpeed);

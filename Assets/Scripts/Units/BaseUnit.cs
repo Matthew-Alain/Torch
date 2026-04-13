@@ -32,17 +32,17 @@ public class BaseUnit : MonoBehaviour
 
     public int GetCurrentHP()
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT current_hp FROM unit_resources WHERE id = {UnitID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT current_hp FROM unit_info WHERE id = {UnitID}"));
     }
 
     public void SetCurrentHP(int newHP)
     {
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET current_hp = {newHP} WHERE id = {UnitID}");
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_info SET current_hp = {newHP} WHERE id = {UnitID}");
     }
 
     public int GetTempHP()
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT temp_hp FROM unit_resources WHERE id = {UnitID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT temp_hp FROM unit_info WHERE id = {UnitID}"));
     }
 
     public void SetTempHP(int newTempHP)
@@ -50,18 +50,18 @@ public class BaseUnit : MonoBehaviour
         int currentTempHP = GetTempHP();
         if(newTempHP > currentTempHP)
         {
-            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET temp_hp = {newTempHP} WHERE id = {UnitID}");
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_info SET temp_hp = {newTempHP} WHERE id = {UnitID}");
         }
     }
 
     public int GetMaxHP()
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT max_hp FROM unit_resources WHERE id = {UnitID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT max_hp FROM unit_info WHERE id = {UnitID}"));
     }
 
     public int GetAC()
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT AC FROM unit_stats WHERE id = {UnitID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT AC FROM unit_info WHERE id = {UnitID}"));
     }
 
     public int GetSaveDCForStat(string stat)
@@ -110,12 +110,12 @@ public class BaseUnit : MonoBehaviour
 
     public int GetModifier(string modifier)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT {modifier} FROM unit_stats WHERE id = {UnitID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT {modifier} FROM unit_info WHERE id = {UnitID}"));
     }
 
     public int GetStat(string stat)
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT {stat} FROM unit_stats WHERE id = {UnitID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT {stat} FROM unit_info WHERE id = {UnitID}"));
     }
 
     public int GetProficiency(string proficiency)
@@ -135,7 +135,7 @@ public class BaseUnit : MonoBehaviour
 
     public int GetPB()
     {
-        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT proficiency FROM unit_stats WHERE id = {UnitID}"));
+        return Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT proficiency FROM unit_info WHERE id = {UnitID}"));
     }
 
     public int GetWeaponProficiency(int weaponID)
@@ -174,7 +174,7 @@ public class BaseUnit : MonoBehaviour
 
     public bool GetCondition(string condition)
     {
-        return Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT {condition} FROM unit_conditions WHERE id = {UnitID}"));
+        return Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT {condition} FROM unit_info WHERE id = {UnitID}"));
     }
 
     public void SetCondition(string condition, bool status)
@@ -184,32 +184,32 @@ public class BaseUnit : MonoBehaviour
         {
             value = 1;
         }
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_conditions SET {condition} = {value} WHERE id = {UnitID}");
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_info SET {condition} = {value} WHERE id = {UnitID}");
         CombatMenuManager.Instance.ReRenderMenu();
     }
 
     public bool CanSwim()
     {
-        return Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT can_swim FROM unit_flags WHERE id = {UnitID}"));
+        return Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT can_swim FROM unit_info WHERE id = {UnitID}"));
     }
     
     public bool CanClimb()
     {
-        return Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT can_climb FROM unit_flags WHERE id = {UnitID}"));
+        return Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT can_climb FROM unit_info WHERE id = {UnitID}"));
     }
 
     public bool HasReaction()
     {
-        return Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT reaction FROM unit_resources WHERE id = {UnitID}"));
+        return Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT reaction FROM unit_info WHERE id = {UnitID}"));
     }
 
     // public bool UseReaction()
     // {
-    //     bool hasReaction = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT reaction FROM unit_resources WHERE id = {UnitID}"));
+    //     bool hasReaction = Convert.ToBoolean(DatabaseManager.Instance.ExecuteScalar($"SELECT reaction FROM unit_info WHERE id = {UnitID}"));
 
     //     if (hasReaction)
     //     {
-    //         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET reaction = 0 WHERE id = {UnitID}");
+    //         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_info SET reaction = 0 WHERE id = {UnitID}");
     //     }
     //     else
     //     {
@@ -221,7 +221,7 @@ public class BaseUnit : MonoBehaviour
     
     public int GetResource(string resourceName)
     {
-        var resourceValue = DatabaseManager.Instance.ExecuteScalar($"SELECT {resourceName} FROM unit_resources WHERE id = {UnitID}");
+        var resourceValue = DatabaseManager.Instance.ExecuteScalar($"SELECT {resourceName} FROM unit_info WHERE id = {UnitID}");
         
         if(resourceValue == DBNull.Value)
         {
@@ -238,7 +238,7 @@ public class BaseUnit : MonoBehaviour
 
         if (currentResource > 0)
         {
-            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET {resourceName} = {currentResource - 1} WHERE id = {UnitID}");
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_info SET {resourceName} = {currentResource - 1} WHERE id = {UnitID}");
             CombatMenuManager.Instance.ReRenderMenu();
 
             return true;
@@ -250,7 +250,7 @@ public class BaseUnit : MonoBehaviour
 
     public void SetResource(string resourceName, int newValue)
     {
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_resources SET {resourceName} = {newValue} WHERE id = {UnitID}");
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_info SET {resourceName} = {newValue} WHERE id = {UnitID}");
         CombatMenuManager.Instance.ReRenderMenu();
     }
 
