@@ -12,7 +12,7 @@ public class CharacterSelectManager : MonoBehaviour
 
         List<string> nameList = new List<string>();//Create the list of strings to hold the names
 
-        DatabaseManager.Instance.ExecuteReader("SELECT name FROM saved_pcs",
+        DatabaseManager.Instance.ExecuteReader("SELECT name FROM unit_info",
         reader =>
         {
             while (reader.Read())

@@ -63,11 +63,11 @@ public class CombatActions: MonoBehaviour
         }
         else if (distance <= normal_range)
         {
-            RangedWeaponAttack(attacker, target, weaponID);
+            yield return CombatUnitManager.Instance.StartCoroutine(RangedWeaponAttack(attacker, target, weaponID));
         }
         else if (distance <= long_range)
         {
-            LongRangeWeaponAttack(attacker, target, weaponID);
+            yield return CombatUnitManager.Instance.StartCoroutine(LongRangeWeaponAttack(attacker, target, weaponID));
         }
         else
         {
@@ -81,6 +81,74 @@ public class CombatActions: MonoBehaviour
 
     public static IEnumerator MeleeWeaponAttack(BaseUnit attacker, BaseUnit target, int weaponID)
     {
+        int dieRoll = DiceRoller.Rolld20();
+
+        string attackStat = "";
+        int dice_number = 0;
+        int dice_size = 0;
+        DatabaseManager.Instance.ExecuteReader(
+            $"SELECT stat, category, light, dice_number, dice_size FROM weapons WHERE id = {weaponID}",
+            reader =>
+            {
+                attackStat = Convert.ToString(reader["stat"]);
+                dice_number = Convert.ToInt32(reader["dice_number"]);
+                dice_size = Convert.ToInt32(reader["dice_size"]);
+            }
+        );
+
+        int mSTR = attacker.GetModifier("mSTR");
+        int mDEX = attacker.GetModifier("mDEX");
+
+        int attackModifier = 0;
+        if (attackStat == "STR" || (attackStat == "Finesse" && mSTR > mDEX))
+        {
+            attackModifier = mSTR;
+        }
+        else if (attackStat == "DEX" || attackStat == "Finesse" && mSTR <= mDEX)
+        {
+            attackModifier = mDEX;
+        }
+        // Debug.Log("Your weapon uses " + attackStat + ", so you add " + attackModifier + " to your d20 roll.");
+
+
+        int pb = attacker.GetWeaponProficiency(weaponID);
+        // Debug.Log("PB = " + pb);
+
+        int totalResult = dieRoll + attackModifier + pb;
+        // Debug.Log($"You rolled {dieRoll}, with a modifier of {attackModifier}, and a proficiency of {pb}, for a total result of: {totalResult}");
+
+        bool result = totalResult >= target.GetAC();
+
+        yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayDiceRoll(attacker, dieRoll, attackModifier, pb, result));
+
+        if (result)
+        {
+            // Debug.Log($"The target's AC is {target.GetAC()}, so you hit!");
+
+            if (dieRoll == 20)
+            {
+                // yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled a natural 20 to hit {target.UnitName}!"));
+                yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number * 2, dice_size), true));
+            }
+            else
+            {
+                // yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled {totalResult} to hit, which hits {target.UnitName}"));
+                yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number, dice_size), false));
+            }
+
+
+        }
+        else
+        {
+            // yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled {totalResult} to hit, which misses {target.UnitName}"));
+        }
+    }
+
+    public static IEnumerator RangedWeaponAttack(BaseUnit attacker, BaseUnit target, int weaponID)
+    {
+        //If there is an enemy within 5 feet:
+        // int dieRoll = DiceRoller.Rolld20(true, false);
+
         int dieRoll = DiceRoller.Rolld20();
 
         string attackStat = "";
@@ -143,13 +211,68 @@ public class CombatActions: MonoBehaviour
         }
     }
 
-    public static void RangedWeaponAttack(BaseUnit attacker, BaseUnit target, int weaponID)
-    {
-
-    }
-
-    public static void LongRangeWeaponAttack(BaseUnit attacker, BaseUnit target, int weaponID)
+    public static IEnumerator LongRangeWeaponAttack(BaseUnit attacker, BaseUnit target, int weaponID)
     {
         //If user has sharpshooter, just make a ranged weapon attack
+        int dieRoll = DiceRoller.Rolld20(false, true);
+
+        string attackStat = "";
+        int dice_number = 0;
+        int dice_size = 0;
+        DatabaseManager.Instance.ExecuteReader(
+            $"SELECT stat, category, light, dice_number, dice_size FROM weapons WHERE id = {weaponID}",
+            reader =>
+            {
+                attackStat = Convert.ToString(reader["stat"]);
+                dice_number = Convert.ToInt32(reader["dice_number"]);
+                dice_size = Convert.ToInt32(reader["dice_size"]);
+            }
+        );
+
+        int mSTR = attacker.GetModifier("mSTR");
+        int mDEX = attacker.GetModifier("mDEX");
+
+        int attackModifier = 0;
+        if (attackStat == "STR" || (attackStat == "Finesse" && mSTR > mDEX))
+        {
+            attackModifier = mSTR;
+        }
+        else if (attackStat == "DEX" || attackStat == "Finesse" && mSTR <= mDEX)
+        {
+            attackModifier = mDEX;
+        }
+        // Debug.Log("Your weapon uses " + attackStat + ", so you add " + attackModifier + " to your d20 roll.");
+
+
+        int pb = attacker.GetWeaponProficiency(weaponID);
+
+        int totalResult = dieRoll + attackModifier + pb;
+        // Debug.Log($"You rolled {dieRoll}, with a modifier of {attackModifier}, and a proficiency of {pb}, for a total result of: {totalResult}");
+
+        bool result = totalResult >= target.GetAC();
+
+        yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayDiceRoll(attacker, dieRoll, attackModifier, pb, result));
+
+        if (result)
+        {
+            // Debug.Log($"The target's AC is {target.GetAC()}, so you hit!");
+
+            if (dieRoll == 20)
+            {
+                // yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled a natural 20 to hit {target.UnitName}!"));
+                yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number * 2, dice_size), true));
+            }
+            else
+            {
+                // yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled {totalResult} to hit, which hits {target.UnitName}"));
+                yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number, dice_size), false));
+            }
+
+
+        }
+        else
+        {
+            // yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled {totalResult} to hit, which misses {target.UnitName}"));
+        }
     }
 }

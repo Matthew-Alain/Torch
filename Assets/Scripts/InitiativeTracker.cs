@@ -121,7 +121,7 @@ public class InitiativeTracker: MonoBehaviour
         return nextUnit;
     }
 
-    public void AdvanceTurn()
+    public IEnumerator AdvanceTurn()
     {
         do
         {
@@ -137,6 +137,8 @@ public class InitiativeTracker: MonoBehaviour
 
             currentTurnUnit = GetCurrentUnit();
         } while (currentTurnUnit == null);
+
+        yield return null;
 
         // Debug.LogWarning("Current unit turn: "+currentTurnUnit);
     }

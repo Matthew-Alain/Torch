@@ -9,11 +9,11 @@ public class BaseMonster : BaseUnit
     public List<(int, int)> actionList = new List<(int, int)>();
     public List<int> validActions;
     public List<(BaseUnit, int, int)> validTargetsWithAttackAndPriority = new List<(BaseUnit, int, int)>();
-    public int attackMod;
-    public int saveDC;
-    public int proficiency;
-    public string BaseName;
-    public string DisplayName;
+    // public int attackMod;
+    // public int saveDC;
+    // public int proficiency;
+    // public string BaseName;
+    // public string DisplayName;
 
     public override void Initialize(){}
     
@@ -104,7 +104,7 @@ public class BaseMonster : BaseUnit
                 }
                 else
                 {
-                    // Debug.Log($"Attack {attackID} cannot get within range of {target.UnitName}");
+                    Debug.Log($"Attack {attackID} cannot get within range of {target.UnitName}");
                     continue;
                 }
 
@@ -241,17 +241,22 @@ public class BaseMonster : BaseUnit
         for (int i = 0; i < path.Count; i++)
         {
             yield return StartCoroutine(path[i].MoveUnit(this, false));
-            
+
             if (TurnUtility.ShouldStop(this))
             {
                 // Debug.Log("Turn should stop");
                 yield break;
-                
+
             }
         }
     }
-
+    
     public List<Tile> GetPathToBestAttackTile(Tile targetTile, int attackID)
+    {
+        return GetPathToBestAttackTile(targetTile, attackID, false);
+    }
+
+    public List<Tile> GetPathToBestAttackTile(Tile targetTile, int attackID, bool getAsCloseAsPossible)
     {
         var openSet = new List<Tile> { occupiedTile };
         var cameFrom = new Dictionary<Tile, Tile>();
@@ -278,7 +283,10 @@ public class BaseMonster : BaseUnit
             Tile current = openSet.OrderBy(t => fScore.ContainsKey(t) ? fScore[t] : int.MaxValue).First();
             openSet.Remove(current);
 
-            int distToTarget = Heuristic(current, targetTile);
+            // int distToTarget = Heuristic(current, targetTile);
+            // int distToTarget = GetPathDistance(current, targetTile);
+            Dictionary<Tile, int> distanceMap = GenerateDistanceMap(targetTile);
+            int distToTarget = distanceMap.ContainsKey(current) ? distanceMap[current] : int.MaxValue;
 
             // fallback tracking
             if (distToTarget < closestDistance)
@@ -328,13 +336,13 @@ public class BaseMonster : BaseUnit
 
                 int tentativeG = gScore[current] + moveCost;
 
-                if (tentativeG > GetResource("current_speed")) continue;
+                if (tentativeG > GetResource("current_speed") && !getAsCloseAsPossible) continue;
 
                 if (!gScore.ContainsKey(neighbor) || tentativeG < gScore[neighbor])
                 {
                     cameFrom[neighbor] = current;
                     gScore[neighbor] = tentativeG;
-                    fScore[neighbor] = tentativeG;
+                    fScore[neighbor] = tentativeG + Heuristic(neighbor, targetTile);
 
                     if (!openSet.Contains(neighbor))
                         openSet.Add(neighbor);
@@ -349,6 +357,11 @@ public class BaseMonster : BaseUnit
             return ReconstructPath(cameFrom, closestTile);
 
         return null;
+    }
+
+    public List<Tile> GetAsCloseAsPossibleToTarget(Tile targetTile, int attackID)
+    {
+        return GetPathToBestAttackTile(targetTile, attackID, true);
     }
 
     int GetIdealDistance(RangeType type, int meleeMax, int normalMax, int longMax)
@@ -385,6 +398,65 @@ public class BaseMonster : BaseUnit
             case RangeType.Long: return 1;
             default: return 0;
         }
+    }
+
+    int GetPathDistance(Tile start, Tile target)
+    {
+        var openSet = new List<Tile> { start };
+        var gScore = new Dictionary<Tile, int> { [start] = 0 };
+
+        while (openSet.Count > 0)
+        {
+            Tile current = openSet.OrderBy(t => gScore[t]).First();
+            openSet.Remove(current);
+
+            if (current == target)
+                return gScore[current];
+
+            foreach (Tile neighbor in GetNeighbors(current))
+            {
+                if (neighbor == null || !neighbor.isWalkable)
+                    continue;
+
+                int tentative = gScore[current] + 1;
+
+                if (!gScore.ContainsKey(neighbor) || tentative < gScore[neighbor])
+                {
+                    gScore[neighbor] = tentative;
+                    openSet.Add(neighbor);
+                }
+            }
+        }
+
+        return int.MaxValue; // unreachable
+    }
+
+    Dictionary<Tile, int> GenerateDistanceMap(Tile target)
+    {
+        var distances = new Dictionary<Tile, int>();
+        var queue = new Queue<Tile>();
+
+        distances[target] = 0;
+        queue.Enqueue(target);
+
+        while (queue.Count > 0)
+        {
+            Tile current = queue.Dequeue();
+
+            foreach (var neighbor in GetNeighbors(current))
+            {
+                if (neighbor == null || !neighbor.isWalkable)
+                    continue;
+
+                if (!distances.ContainsKey(neighbor))
+                {
+                    distances[neighbor] = distances[current] + 1;
+                    queue.Enqueue(neighbor);
+                }
+            }
+        }
+
+        return distances;
     }
 
     int Heuristic(Tile a, Tile b)
@@ -592,8 +664,16 @@ public class BaseMonster : BaseUnit
 
     public IEnumerator MoveToClosestPC()
     {
-        var path = GetPathToBestAttackTile(GetClosestPC().occupiedTile, 0); //Try to get as close as possible to them
-        yield return StartCoroutine(MoveToTile(path));
+        List<Tile> pathToTake;
+        if(actionList.Count == 0)
+        {
+            pathToTake = GetAsCloseAsPossibleToTarget(GetClosestPC().occupiedTile, 0);
+        }
+        else
+        {
+            pathToTake = GetAsCloseAsPossibleToTarget(GetClosestPC().occupiedTile, actionList[0].Item1); //Try to get as close as possible to them
+        }
+        yield return StartCoroutine(MoveToTile(pathToTake));
     }
 
     public IEnumerator ExecuteAction(int actionID, BaseUnit target)
@@ -622,11 +702,11 @@ public class BaseMonster : BaseUnit
             {
                 case 2:
                     Dodge();
-                    yield return MoveToClosestPC();
+                    yield return StartCoroutine(MoveToClosestPC());
                     break;
                 case 3:
                     Dash(); //Take the dash action
-                    yield return MoveToClosestPC();
+                    yield return StartCoroutine(MoveToClosestPC());
                     break;
 
             }

@@ -22,7 +22,7 @@ public class BaseUnit : MonoBehaviour
 
     public string GetName()
     {
-        return Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT name FROM saved_pcs WHERE id = {UnitID}"));
+        return Convert.ToString(DatabaseManager.Instance.ExecuteScalar($"SELECT name FROM unit_info WHERE id = {UnitID}"));
     }
 
     public void SetName(string newName)
@@ -183,6 +183,11 @@ public class BaseUnit : MonoBehaviour
         if (status)
         {
             value = 1;
+            DatabaseManager.Instance.ExecuteNonQuery($"INSERT INTO active_conditions (condition_name, target_unit_id) VALUES ('{condition}', {UnitID})");
+        }
+        else
+        {
+            DatabaseManager.Instance.ExecuteNonQuery($"DELETE FROM active_conditions WHERE condition_name = '{condition}' AND target_unit_id = {UnitID}");
         }
         DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_info SET {condition} = {value} WHERE id = {UnitID}");
         CombatMenuManager.Instance.ReRenderMenu();
@@ -380,7 +385,7 @@ public class BaseUnit : MonoBehaviour
         SetCurrentHP(currentHP);
     }
 
-    public void RestoreHealth(int amount)
+    public IEnumerator RestoreHealth(int amount)
     {
         if (!GetCondition("dead"))
         {
@@ -415,6 +420,8 @@ public class BaseUnit : MonoBehaviour
                 ((BasePC)this).ClearDeathSaves();
             }
         }
+
+        yield return null;
     }
 
     public bool MakeSave(string saveType, int DC)
@@ -679,7 +686,7 @@ public class BaseUnit : MonoBehaviour
 
             Tile nextTile = CombatGridManager.Instance.GetTileAtPosition(next);
 
-            if (nextTile == null || !nextTile.isWalkable) break;
+            if (nextTile == null || !nextTile.isWalkable || nextTile.OccupiedUnit != null) break;
 
             yield return StartCoroutine(nextTile.MoveUnit(target, true));
             currentPos = next;

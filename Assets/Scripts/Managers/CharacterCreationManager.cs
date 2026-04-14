@@ -25,7 +25,7 @@ public class CharacterCreationManager : MonoBehaviour
 
         if (characterName == null)
         {
-            Debug.Log("No character name assigned");
+            Debug.LogError("No character name assigned");
             return;
         }
         characterName.SetTextWithoutNotify(GetCharacterName()); //Populate the character name
@@ -36,7 +36,7 @@ public class CharacterCreationManager : MonoBehaviour
     string GetCharacterName()
     {
         return Convert.ToString(DatabaseManager.Instance.ExecuteScalar( //Get the character's name
-            $"SELECT name FROM saved_pcs WHERE id = {currentPC.UnitID}"
+            $"SELECT name FROM unit_info WHERE id = {currentPC.UnitID}"
         ));        
     }
 
@@ -44,7 +44,7 @@ public class CharacterCreationManager : MonoBehaviour
     {
         if(!string.IsNullOrWhiteSpace(characterName.text))
         {
-            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE saved_pcs SET name = \"{characterName.text}\" WHERE id = {currentPC.UnitID}");
+            DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_info SET name = \"{characterName.text}\" WHERE id = {currentPC.UnitID}");
         }
     }
 

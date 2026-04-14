@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a9a810d260c8bc34e87c46c881b08ca1, type: 3}
-  m_Name: Melee Goblin
+  m_Name: Goblin Dodger
   m_EditorClassIdentifier: 
   Faction: 1
-  UnitPrefab: {fileID: -5055018895735029699, guid: 8e1faf6e8560f474fb305f0fe8cb9cbe, type: 3}
+  UnitPrefab: {fileID: -3530375247695887920, guid: 6117a5a4e441c2142bc78eac166a657b, type: 3}
   UnitSprite: {fileID: 0}
-  UnitID: 9994
+  UnitID: 9993

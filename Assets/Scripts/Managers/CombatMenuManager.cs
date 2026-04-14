@@ -23,6 +23,15 @@ public class CombatMenuManager : MonoBehaviour
     public GameObject chatPrefab;
     public Transform contentParent;
 
+    [SerializeField] public GameObject UnitInfoCanvas;
+    public Button btnCloseUnitInfo;
+    [SerializeField] private ScrollRect unitInfoConditionScrollRect;
+    public Transform conditionInfoContentParent;
+    public TMP_Text STR_score, DEX_score, CON_score, INT_score, WIS_score, CHA_score;
+    public TMP_Text STR_mod, DEX_mod, CON_mod, INT_mod, WIS_mod, CHA_mod;
+    public TMP_Text STR_save, DEX_save, CON_save, INT_save, WIS_save, CHA_save;
+    public TMP_Text unitName, currentHP, maxHP, tempHP;
+
     private Stack<Func<List<MenuOption>>> menuStack = new();
 
     void Awake()
@@ -48,6 +57,7 @@ public class CombatMenuManager : MonoBehaviour
     void Start()
     {
         btnShowChat.onClick.AddListener(ShowHideChat);
+        btnCloseUnitInfo.onClick.AddListener(CloseUnitInfo);
     }
 
     public void ShowHideChat()
@@ -429,7 +439,7 @@ public class CombatMenuManager : MonoBehaviour
             message += "-";
         else
             message += "+";
-        message += modifier.ToString()+". ";
+        message += modifier.ToString() + ". ";
 
         displayDice.GetComponentInChildren<TMP_Text>().text = message;
         yield return new WaitForSeconds(1f);
@@ -456,5 +466,61 @@ public class CombatMenuManager : MonoBehaviour
         yield return new WaitForSeconds(2f);
 
         displayDice.SetActive(false);
+    }
+
+    public void ShowUnitInfo(BaseUnit unit)
+    {
+        UnitInfoCanvas.SetActive(true);
+        unitName.text = unit.UnitName;
+        currentHP.text = unit.GetCurrentHP().ToString();
+        maxHP.text = unit.GetMaxHP().ToString();
+        tempHP.text = unit.GetTempHP().ToString();
+        STR_score.text = unit.GetStat("strength").ToString();
+        DEX_score.text = unit.GetStat("dexterity").ToString();
+        CON_score.text = unit.GetStat("constitution").ToString();
+        INT_score.text = unit.GetStat("intelligence").ToString();
+        WIS_score.text = unit.GetStat("wisdom").ToString();
+        CHA_score.text = unit.GetStat("charisma").ToString();
+        STR_mod.text = "(" + unit.GetStat("mSTR").ToString() + ")";
+        DEX_mod.text = "(" + unit.GetStat("mDEX").ToString() + ")";
+        CON_mod.text = "(" + unit.GetStat("mCON").ToString() + ")";
+        INT_mod.text = "(" + unit.GetStat("mINT").ToString() + ")";
+        WIS_mod.text = "(" + unit.GetStat("mWIS").ToString() + ")";
+        CHA_mod.text = "(" + unit.GetStat("mCHA").ToString() + ")";
+        STR_save.text = "(" + unit.GetStat("str_save").ToString() + ")";
+        DEX_save.text = "(" + unit.GetStat("dex_save").ToString() + ")";
+        CON_save.text = "(" + unit.GetStat("con_save").ToString() + ")";
+        INT_save.text = "(" + unit.GetStat("int_save").ToString() + ")";
+        WIS_save.text = "(" + unit.GetStat("wis_save").ToString() + ")";
+        CHA_save.text = "(" + unit.GetStat("cha_save").ToString() + ")";
+
+        DatabaseManager.Instance.ExecuteReader(
+            $"SELECT condition_name FROM active_conditions WHERE target_unit_id = {unit.UnitID}",
+            reader =>
+            {
+                while (reader.Read())
+                {
+                    AddConditionToInfo(Convert.ToString(reader["condition_name"]));
+                }
+            }
+        );
+    }
+    
+    public void AddConditionToInfo(string text)
+    {
+        GameObject obj = Instantiate(chatPrefab, conditionInfoContentParent);
+
+        var ui = obj.GetComponent<TMP_Text>();
+
+        ui.text = text;
+    }
+    
+    public void CloseUnitInfo()
+    {
+        foreach (Transform child in conditionInfoContentParent)
+        {
+            Destroy(child.gameObject);
+        }
+        UnitInfoCanvas.SetActive(false);
     }
 }

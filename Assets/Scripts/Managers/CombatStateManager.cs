@@ -433,7 +433,7 @@ public class CombatStateManager : MonoBehaviour
         if (unit.GetCondition("dead") || (unit.GetCurrentHP() <= 0 && !unit.GetCondition("dying")))
             yield break;
 
-        StartCoroutine(CombatMenuManager.Instance.DisplayText($"Current turn: {unit.UnitName}"));
+        yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"Current turn: {unit.UnitName}"));
 
         if(!reloadedPreviousSave)
             InitiativeTracker.Instance.currentTurnUnit.RefreshStartOfTurnResources();
@@ -509,15 +509,16 @@ public class CombatStateManager : MonoBehaviour
 
     public IEnumerator EndTurnFlow()
     {
+        // Debug.Log("Starting end turn");
         CombatUnitManager.Instance.ResetOncePerTurnResources();
 
         reloadedPreviousSave = false;
 
-        InitiativeTracker.Instance.AdvanceTurn();
+        yield return StartCoroutine(InitiativeTracker.Instance.AdvanceTurn());
+        // Debug.Log("Ending turn");
 
         yield return null;
     }
-
 }
 
 public static class TurnUtility

@@ -112,11 +112,8 @@ public class CombatGridManager : MonoBehaviour
             $"SELECT x, y FROM grid_contents WHERE unit_id = {PCID} AND encounter_id = {encounterID}",
             reader =>
             {
-                while (reader.Read())
-                {
-                    x = Convert.ToInt32(reader["x"]);
-                    y = Convert.ToInt32(reader["y"]);
-                }
+                x = Convert.ToInt32(reader["x"]);
+                y = Convert.ToInt32(reader["y"]);
             }
         );
 

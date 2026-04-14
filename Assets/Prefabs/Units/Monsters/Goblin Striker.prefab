@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5167313632957188762}
   - component: {fileID: -5055018895735029699}
   m_Layer: 0
-  m_Name: Melee Goblin
+  m_Name: Goblin Striker
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -82,7 +82,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -948801342682158077, guid: 83d04d74b155f074d909a2c404825a3f, type: 3}
+  m_Sprite: {fileID: -3391862160472368760, guid: aeaf27a107b4ef147b52a411394d2528, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

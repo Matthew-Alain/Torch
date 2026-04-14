@@ -89,7 +89,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
         int distance = CheckDistanceInTiles(movingPCCurrentTile);
 
-        if (distance == speedInTiles + 1 || (distance < speedInTiles && !isWalkable) || OccupiedUnit != null)
+        if (distance == speedInTiles + 1 || (distance <= speedInTiles && !isWalkable) || OccupiedUnit != null)
             invalidHighlight.SetActive(true);
         else if (distance == 1)
             validHighlight.SetActive(true);
@@ -176,7 +176,9 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
             if (movementCost > unitSpeed || unitSpeed <= 0)
             {
-                yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{movingUnit.UnitName} does not have enough movement to move to this tile"));
+                if(movingUnit.Faction == Faction.PC)
+                    yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{movingUnit.UnitName} does not have enough movement to move to this tile"));
+
                 moving = false;
             }
             else
@@ -249,7 +251,19 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         CombatMenuManager menu = CombatMenuManager.Instance;
 
         bool leftClick = eventData.button == PointerEventData.InputButton.Left;
+        bool rightClick = eventData.button == PointerEventData.InputButton.Right;
         GameState currentState = CombatStateManager.Instance.GameState;
+
+        if (!leftClick)
+        {
+            if (rightClick && OccupiedUnit != null)
+            {
+                menu.ShowUnitInfo(OccupiedUnit);
+            }
+            //Only close this if the stack has more than one layer
+            // menu.CloseMenu();
+            return;
+        }
 
         if (currentState == GameState.GenerateGrid ||
             currentState == GameState.SpawnPCs ||
@@ -262,21 +276,15 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             Log("Current state is: " + currentState);
             return; //If it's not your turn, you can't click
         }
-        if (!leftClick)
-        {
-            //Only close this if the stack has more than one layer
-            // menu.CloseMenu();
-            return;
-        }
 
         switch (currentState)
         {
             case GameState.PlayerTurn:
                 if (OccupiedUnit != null)
                 {
-                    if(OccupiedUnit == InitiativeTracker.Instance.currentTurnUnit)
+                    if (OccupiedUnit == InitiativeTracker.Instance.currentTurnUnit)
                     {
-                        if(OccupiedUnit.GetCondition("dying") || OccupiedUnit.GetCondition("unconscious") || OccupiedUnit.GetCondition("dead"))
+                        if (OccupiedUnit.GetCondition("dying") || OccupiedUnit.GetCondition("unconscious") || OccupiedUnit.GetCondition("dead"))
                         {
                             StartCoroutine(menu.DisplayText($"{OccupiedUnit.UnitName} is unable to act this turn."));
                             return;
@@ -284,7 +292,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
                         SelectPC(); //Select that PC
                     }
-                    
+
                 }
                 else
                 {
@@ -296,7 +304,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 if (isWalkable && OccupiedUnit == null)
                 {
                     int distance = CheckDistanceInTiles(CombatUnitManager.Instance.SelectedPC.occupiedTile);
-                    if(distance == 1)
+                    if (distance == 1)
                     {
                         StartCoroutine(MoveUnit(CombatUnitManager.Instance.SelectedPC));
                     }
@@ -323,7 +331,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                     StartCoroutine(menu.DisplayText("You are only allowed to select monsters"));
                 }
                 break;
-            
+
             case GameState.SelectTargetPC:
                 if (OccupiedUnit != null && OccupiedUnit.Faction == Faction.PC)
                 {
@@ -335,7 +343,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                     StartCoroutine(menu.DisplayText("You are only allowed to select PCs"));
                 }
                 break;
-            
+
             case GameState.SelectTargetUnit:
                 if (OccupiedUnit != null)
                 {
@@ -347,7 +355,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                     StartCoroutine(menu.DisplayText("There's no unit there that tile"));
                 }
                 break;
-            
+
             case GameState.SelectTargetTile:
                 // StartCoroutine(CombatStateManager.Instance.ConfirmTile(this));
                 StartCoroutine(CombatStateManager.Instance.ConfirmTileTargetSelection(this));
@@ -364,7 +372,7 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                     StartCoroutine(menu.DisplayText("You must select an empty tile"));
                 }
                 break;
-            
+
             default:
                 Log("No click action for the current game state: " + currentState);
                 break;

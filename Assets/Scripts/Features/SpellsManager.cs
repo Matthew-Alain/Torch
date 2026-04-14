@@ -171,17 +171,17 @@ public class SpellsManager : MonoBehaviour
 
     public static IEnumerator CastSpell(BaseUnit caster, int id, int spellLevel, string spellcastingAbility)
     {
-        string spellType = "tile";
+        string spellType;
 
+        if (id == 34 || id == 74) //TODO: convert this to a column in the database that identifies whether a spell does damage, heals, or provides a status effect
+            spellType = "heal";
+        else
+            spellType = "damage";
 
-        if (spellType == "tile")
-            yield return Instance.StartCoroutine(CastTileSpell(caster, id, spellLevel, spellcastingAbility));
-        if (spellType == "target")
-            yield return Instance.StartCoroutine(CastTileSpell(caster, id, spellLevel, spellcastingAbility));
-
+        yield return Instance.StartCoroutine(CastSpell(caster, id, spellLevel, spellcastingAbility, spellType));
     }
     
-    public static IEnumerator CastTileSpell(BaseUnit caster, int id, int spellLevel, string spellcastingAbility)
+    public static IEnumerator CastSpell(BaseUnit caster, int id, int spellLevel, string spellcastingAbility, string spellType)
     {
         //TODO: Add damage scaling based on spell level, and multi-targeting
 
@@ -272,7 +272,7 @@ public class SpellsManager : MonoBehaviour
         //     Damage = 10
         // };
 
-        int damage = DiceRoller.Roll(GetDiceNumber(id), GetDiceSize(id));
+        int diceResult = DiceRoller.Roll(GetDiceNumber(id), GetDiceSize(id));
         // Debug.Log("Damage: " + damage);
         
         caster.UseResource(GetCastTime(id));
@@ -284,75 +284,107 @@ public class SpellsManager : MonoBehaviour
         else if(spellLevel == 3)
             caster.UseResource("level_3_slots");
 
-        yield return Instance.StartCoroutine(Instance.ProcessSpellTargets(caster, id, targets, damage, spellcastingAbility, DC, spellLevel));
+        yield return Instance.StartCoroutine(Instance.ProcessSpellTargets(caster, id, targets, diceResult, spellcastingAbility, DC, spellLevel, spellType));
         yield return Instance.StartCoroutine(CombatStateManager.Instance.ChangeState(GameState.PlayerTurn));
     }
 
-    public IEnumerator ProcessSpellTargets(BaseUnit caster, int id, List<BaseUnit> targets, int damage, string spellcastingAbility, int DC, int spellLevel)
+    public IEnumerator ProcessSpellTargets(BaseUnit caster, int id, List<BaseUnit> targets, int diceResult, string spellcastingAbility, int DC, int spellLevel, string spellType)
     {
-        foreach (BaseUnit target in targets)
+        if (spellType == "damage")
         {
-            // Debug.Log("unit in range: " + target.UnitName);
-            if (GetAttackSaveNone(id) == "attack")
+            foreach (BaseUnit target in targets)
             {
-                // Debug.Log("Making attack roll");
-                bool hit = false;
-                bool crit = false;
+                // Debug.Log("unit in range: " + target.UnitName);
+                if (GetAttackSaveNone(id) == "attack")
+                {
+                    // Debug.Log("Making attack roll");
+                    bool hit = false;
+                    bool crit = false;
 
-                yield return StartCoroutine(caster.MakeAttackWithStat(spellcastingAbility, true, target.GetAC(), (hitResult, critResult) =>
-                {
-                    hit = hitResult;
-                    crit = critResult;
-                }));
-
-                if (crit)
-                {
-                    yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{caster} rolled a natural 20 to hit {target.UnitName}"));
-                    if(damage > 0)
-                        yield return Instance.StartCoroutine(target.TakeDamage(damage*2, true)); //TODO: Currently this doubles all damage, not just dice
-                }
-                else if (hit)
-                {
-                    yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{caster} hit {target.UnitName}"));
-                    if(damage > 0)
-                        yield return Instance.StartCoroutine(target.TakeDamage(damage, false));
-                }
-                else
-                {
-                    yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{caster} missed {target.UnitName}"));
-                    // Debug.Log("Missed " + target.UnitName);
-                }
-            }
-            else if (GetAttackSaveNone(id) == "save")
-            {
-                // Debug.Log("Making saving throw");
-                if (!target.MakeSave(GetSaveType(id), DC))
-                {
-                    yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{target.UnitName} failed their save"));
-                    // Debug.Log($"{target.UnitName} failed the save");
-                    yield return Instance.StartCoroutine(target.TakeDamage(damage, false));
-                    // Debug.Log($"Dealt {damage} damage to {target.UnitName}");
-                }
-                else
-                {
-                    yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{target.UnitName} succeeded on their saving throw"));
-                    // Debug.Log($"{target.UnitName} made the save");
-                    if (DoesHalfOnSave(id))
+                    yield return StartCoroutine(caster.MakeAttackWithStat(spellcastingAbility, true, target.GetAC(), (hitResult, critResult) =>
                     {
-                        yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{target.UnitName} still takes half damage"));
+                        hit = hitResult;
+                        crit = critResult;
+                    }));
 
-                        // Debug.Log("Spell does half damage on save");
-                        yield return Instance.StartCoroutine(target.TakeDamage((int)Math.Floor((decimal)(damage / 2)), false));
-                        // Debug.Log($"Dealt {(int)Math.Floor((decimal)(damage / 2))} damage to {target.UnitName}");
+                    if (crit)
+                    {
+                        yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{caster} rolled a natural 20 to hit {target.UnitName}"));
+                        if (diceResult > 0)
+                            yield return Instance.StartCoroutine(target.TakeDamage(diceResult * 2, true)); //TODO: Currently this doubles all damage, not just dice
+                    }
+                    else if (hit)
+                    {
+                        yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{caster} hit {target.UnitName}"));
+                        if (diceResult > 0)
+                            yield return Instance.StartCoroutine(target.TakeDamage(diceResult, false));
+                    }
+                    else
+                    {
+                        yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{caster} missed {target.UnitName}"));
+                        // Debug.Log("Missed " + target.UnitName);
                     }
                 }
+                else if (GetAttackSaveNone(id) == "save")
+                {
+                    // Debug.Log("Making saving throw");
+                    if (!target.MakeSave(GetSaveType(id), DC))
+                    {
+                        yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{target.UnitName} failed their save"));
+                        // Debug.Log($"{target.UnitName} failed the save");
+                        yield return Instance.StartCoroutine(ApplyEffect(caster, id, target));
+                        yield return Instance.StartCoroutine(target.TakeDamage(diceResult, false));
+                        // Debug.Log($"Dealt {damage} damage to {target.UnitName}");
+                    }
+                    else
+                    {
+                        yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{target.UnitName} succeeded on their saving throw"));
+                        // Debug.Log($"{target.UnitName} made the save");
+                        if (DoesHalfOnSave(id))
+                        {
+                            yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{target.UnitName} still takes half damage"));
+
+                            // Debug.Log("Spell does half damage on save");
+                            yield return Instance.StartCoroutine(target.TakeDamage((int)Math.Floor((decimal)(diceResult / 2)), false));
+                            // Debug.Log($"Dealt {(int)Math.Floor((decimal)(damage / 2))} damage to {target.UnitName}");
+                        }
+                    }
+                }
+                else if (GetAttackSaveNone(id) == "none")
+                {
+                    yield return Instance.StartCoroutine(target.TakeDamage(diceResult, false));
+                    // Debug.Log($"Dealt {damage} damage to {target.UnitName}");
+                }
             }
-            else if (GetAttackSaveNone(id) == "none")
+        }
+        else if (spellType == "heal")
+        {
+            foreach (BaseUnit target in targets)
             {
-                yield return Instance.StartCoroutine(target.TakeDamage(damage, false));
-                // Debug.Log($"Dealt {damage} damage to {target.UnitName}");
+                yield return Instance.StartCoroutine(target.RestoreHealth(diceResult));
             }
         }
         yield return StartCoroutine(CombatStateManager.Instance.CheckForGameOver());
+    }
+    
+    public IEnumerator ApplyEffect(BaseUnit caster, int id, BaseUnit target)
+    {
+        var effect = DatabaseManager.Instance.ExecuteScalar($"SELECT spell_effect_id FROM spells WHERE id = {id}");
+
+        if (effect == DBNull.Value)
+            yield break;
+
+        int effectID = Convert.ToInt32(effect);
+        
+        switch (effectID)
+        {
+            case 1:
+                target.SetCondition("blinded", true);
+                break;
+            default:
+                break;
+        }
+
+        yield return null;
     }
 }

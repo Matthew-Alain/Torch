@@ -1,13 +1,11 @@
 using UnityEngine;
 
-public class Goblin : BaseMonster
+public class GoblinStriker : BaseMonster
 {
     void Start()
     {
         (int, int)[] actions = { 
-            (2, 0),
-            (3, 0),
-            (5, 2),
+            (8, 2),
         };
         actionList.AddRange(actions);
     }
