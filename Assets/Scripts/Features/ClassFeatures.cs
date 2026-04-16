@@ -1,7 +1,5 @@
 
 using System.Collections.Generic;
-using System.Runtime.Serialization;
-using UnityEditor.Tilemaps;
 
 public class ClassFeatures
 {
@@ -62,7 +60,8 @@ public class ClassFeatures
                 user.UseResource("warrior_of_the_gods_available");
                 total += DiceRoller.Roll("1d12");
             }
-            user.RestoreHealth(total);
+
+            user.StartCoroutine(user.RestoreHealth(total));
         }
     }
     

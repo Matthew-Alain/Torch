@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class CombatStateManager : MonoBehaviour
 {
@@ -26,6 +28,10 @@ public class CombatStateManager : MonoBehaviour
     public bool reloadedPreviousSave;
     public bool cancelSelection = false;
     public bool processing = false;
+    public GameObject GameOverCanvas;
+    public Button btnBackToHome;
+    public TMP_Text GameOverMessage;
+
 
     void Awake()
     {
@@ -52,6 +58,7 @@ public class CombatStateManager : MonoBehaviour
     void Start()
     {
         // ChangeState(GameState.GenerateGrid);
+        btnBackToHome.onClick.AddListener(BackToHome);
     }
 
     void OnEnable()
@@ -380,14 +387,15 @@ public class CombatStateManager : MonoBehaviour
 
         if (!activePC)
         {
-            Debug.LogWarning("You have no more active PCs, you lose...");
+            GameOverMessage.text = "You have no more active PCs, you lose...";
+            GameOverCanvas.SetActive(true);
         }
         else if (Convert.ToInt32(DatabaseManager.Instance.ExecuteScalar($"SELECT COUNT(*) FROM grid_contents " +
             $"WHERE encounter_id = {DatabaseManager.Instance.currentEncounter} " +
             $"AND unit_id NOT IN {CombatUnitManager.Instance.PCList}")) <= 0)
         {
-            Debug.LogWarning("The last monster has been killed, you win!");
-            //Create a canvas window that announces this, with a button to reset
+            GameOverMessage.text = "The last monster has been slain, you win!";
+            GameOverCanvas.SetActive(true);
         }
         else
         {
@@ -395,6 +403,11 @@ public class CombatStateManager : MonoBehaviour
         }
         gameOver = true;
         StopAllCoroutines();
+    }
+
+    private void BackToHome()
+    {
+        GameOverCanvas.SetActive(false);
         SceneManager.LoadScene(0);
         DatabaseManager.Instance.DeleteEncounterDatabase(DatabaseManager.Instance.currentEncounter);
     }

@@ -9,6 +9,7 @@ public class EncounterSelectManager : MonoBehaviour
     public TMP_Dropdown encounterList;
     public Button btnStartEncounter;
     public TMP_Text txtDifficulty, txtDescription;
+    public Image tutorial_1, tutorial_2, tutorial_3, tutorial_4, encounter_1, encounter_2, encounter_3, encounter_4, encounter_5;
 
 
     void Awake()
@@ -35,6 +36,48 @@ public class EncounterSelectManager : MonoBehaviour
             }
         );
 
+        tutorial_1.gameObject.SetActive(false);
+        tutorial_2.gameObject.SetActive(false);
+        tutorial_3.gameObject.SetActive(false);
+        tutorial_4.gameObject.SetActive(false);
+        encounter_1.gameObject.SetActive(false);
+        encounter_2.gameObject.SetActive(false);
+        encounter_3.gameObject.SetActive(false);
+        encounter_4.gameObject.SetActive(false);
+        encounter_5.gameObject.SetActive(false);
+
+        switch (index)
+        {
+            case 0:
+                tutorial_1.gameObject.SetActive(true);
+                break;
+            case 1:
+                tutorial_2.gameObject.SetActive(true);
+                break;
+            case 2:
+                tutorial_3.gameObject.SetActive(true);
+                break;
+            case 3:
+                tutorial_4.gameObject.SetActive(true);
+                break;
+            case 4:
+                encounter_1.gameObject.SetActive(true);
+                break;
+            case 5:
+                encounter_2.gameObject.SetActive(true);
+                break;
+            case 6:
+                encounter_3.gameObject.SetActive(true);
+                break;
+            case 7:
+                encounter_4.gameObject.SetActive(true);
+                break;
+            case 8:
+                encounter_5.gameObject.SetActive(true);
+                break;
+            default:
+                break;
+        }
     }
 
     void StartEncounter()

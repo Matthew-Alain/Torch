@@ -50,6 +50,7 @@ public class DiceRoller
             // Debug.Log("Roll 1: " + roll1 + ", Roll2: " + roll2);
             dieRoll = Math.Max(roll1, roll2);
             // Debug.Log("So your roll is: " + dieRoll);
+            CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"Rolling with advantage. Roll 1: {roll1}. Roll 2: {roll2}"));
         }
         else if (withDisadvantage && !withAdvantage)
         {
@@ -59,6 +60,7 @@ public class DiceRoller
             // Debug.Log("Roll 1: " + roll1 + ", Roll2: " + roll2);
             dieRoll = Math.Min(roll1, roll2);
             // Debug.Log("So your roll is: " + dieRoll);
+            CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"Rolling with disadvantage. Roll 1: {roll1}. Roll 2: {roll2}"));
         }
         else
         {

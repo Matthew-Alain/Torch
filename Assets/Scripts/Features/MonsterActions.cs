@@ -1,16 +1,13 @@
 
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using UnityEditor.Tilemaps;
 using UnityEngine;
 
 public class MonsterActions: MonoBehaviour
 {
     public static IEnumerator Attack(BaseMonster attacker, BaseUnit target, int attackID)
     {
-        if (attacker.UseResource("major_action"))
+        if (attacker.UseResource("current_number_of_attacks"))
         {
             int dieRoll = DiceRoller.Rolld20();
 
@@ -59,6 +56,8 @@ public class MonsterActions: MonoBehaviour
                 else
                 {
                     yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled a {totalResult} to hit, which misses"));
+                    if (attackID == 4)
+                        yield return attacker.StartCoroutine(ApplyEffect(attacker, target, attackID));
                 }
             }
         }
@@ -69,7 +68,7 @@ public class MonsterActions: MonoBehaviour
     {
         if (monster.UseResource("major_action"))
         {
-
+            monster.SetCondition("dodging", true);
         }
     }
 
@@ -98,10 +97,13 @@ public class MonsterActions: MonoBehaviour
             switch(effectID)
             {
                 case 1:
-                    yield return attacker.PullTarget(target, 6);
+                    yield return attacker.StartCoroutine(attacker.PullTarget(target, 9));
                     break;
                 case 2:
-                    yield return attacker.PushTarget(target, 1);
+                    yield return attacker.StartCoroutine(attacker.PushTarget(target, 1));
+                    break;
+                case 3:
+                    yield return attacker.StartCoroutine(((BaseMonster)attacker).AttackTarget(target, attackID));
                     break;
             }
         }

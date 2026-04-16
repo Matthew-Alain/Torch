@@ -802,7 +802,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &138722824
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1334,19 +1334,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 278327652}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 541840733}
-        m_TargetAssemblyTypeName: SettingsManager, Assembly-CSharp
-        m_MethodName: ToggleSettings
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &278327652
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3253,6 +3241,7 @@ MonoBehaviour:
   panelTutorials: {fileID: 934900115}
   markAllTutorialsRead: {fileID: 518316374}
   panelUnsavedWarning: {fileID: 420849666}
+  btnShowSettings: {fileID: 278327651}
 --- !u!1 &545026537
 GameObject:
   m_ObjectHideFlags: 0
@@ -9458,6 +9447,7 @@ MonoBehaviour:
   lastPCEdited: {fileID: 0}
   lastScene: 0
   currentEncounter: 0
+  spellListToEdit: 0
 --- !u!4 &1817384180
 Transform:
   m_ObjectHideFlags: 0

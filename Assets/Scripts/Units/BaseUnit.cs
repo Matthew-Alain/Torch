@@ -302,7 +302,7 @@ public class BaseUnit : MonoBehaviour
     {
         // Debug.LogWarning("Called TakeDamage()");
 
-        yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} is taking {damage} damage"));
+        // yield return StartCoroutine(CombatMenuManager.Instance.DisplayText($"{UnitName} is taking {damage} damage"));
 
         int damageRemaining = damage;
         int currentHP = GetCurrentHP();

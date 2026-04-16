@@ -36,7 +36,7 @@ public class CombatUnitManager : MonoBehaviour
 
         //Goes into resources folder, goes into units folder, look into all subfolders for all types of scriptable units and put them into this list
         units = Resources.LoadAll<ScriptableUnit>("Units").ToList();
-        PCList = "(0,1,2,3,4,5,9991,9998)";
+        PCList = "(0,1,2,3,4,5,9991,9998,9999)";
     }
 
     public void SpawnPCs(int encounterID)

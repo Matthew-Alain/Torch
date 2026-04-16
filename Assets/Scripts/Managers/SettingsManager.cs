@@ -13,6 +13,7 @@ public class SettingsManager : MonoBehaviour
     public GameObject panelTutorials;
     public Button markAllTutorialsRead;
     public GameObject panelUnsavedWarning;
+    public Button btnShowSettings;
 
     private bool hasUnsavedChanges = false;
 
@@ -46,6 +47,11 @@ public class SettingsManager : MonoBehaviour
         markAllTutorialsRead.onClick.AddListener(() => TutorialManager.MarkAllTutorialsRead());
     }
 
+    void Start()
+    {
+        btnShowSettings.onClick.AddListener(ToggleSettings);
+    }
+
     void Update()
     {
         // If the user is on a non-setting scene and presses escape...
@@ -62,17 +68,24 @@ public class SettingsManager : MonoBehaviour
         {
             if (!settingsCanvas.activeSelf)
             {
+                // Debug.Log("!settingsCanvas.activeSelf");
                 settingsCanvas.SetActive(!settingsCanvas.activeSelf);
                 ShowPanel(panelMain);
             }
             else if (panelMain.activeSelf)
             {
+                // Debug.Log("panelMain.activeSelf");
                 settingsCanvas.SetActive(!settingsCanvas.activeSelf);
             }
             else
             {
+                // Debug.Log("settingsCanvas.activeSelf and !panelMain.activeSelf");
                 ShowPanel(panelMain);
             }
+        }
+        else
+        {
+            // Debug.Log("canvas null");
         }
     }
 

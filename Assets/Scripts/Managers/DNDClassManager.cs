@@ -598,7 +598,19 @@ public class DNDClassManager : MonoBehaviour
         int d10 = allLevels[4] + allLevels[6] + allLevels[7];
         int d12 = allLevels[0];
 
-        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_info SET d6_hd = {d6}, d8_hd = {d8}, d10_hd = {d10}, d12_hd = {d12} WHERE id = {currentPC.UnitID}");
+        int maxHP = d6 * 4 + d8 * 5 + d10 * 6 + d12 * 7 + (level.value + 1) * currentPC.GetStat("mCON");
+
+        if (dndClass1.value == 0)
+            maxHP += 5;
+        else if (dndClass1.value == 4 || dndClass1.value == 6 || dndClass1.value == 7)
+            maxHP += 4;
+        else if (dndClass1.value == 1 || dndClass1.value == 2 || dndClass1.value == 3 || dndClass1.value == 5 || dndClass1.value == 8 || dndClass1.value == 10)
+            maxHP += 3;
+        else
+            maxHP += 2;
+        
+        DatabaseManager.Instance.ExecuteNonQuery($"UPDATE unit_info SET d6_hd = {d6}, d8_hd = {d8}, d10_hd = {d10}, d12_hd = {d12}, " +
+            $"max_hp = {maxHP}, current_hp = {maxHP} WHERE id = {currentPC.UnitID}");
     }
 
     private void CloseFeatureWindow()

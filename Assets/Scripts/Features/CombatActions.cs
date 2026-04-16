@@ -81,7 +81,15 @@ public class CombatActions: MonoBehaviour
 
     public static IEnumerator MeleeWeaponAttack(BaseUnit attacker, BaseUnit target, int weaponID)
     {
-        int dieRoll = DiceRoller.Rolld20();
+        int dieRoll;
+        if (target.GetCondition("dodging") || attacker.GetCondition("prone"))
+        {
+            dieRoll = DiceRoller.Rolld20(false, true);
+        }
+        else
+        {
+            dieRoll = DiceRoller.Rolld20();
+        }
 
         string attackStat = "";
         int dice_number = 0;
@@ -128,15 +136,13 @@ public class CombatActions: MonoBehaviour
             if (dieRoll == 20)
             {
                 // yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled a natural 20 to hit {target.UnitName}!"));
-                yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number * 2, dice_size), true));
+                yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number * 2, dice_size)+attackModifier, true));
             }
             else
             {
                 // yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled {totalResult} to hit, which hits {target.UnitName}"));
-                yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number, dice_size), false));
+                yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number, dice_size)+attackModifier, false));
             }
-
-
         }
         else
         {
@@ -146,10 +152,16 @@ public class CombatActions: MonoBehaviour
 
     public static IEnumerator RangedWeaponAttack(BaseUnit attacker, BaseUnit target, int weaponID)
     {
-        //If there is an enemy within 5 feet:
-        // int dieRoll = DiceRoller.Rolld20(true, false);
-
-        int dieRoll = DiceRoller.Rolld20();
+        int dieRoll;
+        if (target.GetCondition("dodging") || target.GetCondition("prone"))
+        {
+            //Or if there is an enemy within 5 feet:
+            dieRoll = DiceRoller.Rolld20(false, true);
+        }
+        else
+        {
+            dieRoll = DiceRoller.Rolld20();
+        }
 
         string attackStat = "";
         int dice_number = 0;
@@ -195,12 +207,12 @@ public class CombatActions: MonoBehaviour
             if (dieRoll == 20)
             {
                 // yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled a natural 20 to hit {target.UnitName}!"));
-                yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number * 2, dice_size), true));
+                yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number * 2, dice_size)+attackModifier, true));
             }
             else
             {
                 // yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled {totalResult} to hit, which hits {target.UnitName}"));
-                yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number, dice_size), false));
+                yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number, dice_size)+attackModifier, false));
             }
 
 
@@ -260,12 +272,12 @@ public class CombatActions: MonoBehaviour
             if (dieRoll == 20)
             {
                 // yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled a natural 20 to hit {target.UnitName}!"));
-                yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number * 2, dice_size), true));
+                yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number * 2, dice_size)+attackModifier, true));
             }
             else
             {
                 // yield return CombatMenuManager.Instance.StartCoroutine(CombatMenuManager.Instance.DisplayText($"{attacker.UnitName} rolled {totalResult} to hit, which hits {target.UnitName}"));
-                yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number, dice_size), false));
+                yield return target.StartCoroutine(target.TakeDamage(DiceRoller.Roll(dice_number, dice_size)+attackModifier, false));
             }
 
 
