@@ -106,6 +106,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GoblinBully
   occupiedTile: {fileID: 0}
   Faction: 1
-  UnitName: Goblin Bully
-  UnitID: 17
+  UnitName: Goblin Bully 1
+  UnitID: 16
   validActions: 

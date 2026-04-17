@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3897828687781263829}
   - component: {fileID: 5167313632957188762}
-  - component: {fileID: 6815237070543462442}
+  - component: {fileID: 7641592532909886010}
   m_Layer: 0
   m_Name: Goblin Hexer 1
   m_TagString: Untagged
@@ -92,7 +92,7 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!114 &6815237070543462442
+--- !u!114 &7641592532909886010
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -106,6 +106,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GoblinHexer
   occupiedTile: {fileID: 0}
   Faction: 1
-  UnitName: Goblin Hexer 2
-  UnitID: 32
+  UnitName: Goblin Hexer 1
+  UnitID: 31
   validActions: 

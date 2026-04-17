@@ -163,15 +163,16 @@ public abstract class Tile : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 $"SELECT current_speed FROM unit_info WHERE id = {movingUnit.UnitID}"
             ));
 
-            //If tile is difficult terrain, multiply by 10 instead
-            int movementCost = 0;
+            int distance = CheckDistanceInTiles(movingUnit.occupiedTile) * 5;
+            int movementCost = distance;
+            
             if (CostsExtra(movingUnit))
             {
-                movementCost = CheckDistanceInTiles(movingUnit.occupiedTile) * 10;
+                movementCost += distance;
             }
-            else
-            {
-                movementCost = CheckDistanceInTiles(movingUnit.occupiedTile) * 5;
+
+            if (movingUnit.GetCondition("prone")){
+                movementCost += distance;;
             }
 
             if (movementCost > unitSpeed || unitSpeed <= 0)

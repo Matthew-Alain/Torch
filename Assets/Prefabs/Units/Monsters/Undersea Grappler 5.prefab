@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 3897828687781263829}
   - component: {fileID: 5167313632957188762}
-  - component: {fileID: 5860108960926245835}
+  - component: {fileID: -1172744005516006956}
   m_Layer: 0
-  m_Name: Insect 2 (Swim)
+  m_Name: Undersea Grappler 5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -82,7 +82,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 321294801040123069, guid: 0481cc73b475e084192e152d827d8bb5, type: 3}
+  m_Sprite: {fileID: -5321755188894177992, guid: a75f4c6d328a9b644a50e3e35d32bf8b, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -92,7 +92,7 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!114 &5860108960926245835
+--- !u!114 &-1172744005516006956
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -101,11 +101,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 7089780268459073922}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9786a76110aca25428d781d91db5af13, type: 3}
+  m_Script: {fileID: 11500000, guid: 467c163ddf9beaf41b10dcd0f4b3c0d2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SwimmingInsect
+  m_EditorClassIdentifier: Assembly-CSharp::UnderseaGrappler
   occupiedTile: {fileID: 0}
   Faction: 1
-  UnitName: Swimming Insect 2
-  UnitID: 92
+  UnitName: Undersea Grappler 5
+  UnitID: 25
   validActions: 

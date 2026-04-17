@@ -106,6 +106,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GoblinMage
   occupiedTile: {fileID: 0}
   Faction: 1
-  UnitName: Goblin Mage 3
-  UnitID: 13
+  UnitName: Goblin Mage 2
+  UnitID: 12
   validActions: 

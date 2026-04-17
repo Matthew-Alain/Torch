@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 3897828687781263829}
   - component: {fileID: 5167313632957188762}
-  - component: {fileID: 2332571502546488745}
+  - component: {fileID: 7137314009471380798}
   m_Layer: 0
-  m_Name: Goblin Warrior
+  m_Name: Goblin Mage 5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -82,7 +82,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -3391862160472368760, guid: aeaf27a107b4ef147b52a411394d2528, type: 3}
+  m_Sprite: {fileID: 1492209891294395249, guid: 7b04b209becbcbc4bb3a588bb3c4f247, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -92,7 +92,7 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!114 &2332571502546488745
+--- !u!114 &7137314009471380798
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -101,11 +101,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 7089780268459073922}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d239e5fa2fe545b41b9d20baab33f104, type: 3}
+  m_Script: {fileID: 11500000, guid: 9bc73f1dd5ee8674f9406533beb008e1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GoblinWarrior
+  m_EditorClassIdentifier: Assembly-CSharp::GoblinMage
   occupiedTile: {fileID: 0}
   Faction: 1
-  UnitName: Goblin Warrior
-  UnitID: 26
+  UnitName: Goblin Mage 5
+  UnitID: 15
   validActions: 

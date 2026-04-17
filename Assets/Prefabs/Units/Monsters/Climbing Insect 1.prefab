@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5167313632957188762}
   - component: {fileID: 4145519451107509902}
   m_Layer: 0
-  m_Name: Insect 1 (Climb)
+  m_Name: Climbing Insect 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

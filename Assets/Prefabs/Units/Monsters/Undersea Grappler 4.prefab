@@ -106,6 +106,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UnderseaGrappler
   occupiedTile: {fileID: 0}
   Faction: 1
-  UnitName: Undersea Grappler 5
-  UnitID: 25
+  UnitName: Undersea Grappler 4
+  UnitID: 24
   validActions: 

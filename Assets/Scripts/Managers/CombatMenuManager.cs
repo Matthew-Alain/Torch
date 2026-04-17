@@ -435,10 +435,9 @@ public class CombatMenuManager : MonoBehaviour
         yield return new WaitForSeconds(1f);
 
         message += "Modifier: ";
-        if (modifier < 0)
-            message += "-";
-        else
+        if (modifier >= 0)
             message += "+";
+
         message += modifier.ToString() + ". ";
 
         displayDice.GetComponentInChildren<TMP_Text>().text = message;

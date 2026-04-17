@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5167313632957188762}
   - component: {fileID: 4145519451107509902}
   m_Layer: 0
-  m_Name: Insect 5 (Climb)
+  m_Name: Climbing Insect 3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -106,6 +106,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ClimbingInsect
   occupiedTile: {fileID: 0}
   Faction: 1
-  UnitName: Climbing Insect 5
-  UnitID: 100
+  UnitName: Climbing Insect 3
+  UnitID: 98
   validActions: 

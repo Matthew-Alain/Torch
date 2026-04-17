@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5167313632957188762}
   - component: {fileID: 5860108960926245835}
   m_Layer: 0
-  m_Name: Insect 4 (Swim)
+  m_Name: Swimming Insect 4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

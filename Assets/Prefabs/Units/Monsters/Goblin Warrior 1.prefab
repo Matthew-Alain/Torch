@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3897828687781263829}
   - component: {fileID: 5167313632957188762}
-  - component: {fileID: -7076266170173213401}
+  - component: {fileID: 2332571502546488745}
   m_Layer: 0
   m_Name: Goblin Warrior 1
   m_TagString: Untagged
@@ -92,7 +92,7 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!114 &-7076266170173213401
+--- !u!114 &2332571502546488745
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -106,6 +106,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GoblinWarrior
   occupiedTile: {fileID: 0}
   Faction: 1
-  UnitName: Goblin Warrior 2
-  UnitID: 27
+  UnitName: Goblin Warrior
+  UnitID: 26
   validActions: 

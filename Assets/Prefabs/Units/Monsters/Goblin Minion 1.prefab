@@ -106,6 +106,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   occupiedTile: {fileID: 0}
   Faction: 1
-  UnitName: Goblin Minion 2
-  UnitID: 7
+  UnitName: Goblin Minion
+  UnitID: 6
   validActions: 
+  attackMod: 0
+  saveDC: 0
+  proficiency: 0
+  BaseName: 
+  DisplayName: 
