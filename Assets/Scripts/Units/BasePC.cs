@@ -655,7 +655,6 @@ public class BasePC : BaseUnit
     public void PopulateFreeActions(List<MenuOption> menu)
     {
         //Drop Concentration
-        //Drop Prone
         //Bard Font of Inspiration
         //Druid Wild Resurgence
         //Sea Druid dismiss Wrath of the Sea (While active)
@@ -674,7 +673,6 @@ public class BasePC : BaseUnit
 
     public void PopulateReactions()
     {
-        //Opportunity Attack (character moves out of melee range)
         //Fire Goliath Fire's Burn (Hit with attack)
         //Frost Goliath Frost's Chill (Hit with attack)
         //Hill Goliath Hill's Tumble (Hit with attack)
